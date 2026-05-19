@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+@import "tailwindcss";
+
+:root {
+  --bg-dark: #080c18;
+  --bg-card: #141929;
+  --bg-card-alt: #1a2035;
+  --accent-lime: #c8ff00;
+  --accent-cyan: #00d4ff;
+  --accent-pink: #ff2d7a;
+  --accent-purple: #9b4dff;
+  --text-primary: #e8eaf0;
+  --text-muted: #7a8099;
+  --border-card: #2a3352;
+  --tag-power-bg: #1a3a1a;
+  --tag-power-border: #4a8a4a;
+  --tag-weakness-bg: #3a1a1a;
+  --tag-weakness-border: #8a4a4a;
+  --tag-burned-bg: #3d2800;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+}
+
+.font-display { font-family: 'Bebas Neue', sans-serif; }
+
+/* Chamfered top-right corner */
+.card-chamfer {
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+}
+
+/* Editable inline field */
+.editable-field {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-card);
+  color: var(--text-primary);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  width: 100%;
+  padding: 2px 4px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.editable-field:focus { border-bottom-color: var(--accent-lime); }
+.editable-field::placeholder { color: var(--text-muted); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-lime); }
