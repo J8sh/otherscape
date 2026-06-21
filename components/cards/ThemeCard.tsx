@@ -1,7 +1,9 @@
 'use client'
+import { useState } from 'react'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { Flame } from 'lucide-react'
-import type { IThemeCard, ThemeCategory } from '@/types'
+import { Flame, BookOpen } from 'lucide-react'
+import { ThemeBookModal } from '@/components/modals/ThemeBookModal'
+import type { IThemeCard, ThemeCategory, ITag } from '@/types'
 
 const CATEGORY_COLOR: Record<ThemeCategory, string> = {
   self: '#00d4ff',
@@ -65,6 +67,7 @@ function TrackDots({
 
 export function ThemeCard({ theme, index, onChange }: Props) {
   const color = CATEGORY_COLOR[theme.category]
+  const [bookOpen, setBookOpen] = useState(false)
 
   function updateField<K extends keyof IThemeCard>(key: K, value: IThemeCard[K]) {
     onChange({ ...theme, [key]: value })
@@ -80,7 +83,28 @@ export function ThemeCard({ theme, index, onChange }: Props) {
     onChange({ ...theme, specials })
   }
 
+  function handleBookApply(entry: import('@/lib/themeBook').ThemeBookEntry, selectedTags: ITag[]) {
+    const filled = selectedTags.slice(0, 8)
+    const blanks: ITag[] = Array.from({ length: 8 - filled.length }, () => ({
+      text: '', isPower: false, isWeakness: false, isBurned: false,
+    }))
+    onChange({
+      ...theme,
+      themeType: entry.type,
+      tags: [...filled, ...blanks],
+    })
+    setBookOpen(false)
+  }
+
   return (
+    <>
+    {bookOpen && (
+      <ThemeBookModal
+        defaultCategory={theme.category}
+        onApply={handleBookApply}
+        onClose={() => setBookOpen(false)}
+      />
+    )}
     <div className="rounded-xl overflow-hidden card-chamfer" style={{ background: '#141929', border: `1px solid #2a3352` }}>
       {/* Color bar top */}
       <div style={{ height: 4, background: color }} />
@@ -98,6 +122,32 @@ export function ThemeCard({ theme, index, onChange }: Props) {
               </span>
             </Tooltip>
             <span style={{ color: '#7a8099', fontSize: 11, fontFamily: 'Rajdhani, sans-serif' }}>#{index + 1}</span>
+            <Tooltip content="Browse Theme Book — select premade tags from the rulebook">
+              <button
+                onClick={() => setBookOpen(true)}
+                className="flex items-center gap-1 font-display tracking-widest transition-all"
+                style={{
+                  fontSize: 10,
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  border: `1px solid #2a3352`,
+                  background: 'transparent',
+                  color: '#4a5570',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={e => {
+                  ;(e.currentTarget as HTMLButtonElement).style.borderColor = color
+                  ;(e.currentTarget as HTMLButtonElement).style.color = color
+                }}
+                onMouseLeave={e => {
+                  ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#2a3352'
+                  ;(e.currentTarget as HTMLButtonElement).style.color = '#4a5570'
+                }}
+              >
+                <BookOpen size={10} />
+                BOOK
+              </button>
+            </Tooltip>
           </div>
           <input
             className="editable-field font-display"
@@ -236,5 +286,6 @@ export function ThemeCard({ theme, index, onChange }: Props) {
         </div>
       </div>
     </div>
+    </>
   )
 }
