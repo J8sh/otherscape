@@ -9,25 +9,39 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<ICampaign[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', description: '', megacity: '' })
 
   async function load() {
-    const res = await fetch('/api/campaigns')
-    setCampaigns(await res.json())
-    setLoading(false)
+    setError(null)
+    try {
+      const res = await fetch('/api/campaigns')
+      if (!res.ok) throw new Error(`Failed to load campaigns (${res.status})`)
+      setCampaigns(await res.json())
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load campaigns')
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { load() }, [])
 
   async function create() {
     if (!form.name.trim()) return
-    const res = await fetch('/api/campaigns', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    })
-    const c = await res.json()
-    router.push(`/campaigns/${c._id}`)
+    setError(null)
+    try {
+      const res = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) throw new Error(`Failed to create campaign (${res.status})`)
+      const c = await res.json()
+      router.push(`/campaigns/${c._id}`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create campaign')
+    }
   }
 
   async function deleteCampaign(id: string, e: React.MouseEvent) {
@@ -79,6 +93,16 @@ export default function CampaignsPage() {
               <button onClick={create} className="px-4 py-2 rounded font-display tracking-widest text-sm transition-all hover:opacity-80" style={{ background: '#c8ff00', color: '#080c18' }}>CREATE</button>
               <button onClick={() => setCreating(false)} className="px-4 py-2 rounded font-display tracking-widest text-sm transition-all" style={{ background: '#1a2035', color: '#7a8099', border: '1px solid #2a3352' }}>CANCEL</button>
             </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-xl p-5 mb-6 flex items-center justify-between" style={{ background: '#1f1420', border: '1px solid #ff3b5c' }}>
+            <div>
+              <div className="font-display text-sm tracking-widest" style={{ color: '#ff3b5c' }}>CONNECTION ERROR</div>
+              <div className="text-sm mt-1" style={{ color: '#e8eaf0' }}>{error}</div>
+            </div>
+            <button onClick={load} className="px-4 py-2 rounded font-display tracking-widest text-sm transition-all hover:opacity-80" style={{ background: '#ff3b5c', color: '#080c18' }}>RETRY</button>
           </div>
         )}
 
