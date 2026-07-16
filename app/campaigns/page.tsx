@@ -12,11 +12,16 @@ export default function CampaignsPage() {
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', description: '', megacity: '' })
 
+  async function errorFrom(res: Response, fallback: string) {
+    const body = await res.json().catch(() => null)
+    return body?.error ?? `${fallback} (${res.status})`
+  }
+
   async function load() {
     setError(null)
     try {
       const res = await fetch('/api/campaigns')
-      if (!res.ok) throw new Error(`Failed to load campaigns (${res.status})`)
+      if (!res.ok) throw new Error(await errorFrom(res, 'Failed to load campaigns'))
       setCampaigns(await res.json())
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load campaigns')
@@ -36,7 +41,7 @@ export default function CampaignsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-      if (!res.ok) throw new Error(`Failed to create campaign (${res.status})`)
+      if (!res.ok) throw new Error(await errorFrom(res, 'Failed to create campaign'))
       const c = await res.json()
       router.push(`/campaigns/${c._id}`)
     } catch (e) {
