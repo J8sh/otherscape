@@ -20,8 +20,18 @@ global.mongoose = cached
 export async function connectDB() {
   if (cached.conn) return cached.conn
   if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, { bufferCommands: false })
+    cached.promise = mongoose.connect(MONGODB_URI, {
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 3000,
+    })
   }
-  cached.conn = await cached.promise
+  try {
+    cached.conn = await cached.promise
+  } catch (err) {
+    // Don't cache a rejected promise — otherwise every later request
+    // re-awaits the same dead connection even after Mongo recovers.
+    cached.promise = null
+    throw err
+  }
   return cached.conn
 }
