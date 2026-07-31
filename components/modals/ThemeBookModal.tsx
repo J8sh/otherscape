@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { X, BookOpen, Check } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import {
@@ -30,7 +30,10 @@ const MOTIVATION_LABEL: Record<ThemeCategory, string> = {
   noise: 'ITCH',
 }
 
-// What the user has checked in the modal
+// Cards default to expanded on tablet/desktop (≥768px) and collapsed on mobile.
+const DESKTOP_QUERY = '(min-width: 768px)'
+
+// What the user has checked in the modal (a slot holds exactly one theme)
 interface Selection {
   entry: ThemeBookEntry
   powerTags: Set<string>
@@ -72,6 +75,22 @@ export function ThemeBookModal({
       : null
   )
 
+  // Which theme cards are expanded (showing their tags). Follows the viewport:
+  // all open on tablet/desktop, all closed on mobile (except the edited theme).
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    const mql = window.matchMedia(DESKTOP_QUERY)
+    const apply = () =>
+      setExpanded(
+        mql.matches
+          ? new Set(THEME_BOOK.map(e => e.type))
+          : new Set(initialType ? [initialType] : [])
+      )
+    apply()
+    mql.addEventListener('change', apply)
+    return () => mql.removeEventListener('change', apply)
+  }, [initialType])
+
   const filtered =
     activeCategory === 'all'
       ? THEME_BOOK
@@ -81,37 +100,49 @@ export function ThemeBookModal({
   const weaknessCount = selection?.weaknessTags.size ?? 0
   const canApply = powerCount >= 1 && weaknessCount >= 1
 
-  function selectEntry(entry: ThemeBookEntry) {
-    // Clicking same entry deselects it
-    if (selection?.entry.type === entry.type) {
-      setSelection(null)
-      return
-    }
-    setSelection({ entry, powerTags: new Set(), weaknessTags: new Set() })
+  function toggleExpanded(type: string) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(type)) next.delete(type)
+      else next.add(type)
+      return next
+    })
   }
 
-  function togglePower(tag: string) {
-    if (!selection) return
-    const next = new Set(selection.powerTags)
-    if (next.has(tag)) {
-      next.delete(tag)
-    } else {
-      if (next.size >= MAX_POWER_TAGS) return // at limit — ignore
-      next.add(tag)
-    }
-    setSelection({ ...selection, powerTags: next })
+  // Checking a tag selects its theme; checking a tag in a different theme
+  // switches the selection (a slot holds one theme) and resets its picks.
+  function togglePower(entry: ThemeBookEntry, tag: string) {
+    setSelection(prev => {
+      const base =
+        prev && prev.entry.type === entry.type
+          ? prev
+          : { entry, powerTags: new Set<string>(), weaknessTags: new Set<string>() }
+      const power = new Set(base.powerTags)
+      if (power.has(tag)) {
+        power.delete(tag)
+      } else {
+        if (power.size >= MAX_POWER_TAGS) return prev // at limit — ignore
+        power.add(tag)
+      }
+      return { ...base, powerTags: power }
+    })
   }
 
-  function toggleWeakness(tag: string) {
-    if (!selection) return
-    const next = new Set(selection.weaknessTags)
-    if (next.has(tag)) {
-      next.delete(tag)
-    } else {
-      if (next.size >= MAX_WEAKNESS_TAGS) return // at limit — ignore
-      next.add(tag)
-    }
-    setSelection({ ...selection, weaknessTags: next })
+  function toggleWeakness(entry: ThemeBookEntry, tag: string) {
+    setSelection(prev => {
+      const base =
+        prev && prev.entry.type === entry.type
+          ? prev
+          : { entry, powerTags: new Set<string>(), weaknessTags: new Set<string>() }
+      const weakness = new Set(base.weaknessTags)
+      if (weakness.has(tag)) {
+        weakness.delete(tag)
+      } else {
+        if (weakness.size >= MAX_WEAKNESS_TAGS) return prev // at limit — ignore
+        weakness.add(tag)
+      }
+      return { ...base, weaknessTags: weakness }
+    })
   }
 
   const handleApply = useCallback(() => {
@@ -219,7 +250,7 @@ export function ThemeBookModal({
         {/* ── Body ────────────────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto p-6" style={{ scrollbarColor: '#2a3352 transparent' }}>
           <div
-            className="grid gap-4"
+            className="grid gap-4 items-start"
             style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}
           >
             {filtered.map(entry => (
@@ -227,11 +258,12 @@ export function ThemeBookModal({
                 key={entry.type}
                 entry={entry}
                 isSelected={selection?.entry.type === entry.type}
+                isExpanded={expanded.has(entry.type)}
                 selectedPower={selection?.entry.type === entry.type ? selection.powerTags : undefined}
                 selectedWeakness={selection?.entry.type === entry.type ? selection.weaknessTags : undefined}
-                onSelect={() => selectEntry(entry)}
-                onTogglePower={togglePower}
-                onToggleWeakness={toggleWeakness}
+                onToggleExpand={() => toggleExpanded(entry.type)}
+                onTogglePower={tag => togglePower(entry, tag)}
+                onToggleWeakness={tag => toggleWeakness(entry, tag)}
               />
             ))}
           </div>
@@ -261,7 +293,7 @@ export function ThemeBookModal({
                 )}
               </>
             ) : (
-              'Click a theme to expand and select tags'
+              'Check power & weakness tags to build your theme'
             )}
           </div>
 
@@ -309,9 +341,10 @@ export function ThemeBookModal({
 interface CardProps {
   entry: ThemeBookEntry
   isSelected: boolean
+  isExpanded: boolean
   selectedPower?: Set<string>
   selectedWeakness?: Set<string>
-  onSelect: () => void
+  onToggleExpand: () => void
   onTogglePower: (tag: string) => void
   onToggleWeakness: (tag: string) => void
 }
@@ -319,9 +352,10 @@ interface CardProps {
 function ThemeBookCard({
   entry,
   isSelected,
+  isExpanded,
   selectedPower,
   selectedWeakness,
-  onSelect,
+  onToggleExpand,
   onTogglePower,
   onToggleWeakness,
 }: CardProps) {
@@ -341,9 +375,10 @@ function ThemeBookCard({
       {/* Color bar */}
       <div style={{ height: 3, background: color }} />
 
-      {/* Clickable header */}
+      {/* Clickable header — toggles expand/collapse */}
       <button
-        onClick={onSelect}
+        onClick={onToggleExpand}
+        aria-expanded={isExpanded}
         className="w-full text-left px-4 pt-3 pb-3 flex items-start justify-between gap-2 transition-all"
         style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
       >
@@ -360,6 +395,14 @@ function ThemeBookCard({
             >
               {CATEGORY_LABEL[entry.category]}
             </span>
+            {isSelected && (
+              <span
+                className="font-display text-xs tracking-widest px-2 py-0.5 rounded"
+                style={{ background: `${color}22`, color, border: `1px solid ${color}55`, fontSize: 10 }}
+              >
+                SELECTED
+              </span>
+            )}
           </div>
           <div
             className="font-display tracking-wide"
@@ -386,17 +429,17 @@ function ThemeBookCard({
           style={{
             width: 24,
             height: 24,
-            border: `1px solid ${isSelected ? color : '#2a3352'}`,
-            background: isSelected ? `${color}22` : 'transparent',
-            color: isSelected ? color : '#4a5570',
+            border: `1px solid ${isExpanded ? color : '#2a3352'}`,
+            background: isExpanded ? `${color}22` : 'transparent',
+            color: isExpanded ? color : '#4a5570',
           }}
         >
-          <span style={{ fontSize: 14, lineHeight: 1 }}>{isSelected ? '−' : '+'}</span>
+          <span style={{ fontSize: 14, lineHeight: 1 }}>{isExpanded ? '−' : '+'}</span>
         </div>
       </button>
 
       {/* Expanded tag list */}
-      {isSelected && (
+      {isExpanded && (
         <div style={{ borderTop: `1px solid #1e2840` }}>
           {/* Power tags */}
           <div className="px-4 py-3">
