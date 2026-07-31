@@ -1,7 +1,11 @@
 'use client'
+import { useState, useEffect } from 'react'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { Flame, Pencil, Trash2 } from 'lucide-react'
+import { Flame, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import type { IThemeCard, ThemeCategory } from '@/types'
+
+// Cards default to expanded on tablet/desktop (≥768px) and collapsed on mobile.
+const DESKTOP_QUERY = '(min-width: 768px)'
 
 const CATEGORY_COLOR: Record<ThemeCategory, string> = {
   self: '#00d4ff',
@@ -67,6 +71,18 @@ function TrackDots({
 
 export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
   const color = CATEGORY_COLOR[theme.category]
+  const [collapsed, setCollapsed] = useState(false)
+
+  // Follow the viewport: expanded on tablet/desktop, collapsed on mobile.
+  // Runs after mount (viewport settled) and on each breakpoint crossing;
+  // manual toggles via the chevron persist until the breakpoint changes.
+  useEffect(() => {
+    const mql = window.matchMedia(DESKTOP_QUERY)
+    const apply = () => setCollapsed(!mql.matches)
+    apply()
+    mql.addEventListener('change', apply)
+    return () => mql.removeEventListener('change', apply)
+  }, [])
 
   function updateField<K extends keyof IThemeCard>(key: K, value: IThemeCard[K]) {
     onChange({ ...theme, [key]: value })
@@ -88,7 +104,7 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
       <div style={{ height: 4, background: color }} />
 
       {/* Header */}
-      <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-2" style={{ borderBottom: '1px solid #1e2840' }}>
+      <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-2" style={{ borderBottom: collapsed ? 'none' : '1px solid #1e2840' }}>
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             <Tooltip content={`This is a ${CATEGORY_LABEL[theme.category]} theme. ${theme.category === 'self' ? 'Represents your personal identity.' : theme.category === 'mythos' ? 'Represents your connection to a mythical Source.' : 'Represents your superhuman technological abilities.'}`}>
@@ -132,6 +148,19 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
             />
           </div>
           <div className="flex flex-col gap-1">
+            <Tooltip content={collapsed ? 'Expand theme — show tags, motivation, and specials.' : 'Collapse theme — hide the details, keep the header.'}>
+              <button
+                onClick={() => setCollapsed(c => !c)}
+                aria-label={collapsed ? 'Expand theme' : 'Collapse theme'}
+                aria-expanded={!collapsed}
+                className="flex items-center justify-center rounded transition-all"
+                style={{ width: 26, height: 26, border: '1px solid #2a3352', background: 'transparent', color: '#7a8099', cursor: 'pointer' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color; (e.currentTarget as HTMLButtonElement).style.color = color }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a3352'; (e.currentTarget as HTMLButtonElement).style.color = '#7a8099' }}
+              >
+                {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+              </button>
+            </Tooltip>
             <Tooltip content="Edit this theme — reopen the Theme Book to change the theme type or its power/weakness tags.">
               <button
                 onClick={onEdit}
@@ -160,6 +189,8 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
         </div>
       </div>
 
+      {!collapsed && (
+      <>
       {/* Motivation */}
       <div className="px-4 py-2 flex items-center gap-2" style={{ borderBottom: '1px solid #1e2840', background: '#0f1520' }}>
         <Tooltip content={MOTIVATION_TOOLTIP[theme.category]}>
@@ -273,6 +304,8 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
           ))}
         </div>
       </div>
+      </>
+      )}
     </div>
   )
 }
