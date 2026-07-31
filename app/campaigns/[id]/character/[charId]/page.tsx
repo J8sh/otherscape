@@ -3,25 +3,13 @@ import { useEffect, useState, use } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Zap } from 'lucide-react'
 import { CharacterCard } from '@/components/cards/CharacterCard'
-import { ThemeCard } from '@/components/cards/ThemeCard'
+import { ThemeSlot } from '@/components/cards/ThemeSlot'
 import { LoadoutThemeCard } from '@/components/cards/LoadoutThemeCard'
 import { TrackingCards } from '@/components/cards/TrackingCard'
 import { Tooltip } from '@/components/ui/Tooltip'
 import type { ICharacter } from '@/types'
 
 const SAVE_DELAY = 800
-
-const THEME_TYPE_OPTIONS = {
-  self: ['Affiliation', 'Assets', 'Expertise', 'Horizon', 'Personality', 'Troubled Past'],
-  mythos: ['Artifact', 'Companion', 'Esoterica', 'Exposure'],
-  noise: ['Augmentation', 'Cutting Edge', 'Cyberspace', 'Drones'],
-}
-
-const CATEGORY_TOOLTIP = {
-  self: 'SELF themes represent your personal identity — who you are as a human being.',
-  mythos: 'MYTHOS themes represent your connection to a mythical Source and the powers it grants.',
-  noise: 'NOISE themes represent your superhuman technological capabilities.',
-}
 
 export default function CharacterPage({ params }: { params: Promise<{ id: string; charId: string }> }) {
   const { id, charId } = use(params)
@@ -94,56 +82,19 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
             <Tooltip content="Each character has exactly 4 themes — their major aspects. Themes hold your power tags, weakness tags, and define your Essence.">
               <h2 className="font-display text-2xl tracking-widest cursor-help" style={{ color: '#e8eaf0' }}>THEMES</h2>
             </Tooltip>
-            <span className="font-display text-sm tracking-widest" style={{ color: '#7a8099' }}>({character.themes.length}/4)</span>
+            <span className="font-display text-sm tracking-widest" style={{ color: '#7a8099' }}>({character.themes.filter(t => t.themeType !== '').length}/4)</span>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {character.themes.map((theme, i) => (
-              <div key={i}>
-                {/* Theme type selector */}
-                <div className="flex items-center gap-2 mb-2">
-                  <Tooltip content={CATEGORY_TOOLTIP[theme.category]}>
-                    <select
-                      value={theme.category}
-                      onChange={e => {
-                        const cat = e.target.value as ICharacter['themes'][0]['category']
-                        updateCharacter({
-                          ...character,
-                          themes: character.themes.map((t, idx) =>
-                            idx === i ? { ...t, category: cat, themeType: THEME_TYPE_OPTIONS[cat][0] as ICharacter['themes'][0]['themeType'] } : t
-                          ),
-                        })
-                      }}
-                      style={{ background: '#141929', border: '1px solid #2a3352', color: '#7a8099', borderRadius: 4, padding: '2px 6px', fontFamily: 'Bebas Neue, sans-serif', fontSize: 12, letterSpacing: '0.1em', cursor: 'pointer' }}
-                    >
-                      <option value="self">SELF</option>
-                      <option value="mythos">MYTHOS</option>
-                      <option value="noise">NOISE</option>
-                    </select>
-                  </Tooltip>
-                  <Tooltip content={`Choose your theme type — determines the motivation style and available Specials.`}>
-                    <select
-                      value={theme.themeType}
-                      onChange={e => updateCharacter({
-                        ...character,
-                        themes: character.themes.map((t, idx) => idx === i ? { ...t, themeType: e.target.value as ICharacter['themes'][0]['themeType'] } : t),
-                      })}
-                      style={{ background: '#141929', border: '1px solid #2a3352', color: '#e8eaf0', borderRadius: 4, padding: '2px 6px', fontFamily: 'Rajdhani, sans-serif', fontSize: 13, cursor: 'pointer' }}
-                    >
-                      {THEME_TYPE_OPTIONS[theme.category].map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  </Tooltip>
-                </div>
-                <ThemeCard
-                  theme={theme}
-                  index={i}
-                  onChange={updated => updateCharacter({
-                    ...character,
-                    themes: character.themes.map((t, idx) => idx === i ? updated : t),
-                  })}
-                />
-              </div>
+              <ThemeSlot
+                key={i}
+                theme={theme}
+                index={i}
+                onChange={updated => updateCharacter({
+                  ...character,
+                  themes: character.themes.map((t, idx) => idx === i ? updated : t),
+                })}
+              />
             ))}
           </div>
         </div>

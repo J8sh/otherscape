@@ -1,9 +1,7 @@
 'use client'
-import { useState } from 'react'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { Flame, BookOpen } from 'lucide-react'
-import { ThemeBookModal } from '@/components/modals/ThemeBookModal'
-import type { IThemeCard, ThemeCategory, ITag } from '@/types'
+import { Flame, Pencil, Trash2 } from 'lucide-react'
+import type { IThemeCard, ThemeCategory } from '@/types'
 
 const CATEGORY_COLOR: Record<ThemeCategory, string> = {
   self: '#00d4ff',
@@ -33,6 +31,8 @@ interface Props {
   theme: IThemeCard
   index: number
   onChange: (theme: IThemeCard) => void
+  onEdit: () => void
+  onDelete: () => void
 }
 
 function TrackDots({
@@ -65,9 +65,8 @@ function TrackDots({
   )
 }
 
-export function ThemeCard({ theme, index, onChange }: Props) {
+export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
   const color = CATEGORY_COLOR[theme.category]
-  const [bookOpen, setBookOpen] = useState(false)
 
   function updateField<K extends keyof IThemeCard>(key: K, value: IThemeCard[K]) {
     onChange({ ...theme, [key]: value })
@@ -83,28 +82,7 @@ export function ThemeCard({ theme, index, onChange }: Props) {
     onChange({ ...theme, specials })
   }
 
-  function handleBookApply(entry: import('@/lib/themeBook').ThemeBookEntry, selectedTags: ITag[]) {
-    const filled = selectedTags.slice(0, 8)
-    const blanks: ITag[] = Array.from({ length: 8 - filled.length }, () => ({
-      text: '', isPower: false, isWeakness: false, isBurned: false,
-    }))
-    onChange({
-      ...theme,
-      themeType: entry.type,
-      tags: [...filled, ...blanks],
-    })
-    setBookOpen(false)
-  }
-
   return (
-    <>
-    {bookOpen && (
-      <ThemeBookModal
-        defaultCategory={theme.category}
-        onApply={handleBookApply}
-        onClose={() => setBookOpen(false)}
-      />
-    )}
     <div className="rounded-xl overflow-hidden card-chamfer" style={{ background: '#141929', border: `1px solid #2a3352` }}>
       {/* Color bar top */}
       <div style={{ height: 4, background: color }} />
@@ -121,33 +99,15 @@ export function ThemeCard({ theme, index, onChange }: Props) {
                 {CATEGORY_LABEL[theme.category]}
               </span>
             </Tooltip>
-            <span style={{ color: '#7a8099', fontSize: 11, fontFamily: 'Rajdhani, sans-serif' }}>#{index + 1}</span>
-            <Tooltip content="Browse Theme Book — select premade tags from the rulebook">
-              <button
-                onClick={() => setBookOpen(true)}
-                className="flex items-center gap-1 font-display tracking-widest transition-all"
-                style={{
-                  fontSize: 10,
-                  padding: '2px 8px',
-                  borderRadius: 4,
-                  border: `1px solid #2a3352`,
-                  background: 'transparent',
-                  color: '#4a5570',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={e => {
-                  ;(e.currentTarget as HTMLButtonElement).style.borderColor = color
-                  ;(e.currentTarget as HTMLButtonElement).style.color = color
-                }}
-                onMouseLeave={e => {
-                  ;(e.currentTarget as HTMLButtonElement).style.borderColor = '#2a3352'
-                  ;(e.currentTarget as HTMLButtonElement).style.color = '#4a5570'
-                }}
+            {theme.themeType && (
+              <span
+                className="tracking-wide"
+                style={{ color: '#9aa4bf', fontSize: 12, fontFamily: 'Rajdhani, sans-serif', fontWeight: 600 }}
               >
-                <BookOpen size={10} />
-                BOOK
-              </button>
-            </Tooltip>
+                {theme.themeType}
+              </span>
+            )}
+            <span style={{ color: '#7a8099', fontSize: 11, fontFamily: 'Rajdhani, sans-serif' }}>#{index + 1}</span>
           </div>
           <input
             className="editable-field font-display"
@@ -157,18 +117,46 @@ export function ThemeCard({ theme, index, onChange }: Props) {
             placeholder="THEME NAME"
           />
         </div>
-        {/* Decay / Upgrade */}
-        <div className="flex gap-3 pt-1 shrink-0">
-          <TrackDots
-            value={theme.decay} max={3} filledColor="#ff2d7a" label="DECAY"
-            tooltip="Decay (0–3): Mark when you act against your motivation. At 3, replace this theme."
-            onChange={v => updateField('decay', v)}
-          />
-          <TrackDots
-            value={theme.upgrade} max={2} filledColor="#c8ff00" label="UPGRADE"
-            tooltip="Upgrade (0–2): Mark when you fully embrace your motivation. Upgrades unlock new options."
-            onChange={v => updateField('upgrade', v)}
-          />
+        {/* Actions + Decay/Upgrade */}
+        <div className="flex items-start gap-3 pt-1 shrink-0">
+          <div className="flex gap-3">
+            <TrackDots
+              value={theme.decay} max={3} filledColor="#ff2d7a" label="DECAY"
+              tooltip="Decay (0–3): Mark when you act against your motivation. At 3, replace this theme."
+              onChange={v => updateField('decay', v)}
+            />
+            <TrackDots
+              value={theme.upgrade} max={2} filledColor="#c8ff00" label="UPGRADE"
+              tooltip="Upgrade (0–2): Mark when you fully embrace your motivation. Upgrades unlock new options."
+              onChange={v => updateField('upgrade', v)}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Tooltip content="Edit this theme — reopen the Theme Book to change the theme type or its power/weakness tags.">
+              <button
+                onClick={onEdit}
+                aria-label="Edit theme"
+                className="flex items-center justify-center rounded transition-all"
+                style={{ width: 26, height: 26, border: '1px solid #2a3352', background: 'transparent', color: '#7a8099', cursor: 'pointer' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color; (e.currentTarget as HTMLButtonElement).style.color = color }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a3352'; (e.currentTarget as HTMLButtonElement).style.color = '#7a8099' }}
+              >
+                <Pencil size={13} />
+              </button>
+            </Tooltip>
+            <Tooltip content="Delete this theme — clears the card back to an empty slot.">
+              <button
+                onClick={onDelete}
+                aria-label="Delete theme"
+                className="flex items-center justify-center rounded transition-all"
+                style={{ width: 26, height: 26, border: '1px solid #2a3352', background: 'transparent', color: '#7a8099', cursor: 'pointer' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#ff3b5c'; (e.currentTarget as HTMLButtonElement).style.color = '#ff3b5c' }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a3352'; (e.currentTarget as HTMLButtonElement).style.color = '#7a8099' }}
+              >
+                <Trash2 size={13} />
+              </button>
+            </Tooltip>
+          </div>
         </div>
       </div>
 
@@ -286,6 +274,5 @@ export function ThemeCard({ theme, index, onChange }: Props) {
         </div>
       </div>
     </div>
-    </>
   )
 }
