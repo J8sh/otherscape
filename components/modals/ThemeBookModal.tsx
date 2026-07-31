@@ -2,8 +2,15 @@
 
 import { useState, useCallback } from 'react'
 import { X, BookOpen, Check } from 'lucide-react'
-import { THEME_BOOK, type ThemeBookEntry } from '@/lib/themeBook'
-import type { ThemeCategory, ThemeType, ITag } from '@/types'
+import { Tooltip } from '@/components/ui/Tooltip'
+import {
+  THEME_BOOK,
+  MAX_POWER_TAGS,
+  MAX_WEAKNESS_TAGS,
+  type ThemeBookEntry,
+  type TagDef,
+} from '@/lib/themeBook'
+import type { ThemeCategory, ITag } from '@/types'
 
 const CATEGORY_COLOR: Record<ThemeCategory, string> = {
   self: '#00d4ff',
@@ -17,6 +24,12 @@ const CATEGORY_LABEL: Record<ThemeCategory, string> = {
   noise: 'NOISE',
 }
 
+const MOTIVATION_LABEL: Record<ThemeCategory, string> = {
+  self: 'IDENTITY',
+  mythos: 'RITUAL',
+  noise: 'ITCH',
+}
+
 // What the user has checked in the modal
 interface Selection {
   entry: ThemeBookEntry
@@ -26,23 +39,47 @@ interface Selection {
 
 interface Props {
   defaultCategory?: ThemeCategory
+  /** Edit mode: preselect this theme type and its chosen tags. */
+  initialType?: string
+  initialPowerTags?: string[]
+  initialWeaknessTags?: string[]
   onApply: (entry: ThemeBookEntry, tags: ITag[]) => void
   onClose: () => void
 }
 
-export function ThemeBookModal({ defaultCategory, onApply, onClose }: Props) {
+export function ThemeBookModal({
+  defaultCategory,
+  initialType,
+  initialPowerTags,
+  initialWeaknessTags,
+  onApply,
+  onClose,
+}: Props) {
+  const initialEntry = initialType
+    ? THEME_BOOK.find(e => e.type === initialType)
+    : undefined
+
   const [activeCategory, setActiveCategory] = useState<ThemeCategory | 'all'>(
-    defaultCategory ?? 'all'
+    initialEntry?.category ?? defaultCategory ?? 'all'
   )
-  const [selection, setSelection] = useState<Selection | null>(null)
+  const [selection, setSelection] = useState<Selection | null>(
+    initialEntry
+      ? {
+          entry: initialEntry,
+          powerTags: new Set(initialPowerTags ?? []),
+          weaknessTags: new Set(initialWeaknessTags ?? []),
+        }
+      : null
+  )
 
   const filtered =
     activeCategory === 'all'
       ? THEME_BOOK
       : THEME_BOOK.filter(e => e.category === activeCategory)
 
-  const totalSelected =
-    (selection?.powerTags.size ?? 0) + (selection?.weaknessTags.size ?? 0)
+  const powerCount = selection?.powerTags.size ?? 0
+  const weaknessCount = selection?.weaknessTags.size ?? 0
+  const canApply = powerCount >= 1 && weaknessCount >= 1
 
   function selectEntry(entry: ThemeBookEntry) {
     // Clicking same entry deselects it
@@ -56,14 +93,24 @@ export function ThemeBookModal({ defaultCategory, onApply, onClose }: Props) {
   function togglePower(tag: string) {
     if (!selection) return
     const next = new Set(selection.powerTags)
-    next.has(tag) ? next.delete(tag) : next.add(tag)
+    if (next.has(tag)) {
+      next.delete(tag)
+    } else {
+      if (next.size >= MAX_POWER_TAGS) return // at limit — ignore
+      next.add(tag)
+    }
     setSelection({ ...selection, powerTags: next })
   }
 
   function toggleWeakness(tag: string) {
     if (!selection) return
     const next = new Set(selection.weaknessTags)
-    next.has(tag) ? next.delete(tag) : next.add(tag)
+    if (next.has(tag)) {
+      next.delete(tag)
+    } else {
+      if (next.size >= MAX_WEAKNESS_TAGS) return // at limit — ignore
+      next.add(tag)
+    }
     setSelection({ ...selection, weaknessTags: next })
   }
 
@@ -124,7 +171,7 @@ export function ThemeBookModal({ defaultCategory, onApply, onClose }: Props) {
                 letterSpacing: '0.1em',
               }}
             >
-              SELECT TAGS TO IMPORT
+              PICK A THEME · CHOOSE UP TO {MAX_POWER_TAGS} POWER + {MAX_WEAKNESS_TAGS} WEAKNESS
             </span>
           </div>
 
@@ -200,14 +247,16 @@ export function ThemeBookModal({ defaultCategory, onApply, onClose }: Props) {
               <>
                 <span style={{ color: '#e8eaf0' }}>{selection.entry.type}</span>
                 {' · '}
-                <span style={{ color: '#90ee90' }}>{selection.powerTags.size} power</span>
+                <span style={{ color: powerCount >= 1 ? '#90ee90' : '#7a8099' }}>
+                  {powerCount}/{MAX_POWER_TAGS} power
+                </span>
                 {' · '}
-                <span style={{ color: '#ee9090' }}>{selection.weaknessTags.size} weakness</span>
-                {' · '}
-                <span>{totalSelected} tag{totalSelected !== 1 ? 's' : ''} selected</span>
-                {totalSelected > 8 && (
-                  <span style={{ color: '#ff6b6b', marginLeft: 8 }}>
-                    (only first 8 will be applied)
+                <span style={{ color: weaknessCount >= 1 ? '#ee9090' : '#7a8099' }}>
+                  {weaknessCount}/{MAX_WEAKNESS_TAGS} weakness
+                </span>
+                {!canApply && (
+                  <span style={{ color: '#ffb84d', marginLeft: 8 }}>
+                    (pick at least 1 power + 1 weakness)
                   </span>
                 )}
               </>
@@ -234,19 +283,19 @@ export function ThemeBookModal({ defaultCategory, onApply, onClose }: Props) {
             </button>
             <button
               onClick={handleApply}
-              disabled={totalSelected === 0}
+              disabled={!canApply}
               className="font-display tracking-widest transition-all"
               style={{
                 fontSize: 12,
                 padding: '8px 20px',
                 borderRadius: 6,
-                border: `1px solid ${totalSelected > 0 ? '#c8ff00' : '#2a3352'}`,
-                background: totalSelected > 0 ? '#c8ff0018' : 'transparent',
-                color: totalSelected > 0 ? '#c8ff00' : '#3a4462',
-                cursor: totalSelected > 0 ? 'pointer' : 'not-allowed',
+                border: `1px solid ${canApply ? '#c8ff00' : '#2a3352'}`,
+                background: canApply ? '#c8ff0018' : 'transparent',
+                color: canApply ? '#c8ff00' : '#3a4462',
+                cursor: canApply ? 'pointer' : 'not-allowed',
               }}
             >
-              APPLY TO THEME
+              DONE
             </button>
           </div>
         </div>
@@ -277,6 +326,8 @@ function ThemeBookCard({
   onToggleWeakness,
 }: CardProps) {
   const color = CATEGORY_COLOR[entry.category]
+  const powerAtLimit = (selectedPower?.size ?? 0) >= MAX_POWER_TAGS
+  const weaknessAtLimit = (selectedWeakness?.size ?? 0) >= MAX_WEAKNESS_TAGS
 
   return (
     <div
@@ -350,100 +401,54 @@ function ThemeBookCard({
           {/* Power tags */}
           <div className="px-4 py-3">
             <div
-              className="font-display text-xs tracking-widest mb-2"
+              className="font-display text-xs tracking-widest mb-2 flex items-center justify-between"
               style={{ color: '#90ee90', fontSize: 10 }}
             >
-              POWER TAGS
+              <span>POWER TAGS</span>
+              <span style={{ color: powerAtLimit ? '#ffb84d' : '#4a5570' }}>
+                {selectedPower?.size ?? 0}/{MAX_POWER_TAGS}
+              </span>
             </div>
             <div className="flex flex-col gap-1">
-              {entry.powerTags.map(tag => {
-                const checked = selectedPower?.has(tag) ?? false
-                return (
-                  <label
-                    key={tag}
-                    className="flex items-center gap-2 rounded px-2 py-1.5 cursor-pointer transition-all"
-                    style={{
-                      background: checked ? '#1a3a1a' : 'transparent',
-                      border: `1px solid ${checked ? '#3a6a3a' : 'transparent'}`,
-                    }}
-                  >
-                    <div
-                      className="shrink-0 flex items-center justify-center rounded transition-all"
-                      style={{
-                        width: 16,
-                        height: 16,
-                        border: `1.5px solid ${checked ? '#90ee90' : '#3a4462'}`,
-                        background: checked ? '#3a6a3a' : 'transparent',
-                      }}
-                      onClick={() => onTogglePower(tag)}
-                    >
-                      {checked && <Check size={10} color="#90ee90" />}
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 13,
-                        color: checked ? '#90ee90' : '#c8d8e8',
-                        fontFamily: 'Rajdhani, sans-serif',
-                        fontWeight: 500,
-                        fontStyle: checked ? 'italic' : 'normal',
-                      }}
-                      onClick={() => onTogglePower(tag)}
-                    >
-                      {tag}
-                    </span>
-                  </label>
-                )
-              })}
+              {entry.powerTags.map(tag => (
+                <TagRow
+                  key={tag.text}
+                  tag={tag}
+                  checked={selectedPower?.has(tag.text) ?? false}
+                  disabled={powerAtLimit && !(selectedPower?.has(tag.text) ?? false)}
+                  activeColor="#90ee90"
+                  activeBg="#1a3a1a"
+                  activeBorder="#3a6a3a"
+                  onToggle={() => onTogglePower(tag.text)}
+                />
+              ))}
             </div>
           </div>
 
           {/* Weakness tags */}
           <div className="px-4 pb-3" style={{ borderTop: '1px solid #141929' }}>
             <div
-              className="font-display text-xs tracking-widest mb-2 pt-3"
+              className="font-display text-xs tracking-widest mb-2 pt-3 flex items-center justify-between"
               style={{ color: '#ee9090', fontSize: 10 }}
             >
-              WEAKNESS TAGS
+              <span>WEAKNESS TAGS</span>
+              <span style={{ color: weaknessAtLimit ? '#ffb84d' : '#4a5570' }}>
+                {selectedWeakness?.size ?? 0}/{MAX_WEAKNESS_TAGS}
+              </span>
             </div>
             <div className="flex flex-col gap-1">
-              {entry.weaknessTags.map(tag => {
-                const checked = selectedWeakness?.has(tag) ?? false
-                return (
-                  <label
-                    key={tag}
-                    className="flex items-center gap-2 rounded px-2 py-1.5 cursor-pointer transition-all"
-                    style={{
-                      background: checked ? '#3a1a1a' : 'transparent',
-                      border: `1px solid ${checked ? '#6a3a3a' : 'transparent'}`,
-                    }}
-                  >
-                    <div
-                      className="shrink-0 flex items-center justify-center rounded transition-all"
-                      style={{
-                        width: 16,
-                        height: 16,
-                        border: `1.5px solid ${checked ? '#ee9090' : '#3a4462'}`,
-                        background: checked ? '#6a3a3a' : 'transparent',
-                      }}
-                      onClick={() => onToggleWeakness(tag)}
-                    >
-                      {checked && <Check size={10} color="#ee9090" />}
-                    </div>
-                    <span
-                      style={{
-                        fontSize: 13,
-                        color: checked ? '#ee9090' : '#c8d8e8',
-                        fontFamily: 'Rajdhani, sans-serif',
-                        fontWeight: 500,
-                        fontStyle: checked ? 'italic' : 'normal',
-                      }}
-                      onClick={() => onToggleWeakness(tag)}
-                    >
-                      {tag}
-                    </span>
-                  </label>
-                )
-              })}
+              {entry.weaknessTags.map(tag => (
+                <TagRow
+                  key={tag.text}
+                  tag={tag}
+                  checked={selectedWeakness?.has(tag.text) ?? false}
+                  disabled={weaknessAtLimit && !(selectedWeakness?.has(tag.text) ?? false)}
+                  activeColor="#ee9090"
+                  activeBg="#3a1a1a"
+                  activeBorder="#6a3a3a"
+                  onToggle={() => onToggleWeakness(tag.text)}
+                />
+              ))}
             </div>
           </div>
 
@@ -456,13 +461,7 @@ function ThemeBookCard({
               className="font-display text-xs tracking-widest"
               style={{ color, fontSize: 10 }}
             >
-              {entry.category === 'self'
-                ? 'IDENTITY'
-                : entry.category === 'mythos'
-                ? 'RITUAL'
-                : 'ITCH'}
-              {' '}
-              EXAMPLE
+              {MOTIVATION_LABEL[entry.category]} EXAMPLE
             </span>
             <div
               style={{
@@ -479,5 +478,68 @@ function ThemeBookCard({
         </div>
       )}
     </div>
+  )
+}
+
+// ── A single selectable tag row with its helper hint ──────────────────────
+
+interface TagRowProps {
+  tag: TagDef
+  checked: boolean
+  disabled: boolean
+  activeColor: string
+  activeBg: string
+  activeBorder: string
+  onToggle: () => void
+}
+
+function TagRow({ tag, checked, disabled, activeColor, activeBg, activeBorder, onToggle }: TagRowProps) {
+  return (
+    <Tooltip content={tag.hint}>
+      <div
+        role="button"
+        tabIndex={disabled ? -1 : 0}
+        aria-pressed={checked}
+        aria-disabled={disabled}
+        onClick={() => !disabled && onToggle()}
+        onKeyDown={e => {
+          if (disabled) return
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onToggle()
+          }
+        }}
+        className="flex items-center gap-2 rounded px-2 py-1.5 transition-all"
+        style={{
+          background: checked ? activeBg : 'transparent',
+          border: `1px solid ${checked ? activeBorder : 'transparent'}`,
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? 0.4 : 1,
+        }}
+      >
+        <div
+          className="shrink-0 flex items-center justify-center rounded transition-all"
+          style={{
+            width: 16,
+            height: 16,
+            border: `1.5px solid ${checked ? activeColor : '#3a4462'}`,
+            background: checked ? activeBorder : 'transparent',
+          }}
+        >
+          {checked && <Check size={10} color={activeColor} />}
+        </div>
+        <span
+          style={{
+            fontSize: 13,
+            color: checked ? activeColor : '#c8d8e8',
+            fontFamily: 'Rajdhani, sans-serif',
+            fontWeight: 500,
+            fontStyle: checked ? 'italic' : 'normal',
+          }}
+        >
+          {tag.text}
+        </span>
+      </div>
+    </Tooltip>
   )
 }

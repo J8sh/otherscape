@@ -32,7 +32,7 @@ export interface IThemeCard {
   _id?: string
   name: string
   category: ThemeCategory
-  themeType: ThemeType
+  themeType: ThemeType | '' // '' = empty/unconfigured slot (shows the add-theme prompt)
   motivation: string // identity / ritual / itch text
   tags: ITag[]
   decay: number   // 0–3
