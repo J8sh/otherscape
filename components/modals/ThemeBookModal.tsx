@@ -1,11 +1,11 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { X, BookOpen, Check } from 'lucide-react'
+import { X, BookOpen, Check, Star } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import {
   THEME_BOOK,
-  MAX_POWER_TAGS,
+  MAX_SUPPORTING_POWER_TAGS,
   MAX_WEAKNESS_TAGS,
   type ThemeBookEntry,
   type TagDef,
@@ -30,13 +30,17 @@ const MOTIVATION_LABEL: Record<ThemeCategory, string> = {
   noise: 'ITCH',
 }
 
+const TITLE_COLOR = '#ffcf4d'
+
 // Cards default to expanded on tablet/desktop (≥768px) and collapsed on mobile.
 const DESKTOP_QUERY = '(min-width: 768px)'
 
-// What the user has checked in the modal (a slot holds exactly one theme)
+// What the user has chosen: one title (main) power tag, up to two supporting
+// power tags, and one weakness tag. A slot holds exactly one theme.
 interface Selection {
   entry: ThemeBookEntry
-  powerTags: Set<string>
+  titleTag: string | null
+  supportingTags: Set<string>
   weaknessTags: Set<string>
 }
 
@@ -44,7 +48,8 @@ interface Props {
   defaultCategory?: ThemeCategory
   /** Edit mode: preselect this theme type and its chosen tags. */
   initialType?: string
-  initialPowerTags?: string[]
+  initialTitleTag?: string | null
+  initialSupportingTags?: string[]
   initialWeaknessTags?: string[]
   onApply: (entry: ThemeBookEntry, tags: ITag[]) => void
   onClose: () => void
@@ -53,7 +58,8 @@ interface Props {
 export function ThemeBookModal({
   defaultCategory,
   initialType,
-  initialPowerTags,
+  initialTitleTag,
+  initialSupportingTags,
   initialWeaknessTags,
   onApply,
   onClose,
@@ -69,7 +75,8 @@ export function ThemeBookModal({
     initialEntry
       ? {
           entry: initialEntry,
-          powerTags: new Set(initialPowerTags ?? []),
+          titleTag: initialTitleTag ?? null,
+          supportingTags: new Set(initialSupportingTags ?? []),
           weaknessTags: new Set(initialWeaknessTags ?? []),
         }
       : null
@@ -96,9 +103,10 @@ export function ThemeBookModal({
       ? THEME_BOOK
       : THEME_BOOK.filter(e => e.category === activeCategory)
 
-  const powerCount = selection?.powerTags.size ?? 0
+  const hasTitle = !!selection?.titleTag
+  const supportingCount = selection?.supportingTags.size ?? 0
   const weaknessCount = selection?.weaknessTags.size ?? 0
-  const canApply = powerCount >= 1 && weaknessCount >= 1
+  const canApply = hasTitle && weaknessCount >= 1
 
   function toggleExpanded(type: string) {
     setExpanded(prev => {
@@ -109,36 +117,47 @@ export function ThemeBookModal({
     })
   }
 
-  // Checking a tag selects its theme; checking a tag in a different theme
-  // switches the selection (a slot holds one theme) and resets its picks.
-  function togglePower(entry: ThemeBookEntry, tag: string) {
+  // Starting from the current selection, or a fresh one when switching themes.
+  function baseFor(entry: ThemeBookEntry, prev: Selection | null): Selection {
+    return prev && prev.entry.type === entry.type
+      ? prev
+      : { entry, titleTag: null, supportingTags: new Set(), weaknessTags: new Set() }
+  }
+
+  function setTitle(entry: ThemeBookEntry, tag: string) {
     setSelection(prev => {
-      const base =
-        prev && prev.entry.type === entry.type
-          ? prev
-          : { entry, powerTags: new Set<string>(), weaknessTags: new Set<string>() }
-      const power = new Set(base.powerTags)
-      if (power.has(tag)) {
-        power.delete(tag)
+      const base = baseFor(entry, prev)
+      if (base.titleTag === tag) return { ...base, titleTag: null } // toggle off
+      // Promote to title; a tag can't be title and supporting at once.
+      const supporting = new Set(base.supportingTags)
+      supporting.delete(tag)
+      return { ...base, titleTag: tag, supportingTags: supporting }
+    })
+  }
+
+  function toggleSupporting(entry: ThemeBookEntry, tag: string) {
+    setSelection(prev => {
+      const base = baseFor(entry, prev)
+      if (base.titleTag === tag) return base // it's the title — use the star to change
+      const supporting = new Set(base.supportingTags)
+      if (supporting.has(tag)) {
+        supporting.delete(tag)
       } else {
-        if (power.size >= MAX_POWER_TAGS) return prev // at limit — ignore
-        power.add(tag)
+        if (supporting.size >= MAX_SUPPORTING_POWER_TAGS) return base // at limit
+        supporting.add(tag)
       }
-      return { ...base, powerTags: power }
+      return { ...base, supportingTags: supporting }
     })
   }
 
   function toggleWeakness(entry: ThemeBookEntry, tag: string) {
     setSelection(prev => {
-      const base =
-        prev && prev.entry.type === entry.type
-          ? prev
-          : { entry, powerTags: new Set<string>(), weaknessTags: new Set<string>() }
+      const base = baseFor(entry, prev)
       const weakness = new Set(base.weaknessTags)
       if (weakness.has(tag)) {
         weakness.delete(tag)
       } else {
-        if (weakness.size >= MAX_WEAKNESS_TAGS) return prev // at limit — ignore
+        if (weakness.size >= MAX_WEAKNESS_TAGS) return base // at limit
         weakness.add(tag)
       }
       return { ...base, weaknessTags: weakness }
@@ -146,17 +165,26 @@ export function ThemeBookModal({
   }
 
   const handleApply = useCallback(() => {
-    if (!selection) return
+    if (!selection || !selection.titleTag) return
     const tags: ITag[] = [
-      ...[...selection.powerTags].map(text => ({
+      {
+        text: selection.titleTag,
+        isPower: true,
+        isTitle: true,
+        isWeakness: false,
+        isBurned: false,
+      },
+      ...[...selection.supportingTags].map(text => ({
         text,
         isPower: true,
+        isTitle: false,
         isWeakness: false,
         isBurned: false,
       })),
       ...[...selection.weaknessTags].map(text => ({
         text,
         isPower: false,
+        isTitle: false,
         isWeakness: true,
         isBurned: false,
       })),
@@ -202,7 +230,7 @@ export function ThemeBookModal({
                 letterSpacing: '0.1em',
               }}
             >
-              PICK A THEME · CHOOSE UP TO {MAX_POWER_TAGS} POWER + {MAX_WEAKNESS_TAGS} WEAKNESS
+              PICK A THEME · 1 TITLE + {MAX_SUPPORTING_POWER_TAGS} POWER + {MAX_WEAKNESS_TAGS} WEAKNESS
             </span>
           </div>
 
@@ -253,19 +281,24 @@ export function ThemeBookModal({
             className="grid gap-4 items-start"
             style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}
           >
-            {filtered.map(entry => (
-              <ThemeBookCard
-                key={entry.type}
-                entry={entry}
-                isSelected={selection?.entry.type === entry.type}
-                isExpanded={expanded.has(entry.type)}
-                selectedPower={selection?.entry.type === entry.type ? selection.powerTags : undefined}
-                selectedWeakness={selection?.entry.type === entry.type ? selection.weaknessTags : undefined}
-                onToggleExpand={() => toggleExpanded(entry.type)}
-                onTogglePower={tag => togglePower(entry, tag)}
-                onToggleWeakness={tag => toggleWeakness(entry, tag)}
-              />
-            ))}
+            {filtered.map(entry => {
+              const isSel = selection?.entry.type === entry.type
+              return (
+                <ThemeBookCard
+                  key={entry.type}
+                  entry={entry}
+                  isSelected={isSel}
+                  isExpanded={expanded.has(entry.type)}
+                  titleTag={isSel ? selection!.titleTag : null}
+                  supportingTags={isSel ? selection!.supportingTags : undefined}
+                  weaknessTags={isSel ? selection!.weaknessTags : undefined}
+                  onToggleExpand={() => toggleExpanded(entry.type)}
+                  onSetTitle={tag => setTitle(entry, tag)}
+                  onToggleSupporting={tag => toggleSupporting(entry, tag)}
+                  onToggleWeakness={tag => toggleWeakness(entry, tag)}
+                />
+              )
+            })}
           </div>
         </div>
 
@@ -279,8 +312,12 @@ export function ThemeBookModal({
               <>
                 <span style={{ color: '#e8eaf0' }}>{selection.entry.type}</span>
                 {' · '}
-                <span style={{ color: powerCount >= 1 ? '#90ee90' : '#7a8099' }}>
-                  {powerCount}/{MAX_POWER_TAGS} power
+                <span style={{ color: hasTitle ? TITLE_COLOR : '#7a8099' }}>
+                  {hasTitle ? 'title ✓' : 'no title'}
+                </span>
+                {' · '}
+                <span style={{ color: supportingCount > 0 ? '#90ee90' : '#7a8099' }}>
+                  {supportingCount}/{MAX_SUPPORTING_POWER_TAGS} power
                 </span>
                 {' · '}
                 <span style={{ color: weaknessCount >= 1 ? '#ee9090' : '#7a8099' }}>
@@ -288,12 +325,12 @@ export function ThemeBookModal({
                 </span>
                 {!canApply && (
                   <span style={{ color: '#ffb84d', marginLeft: 8 }}>
-                    (pick at least 1 power + 1 weakness)
+                    (pick a title tag + 1 weakness)
                   </span>
                 )}
               </>
             ) : (
-              'Check power & weakness tags to build your theme'
+              'Star a title tag, then check supporting power & weakness tags'
             )}
           </div>
 
@@ -342,10 +379,12 @@ interface CardProps {
   entry: ThemeBookEntry
   isSelected: boolean
   isExpanded: boolean
-  selectedPower?: Set<string>
-  selectedWeakness?: Set<string>
+  titleTag: string | null
+  supportingTags?: Set<string>
+  weaknessTags?: Set<string>
   onToggleExpand: () => void
-  onTogglePower: (tag: string) => void
+  onSetTitle: (tag: string) => void
+  onToggleSupporting: (tag: string) => void
   onToggleWeakness: (tag: string) => void
 }
 
@@ -353,15 +392,17 @@ function ThemeBookCard({
   entry,
   isSelected,
   isExpanded,
-  selectedPower,
-  selectedWeakness,
+  titleTag,
+  supportingTags,
+  weaknessTags,
   onToggleExpand,
-  onTogglePower,
+  onSetTitle,
+  onToggleSupporting,
   onToggleWeakness,
 }: CardProps) {
   const color = CATEGORY_COLOR[entry.category]
-  const powerAtLimit = (selectedPower?.size ?? 0) >= MAX_POWER_TAGS
-  const weaknessAtLimit = (selectedWeakness?.size ?? 0) >= MAX_WEAKNESS_TAGS
+  const supportingAtLimit = (supportingTags?.size ?? 0) >= MAX_SUPPORTING_POWER_TAGS
+  const weaknessAtLimit = (weaknessTags?.size ?? 0) >= MAX_WEAKNESS_TAGS
 
   return (
     <div
@@ -444,27 +485,39 @@ function ThemeBookCard({
           {/* Power tags */}
           <div className="px-4 py-3">
             <div
-              className="font-display text-xs tracking-widest mb-2 flex items-center justify-between"
+              className="font-display text-xs tracking-widest mb-1 flex items-center justify-between"
               style={{ color: '#90ee90', fontSize: 10 }}
             >
               <span>POWER TAGS</span>
-              <span style={{ color: powerAtLimit ? '#ffb84d' : '#4a5570' }}>
-                {selectedPower?.size ?? 0}/{MAX_POWER_TAGS}
+              <span style={{ color: '#4a5570' }}>
+                <span style={{ color: titleTag ? TITLE_COLOR : '#4a5570' }}>
+                  ★ {titleTag ? 1 : 0}/1
+                </span>
+                {'  ·  '}
+                <span style={{ color: supportingAtLimit ? '#ffb84d' : '#4a5570' }}>
+                  {supportingTags?.size ?? 0}/{MAX_SUPPORTING_POWER_TAGS}
+                </span>
               </span>
             </div>
+            <div style={{ fontSize: 10, color: '#4a5570', fontFamily: 'Rajdhani, sans-serif', marginBottom: 6 }}>
+              Star (★) one title tag — your theme&apos;s main focus — then check up to {MAX_SUPPORTING_POWER_TAGS} more.
+            </div>
             <div className="flex flex-col gap-1">
-              {entry.powerTags.map(tag => (
-                <TagRow
-                  key={tag.text}
-                  tag={tag}
-                  checked={selectedPower?.has(tag.text) ?? false}
-                  disabled={powerAtLimit && !(selectedPower?.has(tag.text) ?? false)}
-                  activeColor="#90ee90"
-                  activeBg="#1a3a1a"
-                  activeBorder="#3a6a3a"
-                  onToggle={() => onTogglePower(tag.text)}
-                />
-              ))}
+              {entry.powerTags.map(tag => {
+                const isTitle = titleTag === tag.text
+                const isSupporting = supportingTags?.has(tag.text) ?? false
+                return (
+                  <PowerTagRow
+                    key={tag.text}
+                    tag={tag}
+                    isTitle={isTitle}
+                    isSupporting={isSupporting}
+                    supportDisabled={!isSupporting && supportingAtLimit}
+                    onSetTitle={() => onSetTitle(tag.text)}
+                    onToggleSupporting={() => onToggleSupporting(tag.text)}
+                  />
+                )
+              })}
             </div>
           </div>
 
@@ -476,16 +529,16 @@ function ThemeBookCard({
             >
               <span>WEAKNESS TAGS</span>
               <span style={{ color: weaknessAtLimit ? '#ffb84d' : '#4a5570' }}>
-                {selectedWeakness?.size ?? 0}/{MAX_WEAKNESS_TAGS}
+                {weaknessTags?.size ?? 0}/{MAX_WEAKNESS_TAGS}
               </span>
             </div>
             <div className="flex flex-col gap-1">
               {entry.weaknessTags.map(tag => (
-                <TagRow
+                <CheckTagRow
                   key={tag.text}
                   tag={tag}
-                  checked={selectedWeakness?.has(tag.text) ?? false}
-                  disabled={weaknessAtLimit && !(selectedWeakness?.has(tag.text) ?? false)}
+                  checked={weaknessTags?.has(tag.text) ?? false}
+                  disabled={weaknessAtLimit && !(weaknessTags?.has(tag.text) ?? false)}
                   activeColor="#ee9090"
                   activeBg="#3a1a1a"
                   activeBorder="#6a3a3a"
@@ -524,9 +577,93 @@ function ThemeBookCard({
   )
 }
 
-// ── A single selectable tag row with its helper hint ──────────────────────
+// ── A power tag row: star for title, check for supporting ─────────────────
 
-interface TagRowProps {
+interface PowerTagRowProps {
+  tag: TagDef
+  isTitle: boolean
+  isSupporting: boolean
+  supportDisabled: boolean
+  onSetTitle: () => void
+  onToggleSupporting: () => void
+}
+
+function PowerTagRow({ tag, isTitle, isSupporting, supportDisabled, onSetTitle, onToggleSupporting }: PowerTagRowProps) {
+  const active = isTitle || isSupporting
+  const activeColor = isTitle ? TITLE_COLOR : '#90ee90'
+  return (
+    <Tooltip content={tag.hint}>
+      <div
+        className="flex items-center gap-2 rounded px-2 py-1.5 transition-all"
+        style={{
+          background: isTitle ? '#3a2f10' : isSupporting ? '#1a3a1a' : 'transparent',
+          border: `1px solid ${isTitle ? '#6b5320' : isSupporting ? '#3a6a3a' : 'transparent'}`,
+        }}
+      >
+        {/* Title (★) */}
+        <button
+          onClick={onSetTitle}
+          aria-pressed={isTitle}
+          aria-label={isTitle ? 'Unset title tag' : 'Set as title tag'}
+          title="Title tag — the theme's main focus"
+          className="shrink-0 flex items-center justify-center rounded transition-all"
+          style={{
+            width: 20,
+            height: 20,
+            border: `1.5px solid ${isTitle ? TITLE_COLOR : '#3a4462'}`,
+            background: isTitle ? `${TITLE_COLOR}22` : 'transparent',
+            color: isTitle ? TITLE_COLOR : '#4a5570',
+            cursor: 'pointer',
+          }}
+        >
+          <Star size={11} fill={isTitle ? TITLE_COLOR : 'none'} />
+        </button>
+        {/* Supporting (✓) */}
+        <button
+          onClick={() => !supportDisabled && onToggleSupporting()}
+          aria-pressed={isSupporting}
+          aria-disabled={supportDisabled}
+          aria-label={isSupporting ? 'Remove supporting power tag' : 'Add supporting power tag'}
+          title="Supporting power tag"
+          className="shrink-0 flex items-center justify-center rounded transition-all"
+          style={{
+            width: 18,
+            height: 18,
+            border: `1.5px solid ${isSupporting ? '#90ee90' : '#3a4462'}`,
+            background: isSupporting ? '#3a6a3a' : 'transparent',
+            cursor: supportDisabled ? 'not-allowed' : 'pointer',
+            opacity: isTitle || supportDisabled ? 0.4 : 1,
+          }}
+        >
+          {isSupporting && <Check size={10} color="#90ee90" />}
+        </button>
+        <span
+          style={{
+            fontSize: 13,
+            color: active ? activeColor : '#c8d8e8',
+            fontFamily: 'Rajdhani, sans-serif',
+            fontWeight: 500,
+            fontStyle: active ? 'italic' : 'normal',
+          }}
+        >
+          {tag.text}
+          {isTitle && (
+            <span
+              className="font-display tracking-widest"
+              style={{ color: TITLE_COLOR, fontSize: 9, marginLeft: 6 }}
+            >
+              TITLE
+            </span>
+          )}
+        </span>
+      </div>
+    </Tooltip>
+  )
+}
+
+// ── A simple single-checkbox tag row (weakness) with its helper hint ──────
+
+interface CheckTagRowProps {
   tag: TagDef
   checked: boolean
   disabled: boolean
@@ -536,7 +673,7 @@ interface TagRowProps {
   onToggle: () => void
 }
 
-function TagRow({ tag, checked, disabled, activeColor, activeBg, activeBorder, onToggle }: TagRowProps) {
+function CheckTagRow({ tag, checked, disabled, activeColor, activeBg, activeBorder, onToggle }: CheckTagRowProps) {
   return (
     <Tooltip content={tag.hint}>
       <div

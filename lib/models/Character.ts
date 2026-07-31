@@ -5,6 +5,7 @@ const TagSchema = new Schema({
   isPower: { type: Boolean, default: false },
   isWeakness: { type: Boolean, default: false },
   isBurned: { type: Boolean, default: false },
+  isTitle: { type: Boolean, default: false },
 })
 
 const LoadoutTagSchema = new Schema({

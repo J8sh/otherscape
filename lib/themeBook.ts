@@ -15,8 +15,12 @@ export interface ThemeBookEntry {
   motivationExample: string
 }
 
-/** How many tags a new theme starts with when built from the book. */
-export const MAX_POWER_TAGS = 3
+/**
+ * A new theme is built as 1 title (main) power tag + up to 2 supporting power
+ * tags + 1 weakness tag — the :OTHERSCAPE themebook structure.
+ */
+export const MAX_TITLE_TAGS = 1
+export const MAX_SUPPORTING_POWER_TAGS = 2
 export const MAX_WEAKNESS_TAGS = 1
 
 export const THEME_BOOK: ThemeBookEntry[] = [
