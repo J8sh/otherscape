@@ -33,7 +33,10 @@ export function ThemeSlot({ theme, index, onChange }: Props) {
   const isConfigured = theme.themeType !== ''
 
   // Preselect current tags when editing
-  const currentPower = theme.tags.filter(t => t.isPower && t.text).map(t => t.text)
+  const currentTitle = theme.tags.find(t => t.isTitle && t.text)?.text ?? null
+  const currentSupporting = theme.tags
+    .filter(t => t.isPower && !t.isTitle && t.text)
+    .map(t => t.text)
   const currentWeakness = theme.tags.filter(t => t.isWeakness && t.text).map(t => t.text)
 
   function handleApply(entry: ThemeBookEntry, selectedTags: ITag[]) {
@@ -61,7 +64,8 @@ export function ThemeSlot({ theme, index, onChange }: Props) {
         <ThemeBookModal
           defaultCategory={theme.category}
           initialType={isConfigured ? theme.themeType : undefined}
-          initialPowerTags={isConfigured ? currentPower : undefined}
+          initialTitleTag={isConfigured ? currentTitle : undefined}
+          initialSupportingTags={isConfigured ? currentSupporting : undefined}
           initialWeaknessTags={isConfigured ? currentWeakness : undefined}
           onApply={handleApply}
           onClose={() => setModalOpen(false)}

@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { Flame, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Flame, Pencil, Trash2, ChevronDown, ChevronUp, Star } from 'lucide-react'
 import type { IThemeCard, ThemeCategory } from '@/types'
 
 // Cards default to expanded on tablet/desktop (≥768px) and collapsed on mobile.
@@ -90,6 +90,20 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
 
   function updateTag(i: number, field: string, value: string | boolean) {
     const tags = theme.tags.map((t, idx) => idx === i ? { ...t, [field]: value } : t)
+    onChange({ ...theme, tags })
+  }
+
+  // The title tag is the theme's single main power tag; only one per theme.
+  function toggleTitle(i: number) {
+    const makeTitle = !theme.tags[i].isTitle
+    const tags = theme.tags.map((t, idx) => {
+      if (idx === i) {
+        return makeTitle
+          ? { ...t, isTitle: true, isPower: true, isWeakness: false }
+          : { ...t, isTitle: false }
+      }
+      return makeTitle ? { ...t, isTitle: false } : t // enforce a single title
+    })
     onChange({ ...theme, tags })
   }
 
@@ -213,7 +227,8 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
           <Tooltip content="Tags are short descriptors. Power tags (+1 Power) help you succeed. Weakness tags (−1 Power) create narrative trouble. BURN a tag for a one-time major effect — it's unavailable until recovered.">
             <span className="font-display text-xs tracking-widest cursor-help" style={{ color: '#7a8099' }}>TAGS</span>
           </Tooltip>
-          <div className="flex gap-4 text-xs" style={{ color: '#7a8099', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.1em', fontSize: 10 }}>
+          <div className="flex gap-3.5 text-xs" style={{ color: '#7a8099', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.1em', fontSize: 10 }}>
+            <span style={{ color: '#ffcf4d' }}>TITLE</span>
             <span>PWR</span>
             <span>WKN</span>
             <span>BURN</span>
@@ -225,15 +240,15 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
               <div
                 className="flex-1 rounded px-2 py-1"
                 style={{
-                  background: tag.isBurned ? '#3d2800' : tag.isPower ? '#1a3a1a' : tag.isWeakness ? '#3a1a1a' : '#0f1520',
-                  border: `1px solid ${tag.isBurned ? '#6b3d00' : tag.isPower ? '#3a6a3a' : tag.isWeakness ? '#6a3a3a' : '#1e2840'}`,
+                  background: tag.isBurned ? '#3d2800' : tag.isTitle ? '#3a2f10' : tag.isPower ? '#1a3a1a' : tag.isWeakness ? '#3a1a1a' : '#0f1520',
+                  border: `1px solid ${tag.isBurned ? '#6b3d00' : tag.isTitle ? '#6b5320' : tag.isPower ? '#3a6a3a' : tag.isWeakness ? '#6a3a3a' : '#1e2840'}`,
                   opacity: tag.isBurned ? 0.7 : 1,
                 }}
               >
                 <input
                   className="w-full bg-transparent outline-none text-sm"
                   style={{
-                    color: tag.isBurned ? '#cc7700' : tag.isPower ? '#90ee90' : tag.isWeakness ? '#ee9090' : '#e8eaf0',
+                    color: tag.isBurned ? '#cc7700' : tag.isTitle ? '#ffcf4d' : tag.isPower ? '#90ee90' : tag.isWeakness ? '#ee9090' : '#e8eaf0',
                     fontFamily: 'Rajdhani, sans-serif',
                     fontWeight: 500,
                     fontStyle: tag.isPower || tag.isWeakness ? 'italic' : 'normal',
@@ -243,6 +258,22 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
                   placeholder={`tag ${i + 1}...`}
                 />
               </div>
+              {/* Title */}
+              <Tooltip content="Title tag — the theme's main power tag (its central focus). Only one per theme.">
+                <button
+                  onClick={() => toggleTitle(i)}
+                  aria-label="Mark as title tag"
+                  aria-pressed={!!tag.isTitle}
+                  className="w-5 h-5 flex items-center justify-center rounded border transition-all"
+                  style={{
+                    background: tag.isTitle ? '#6b532022' : 'transparent',
+                    borderColor: tag.isTitle ? '#ffcf4d' : '#2a3352',
+                    color: tag.isTitle ? '#ffcf4d' : '#3a4462',
+                  }}
+                >
+                  <Star size={11} fill={tag.isTitle ? '#ffcf4d' : 'none'} />
+                </button>
+              </Tooltip>
               {/* Power */}
               <Tooltip content="Mark as Power tag — adds +1 Power when invoked">
                 <button
