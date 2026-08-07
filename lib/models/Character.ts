@@ -22,7 +22,7 @@ const ThemeCardSchema = new Schema({
   tags: { type: [TagSchema], default: () => Array(8).fill(null).map(() => ({ text: '', isPower: false, isWeakness: false, isBurned: false })) },
   decay: { type: Number, default: 0, min: 0, max: 3 },
   upgrade: { type: Number, default: 0, min: 0, max: 2 },
-  specials: { type: [String], default: () => Array(4).fill('') },
+  specials: { type: [String], default: () => [] }, // chosen Theme Special names, picked via ThemeSpecialsPicker
 })
 
 const LoadoutThemeSchema = new Schema({

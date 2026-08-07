@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Flame, Pencil, Trash2, ChevronDown, ChevronUp, Star } from 'lucide-react'
+import { ThemeSpecialsPicker } from '@/components/cards/ThemeSpecialsPicker'
 import type { IThemeCard, ThemeCategory } from '@/types'
 
 // Cards default to expanded on tablet/desktop (≥768px) and collapsed on mobile.
@@ -107,10 +108,6 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
     onChange({ ...theme, tags })
   }
 
-  function updateSpecial(i: number, value: string) {
-    const specials = theme.specials.map((s, idx) => idx === i ? value : s)
-    onChange({ ...theme, specials })
-  }
 
   return (
     <div className="rounded-xl overflow-hidden card-chamfer" style={{ background: '#141929', border: `1px solid #2a3352` }}>
@@ -316,25 +313,12 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
       </div>
 
       {/* Theme Specials */}
-      <div className="px-4 pb-4" style={{ borderTop: '1px solid #1e2840' }}>
-        <Tooltip content="Theme Specials are unique abilities or rules specific to this theme, unlocked through play or theme type.">
-          <div className="font-display text-xs tracking-widest pt-3 pb-2 cursor-help" style={{ color: '#7a8099' }}>
-            THEME SPECIALS
-          </div>
-        </Tooltip>
-        <div className="flex flex-col gap-1">
-          {theme.specials.map((s, i) => (
-            <input
-              key={i}
-              className="editable-field"
-              style={{ fontSize: 13 }}
-              value={s}
-              onChange={e => updateSpecial(i, e.target.value)}
-              placeholder={`special ${i + 1}...`}
-            />
-          ))}
-        </div>
-      </div>
+      <ThemeSpecialsPicker
+        themeType={theme.themeType as import('@/types').ThemeType}
+        color={color}
+        specials={theme.specials}
+        onChange={specials => updateField('specials', specials)}
+      />
       </>
       )}
     </div>
