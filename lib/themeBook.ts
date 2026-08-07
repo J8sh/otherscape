@@ -1,27 +1,32 @@
 import type { ThemeCategory, ThemeType } from '@/types'
 
-/** A single premade tag plus an authored helper hint (UI guidance, not official rulebook text). */
-export interface TagDef {
-  text: string
-  hint: string
+/**
+ * A Theme Kit is a ready-made preset for a themebook: its name doubles as
+ * the theme's title tag (the theme's main focus), plus a curated set of
+ * supporting power tags, weakness tags, and a premade Identity / Ritual /
+ * Itch line — transcribed from the :OTHERSCAPE core book's rapid character
+ * creation theme kit lists (112 kits across 14 themebooks).
+ */
+export interface ThemeKit {
+  /** Doubles as the theme's title tag. */
+  name: string
+  powerTags: string[]
+  weaknessTags: string[]
+  /** Premade Identity (self) / Ritual (mythos) / Itch (noise) line. */
+  identity: string
 }
 
 export interface ThemeBookEntry {
   type: ThemeType
   category: ThemeCategory
   description: string
-  powerTags: TagDef[]
-  weaknessTags: TagDef[]
-  motivationExample: string
+  kits: ThemeKit[]
 }
 
-/**
- * A new theme is built as 1 title (main) power tag + up to 2 supporting power
- * tags + 1 weakness tag — the :OTHERSCAPE themebook structure.
- */
-export const MAX_TITLE_TAGS = 1
-export const MAX_SUPPORTING_POWER_TAGS = 2
-export const MAX_WEAKNESS_TAGS = 1
+/** A theme is built as: 1 title tag (the chosen kit) + exactly this many
+ * supporting power tags + exactly this many weakness tags. */
+export const REQUIRED_SUPPORTING_TAGS = 2
+export const REQUIRED_WEAKNESS_TAGS = 1
 
 export const THEME_BOOK: ThemeBookEntry[] = [
   // ── SELF ─────────────────────────────────────────────────────────────────
@@ -30,132 +35,336 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'self',
     description:
       'You belong to a group, organization, or crew whose backing and codes define a part of who you are.',
-    powerTags: [
-      { text: 'loyal member', hint: 'Invoke when your standing in the group opens doors or earns trust.' },
-      { text: 'inside connections', hint: 'Invoke to pull strings with someone on the inside.' },
-      { text: 'access to group resources', hint: 'Invoke when you need gear, funds, or people the group can supply.' },
-      { text: 'speaks for the crew', hint: "Invoke when negotiating or making deals on the group's behalf." },
-      { text: 'respected among members', hint: 'Invoke to command cooperation or deference from fellow members.' },
-      { text: 'backed by numbers', hint: "Invoke when the threat of the group's collective force matters." },
-      { text: 'privy to insider information', hint: 'Invoke to know something only insiders would.' },
-      { text: "group's muscle", hint: 'Invoke when intimidation or force tied to the group applies.' },
+    kits: [
+      {
+        name: 'Criminal Syndicate',
+        powerTags: ['respect in the underworld', 'body disposal', 'shady dealings', 'bust a few kneecaps', 'stolen or illegal equipment', 'police payoffs', 'mentored by the boss', 'underground clubs', 'professional bruiser'],
+        weaknessTags: ['keep pulling me back in', 'surveilled by the police', 'questioning the violence', 'ostentatious with money'],
+        identity: 'Keep it in the family.',
+      },
+      {
+        name: 'Corporate Citizenship',
+        powerTags: ['expense account', 'PR training', 'tight-lipped', 'managing a team', 'company vehicle', 'legal protection', 'high social status', 'water cooler rumors', 'brand loyalty'],
+        weaknessTags: ['monitored by the company', 'work rival', 'fake smile', 'corporate logo tattoo'],
+        identity: 'The company is always right.',
+      },
+      {
+        name: 'Forbidden Cult',
+        powerTags: ['access to occult tomes', 'hide my intentions', 'mysterious air', 'quiet contemplation', 'room and board', 'ancient fighting techniques', 'spiritual conviction', 'herb garden', 'self-sacrifice'],
+        weaknessTags: ['defer to cult leaders', 'rival cult', 'overzealous', 'known spiritual mark'],
+        identity: 'Trust in the creed.',
+      },
+      {
+        name: 'Counterculture',
+        powerTags: ['tight-knit clique', 'expressive art', 'defiance of the mainstream', 'looking cool', 'underground VR/AR technology', 'couch surfing', 'artistic conviction', 'knows the coolest hangouts', 'courage to be myself'],
+        weaknessTags: ['mainstream activities', 'too weird for most people', 'reject newcomers', 'obvious affectations'],
+        identity: 'Mainstream is for the mindless.',
+      },
+      {
+        name: 'Neighborhood Hero',
+        powerTags: ['everyone knows my name', 'back alley brawler', 'standing up for the little people', 'patrol the streets', 'borrowed tools', 'unassailable reputation', 'kin in these parts', 'knows how to party', 'role model for kids'],
+        weaknessTags: ['nosy neighbors', 'gang members', 'constantly lending money', 'too many admirers'],
+        identity: 'Never forget your roots.',
+      },
+      {
+        name: 'Hacker Collective',
+        powerTags: ['tech support', 'cracking software', 'synchronized hacking runs', 'constantly online', 'custom-built harness rig', 'anonymous cyberspace avatar', 'fellow nerds', 'pirate gaming domains', 'here for the underdog'],
+        weaknessTags: ['constant alerts', 'hacker rival', 'obsessed with security', 'on cybersecurity watchlists'],
+        identity: 'Information wants to be free.',
+      },
+      {
+        name: 'Law Enforcement',
+        powerTags: ['position of authority', 'weapons training', 'cooperate with corps', 'patrolling', 'badge and gun', 'friends on the force', 'driven to investigate', 'cop bars', 'look the other way'],
+        weaknessTags: ['domineering captain', 'targeted by criminals', 'excessive use of force', 'in uniform'],
+        identity: 'Serve and protect.',
+      },
+      {
+        name: 'Street Gang',
+        powerTags: ['street cred', 'streetwise instincts', 'we control these streets', 'moving illicit goods', 'high capacity weapons', 'gang up on rivals', 'lifelong criminal', 'flashy vehicle', 'willing to kill'],
+        weaknessTags: ['addicted to our own merchandise', 'police investigations', 'pointless rivalries', 'gang colors'],
+        identity: 'Snitches get stitches.',
+      },
     ],
-    weaknessTags: [
-      { text: "bound by the group's code", hint: "The GM can invoke when the group's rules limit your options." },
-      { text: 'answerable to leadership', hint: "Expect trouble when you act without leadership's approval." },
-      { text: "group's enemies are my enemies", hint: "The group's rivals will come after you too." },
-    ],
-    motivationExample: 'My identity within [group name] is…',
   },
   {
     type: 'Assets',
     category: 'self',
     description:
       'You possess material resources — money, gear, property, or contacts — that you leverage to survive and succeed.',
-    powerTags: [
-      { text: 'well-equipped', hint: 'Invoke when having the right gear on hand solves the problem.' },
-      { text: 'financial backing', hint: 'Invoke when money can smooth or open the way.' },
-      { text: 'safe house', hint: 'Invoke when you need a secure place to lie low or regroup.' },
-      { text: 'reliable transport', hint: 'Invoke when getting somewhere fast or unseen matters.' },
-      { text: 'useful stash', hint: 'Invoke to produce a stashed item or supply when needed.' },
-      { text: 'hidden cache', hint: "Invoke to reveal a secret store others don't know about." },
-      { text: 'emergency funds', hint: 'Invoke when you need cash in a pinch.' },
-      { text: 'a contact for every need', hint: 'Invoke to know someone who can help with the task at hand.' },
+    kits: [
+      {
+        name: 'Explosives',
+        powerTags: ['programmable detonator', 'corrosive gel', 'anti-personnel shrapnel', 'design bigger shockwave', 'precision demolition', 'disarming bombs', 'stable-state container', 'unsuspecting target', 'grenade belt'],
+        weaknessTags: ['takes time to set up', 'draws a lot of attention', 'faulty detonator', 'flexible structures'],
+        identity: 'Being loud is the only way to be heard.',
+      },
+      {
+        name: 'Code Arsenal',
+        powerTags: ['firewall crasher', 'howitzer distributed attack', 'streamlined to run fast', 'rapid code writing', 'onslaught a domain', 'quick to reload', 'fortified personal firewall', 'first use against this target', 'feedback barrier software'],
+        weaknessTags: ['requires powerful hardware', 'using the same exploit twice', 'overlooked bugs', 'not very sneaky'],
+        identity: 'Off-the-shelf solutions are for amateurs.',
+      },
+      {
+        name: 'Guns & More Guns',
+        powerTags: ['zephyr assault rifle', 'sawed-off shotgun', 'extended magazines', 'firearm marksmanship', 'source-harming ammo', 'gun cleaning kit', 'hidden firearm', 'prolonged shootouts', 'two guns at once'],
+        weaknessTags: ['obviously armed', 'weapon jam', 'innocent bystanders', 'silent kills are harder'],
+        identity: 'Good offense begins with self defense.',
+      },
+      {
+        name: 'Heist Gear',
+        powerTags: ['safe-cracking device', 'rappelling equipment', 'frictionless and silent', 'avoid being noticed', 'security system override', 'no-evidence self-melting tools', 'pocket-packed utility suit', 'had good intel', 'holographic map projector'],
+        weaknessTags: ['expensive equipment', 'unintended signature', 'rappelling rope breaks', 'delicate and fragile'],
+        identity: 'Never return to the scene of the crime.',
+      },
+      {
+        name: 'Money to Burn',
+        powerTags: ['lavish real-estate', 'tradable finance info', 'untraceable transactions', 'impeccable taste', 'bedazzle with luxury', 'lawyers and accountants', 'cutting-edge security system', "it's only money", 'flashy vehicle'],
+        weaknessTags: ['illiquid funds', 'no concept of hardship', 'target of a heist', "things money can't buy"],
+        identity: 'Money can solve any problem.',
+      },
+      {
+        name: 'Junk Collection',
+        powerTags: ['20th century memorabilia', 'bygone gizmos', 'designed to distract', 'eye for quality', 'historic lore dump', 'bring life to old tech', 'antiquities shop', 'too old to hack', 'rube goldberg machine'],
+        weaknessTags: ['unexpectedly breaks down', 'hoarder', 'greedy & envious', "can't be taken seriously"],
+        identity: 'Treasure the lost and the forgotten.',
+      },
+      {
+        name: 'Motorcycle',
+        powerTags: ['powerful engine', 'high-traction wheels', 'armored windshield', 'stunt driving', 'slide under obstacles', 'mechanic friend', 'wheel blades', 'speed advantage', 'jumps & flips'],
+        weaknessTags: ['noisy vehicle', 'obnoxious showoff', 'low on fuel', 'slippery road'],
+        identity: 'I slow down for no one.',
+      },
+      {
+        name: 'Safehouse',
+        powerTags: ['one in every city', 'surveillance system', 'escape hatch', 'lay low', 'lose a tail', 'trustworthy staff', 'inconspicuous location', 'a place to heal and recover', 'sniper nest'],
+        weaknessTags: ['requires subtlety', 'neglected for too long', 'too remote for backup', 'easily overwhelmed'],
+        identity: "There's no place like home.",
+      },
     ],
-    weaknessTags: [
-      { text: 'everything has a price', hint: 'Favors and gear come with strings the GM can pull.' },
-      { text: 'debt to someone dangerous', hint: 'A creditor can call in what you owe at the worst time.' },
-      { text: "can't move fast when loaded down", hint: 'Your gear slows you when speed matters.' },
-    ],
-    motivationExample: 'My identity as someone with [asset type] is…',
   },
   {
     type: 'Expertise',
     category: 'self',
     description:
       'Years of training and professional experience have made you exceptionally skilled in your field.',
-    powerTags: [
-      { text: 'years of training', hint: 'Invoke when experience in your field gives you the edge.' },
-      { text: 'professional methodology', hint: 'Invoke when a disciplined, proven approach pays off.' },
-      { text: 'technical mastery', hint: 'Invoke for precise, expert handling of your specialty.' },
-      { text: 'calm under pressure', hint: 'Invoke to keep working clearly when stakes are high.' },
-      { text: 'trusted specialist', hint: 'Invoke when your reputation earns you access or cooperation.' },
-      { text: 'knows the procedure', hint: 'Invoke when following the right steps matters.' },
-      { text: 'reliable results', hint: 'Invoke when consistency and dependability count.' },
-      { text: 'reads the situation fast', hint: 'Invoke to size up a scene quickly and act first.' },
+    kits: [
+      {
+        name: 'Gunslinger',
+        powerTags: ['quickdraw', 'trusty sidearm', 'trick shots', 'suppressive fire', 'weapons dealers', 'legendary reputation', 'always packing a gun', 'study my target', 'smart weapon'],
+        weaknessTags: ['trigger-happy', 'no line of sight', "don't get too close", 'not enough firepower'],
+        identity: 'I have to be the best in the game.',
+      },
+      {
+        name: 'Covert Agent',
+        powerTags: ['read a room', 'lockbreaker device', 'extract information', 'backup cover', 'access to intel database', 'high level clearances', 'emotional detachment', 'don a disguise', 'surveillance takeover device'],
+        weaknessTags: ['paranoid', 'going "off script"', 'personal attachment', 'doublecrossed'],
+        identity: "Don't get attached.",
+      },
+      {
+        name: 'Impressive Physique',
+        powerTags: ['brute strength', 'form-fitting clothing', 'peak human stamina', 'avoid an injury', 'my gymrats', 'gold medal winner', 'no pain no gain', 'training regime', 'bioware muscle enhancers'],
+        weaknessTags: ['easily bruised ego', 'unsteady footing', 'alternative beauty ideals', 'my strength used against me'],
+        identity: 'My body is my temple.',
+      },
+      {
+        name: 'Investigator',
+        powerTags: ['notice small details', 'voice analysis software', 'read body language', 'better on my own', 'bribed street informants', 'P.I license', 'trust my gut', 'research suspects', 'analytical brain aug'],
+        weaknessTags: ['cynical', 'red tape', 'fall for sob stories', 'too nosy for my own good'],
+        identity: "Everyone's a rat, if you know where to squeeze.",
+      },
+      {
+        name: 'Ruthless Executive',
+        powerTags: ['business instincts', 'bulletproof business suit', 'project confidence', 'divert blame', 'stakeholder network', 'company perks', 'exploit leverage', 'focus-enhancing pills', 'hostile takeover'],
+        weaknessTags: ['utility focused', 'my superiors', 'underestimated upstart', 'mistrusted by the have-nots'],
+        identity: 'Keep your eyes on the bottom line.',
+      },
+      {
+        name: 'Med Techie',
+        powerTags: ['stabilize the wounded', 'high tech doc bag', 'resuscitate the flatlined', 'grace under pressure', 'back alley clinics', 'medical services pass', 'diagnose symptoms on sight', 'stock up on med supplies', '3D organ printer'],
+        weaknessTags: ['overlook danger', 'too many patients', 'sloppy patch job', 'violent patients'],
+        identity: 'Only subscribed customers get medical help!',
+      },
+      {
+        name: 'Tinkerer',
+        powerTags: ['modifying devices', 'toolbox', 'reverse engineering', 'spare parts', 'tech suppliers', 'certified technician', 'anything can be rebuilt', 'study a piece of tech', 'nanite circuitry reconstructor spray'],
+        weaknessTags: ['obsessed with technology', 'too little to work with', "fixes what's not broken", 'unexpected side effects'],
+        identity: 'I can make it work, trust me.',
+      },
+      {
+        name: 'Trained Killer',
+        powerTags: ['stealthy attacks', 'favorite weapon', 'clean kills', 'disarming attack', 'organized criminals', 'professional reputation', 'finish the job', 'take aim', 'AR shadow bomb'],
+        weaknessTags: ['nihilistic', 'well-guarded targets', 'downplay collateral damage', 'the undead and undying'],
+        identity: 'Honor the contract to the letter.',
+      },
     ],
-    weaknessTags: [
-      { text: 'by-the-book only', hint: 'The GM can invoke when rigid methods fail an unconventional problem.' },
-      { text: 'reputation precedes me', hint: 'Being known can make you a target or tip off rivals.' },
-      { text: 'skeptical of other approaches', hint: 'Dismissing other methods can blind you to a better one.' },
-    ],
-    motivationExample: 'My identity as [profession / expert role] is…',
   },
   {
     type: 'Horizon',
     category: 'self',
     description:
       'You are driven by a powerful vision, ideal, or goal that gives your life direction and meaning.',
-    powerTags: [
-      { text: 'unwavering conviction', hint: 'Invoke when steadfast belief carries you through doubt or fear.' },
-      { text: 'driven by purpose', hint: 'Invoke when your goal fuels extra effort or resolve.' },
-      { text: 'inspires others', hint: 'Invoke to move allies to act toward your vision.' },
-      { text: 'long-term vision', hint: 'Invoke when seeing the bigger picture guides a choice.' },
-      { text: 'committed to the cause', hint: 'Invoke when dedication to the mission tips the scales.' },
-      { text: 'idealistic determination', hint: 'Invoke to push on where others would give up.' },
-      { text: 'nothing will stop me', hint: 'Invoke when sheer persistence is what is needed.' },
-      { text: 'rallies those who believe', hint: 'Invoke to gather and galvanize supporters.' },
+    kits: [
+      {
+        name: 'Attain Enlightenment',
+        powerTags: ['enter a trance state', 'pure intentions', 'question physical appearances', 'philosophical discussions', 'unseen by demons', 'martial arts training', 'open to new experiences', 'pray to angels or devas', 'find nonviolent solutions'],
+        weaknessTags: ['vow of [poverty, chastity, etc.]', 'demons of desire', 'soft-hearted', 'no social circles'],
+        identity: 'I seek nothing but the truth.',
+      },
+      {
+        name: 'Eliminate Corruption',
+        powerTags: ['follow the money', 'surveillance van', 'garner media attention', 'healthy paranoia', 'too inconsequential to find', 'voice modulator', 'strong moral compass', 'victims and witnesses', 'remain distant and obscure'],
+        weaknessTags: ['angry power players', 'bribed officials', 'tunnel vision', 'failing love life'],
+        identity: 'Corruption is a disease, and it must be cured.',
+      },
+      {
+        name: 'Break the System',
+        powerTags: ['spot systemic failures', 'online activism', 'exploit bureaucracy', 'intervene against oppression', 'one voice out of many', 'implanted recording devices', 'unwavering determination', 'fellow malcontents', 'persistence pays'],
+        weaknessTags: ['outside the system', 'collaborators and informers', 'easily riled up', 'lack of sleep'],
+        identity: 'Our only hope is to bring the system down.',
+      },
+      {
+        name: 'Exact Revenge',
+        powerTags: ['dogged pursuit', 'meticulously detailed enemy list', 'make it hurt', 'outsmart their defenses', 'weapons room', 'subdermal armor implants', 'burning fury', 'other victims', 'fear is a potent weapon'],
+        weaknessTags: ['death wish', 'innocent bystanders', 'driven mad by wrath', 'lonely'],
+        identity: "I'll only have peace when they're dead.",
+      },
+      {
+        name: 'Get Rich & Famous',
+        powerTags: ['think big', 'notable online presence', "piggyback off other's success", 'lie when necessary', 'opulent residence', 'surgically enhanced beauty', 'desire for dominance', 'assistants and proteges', 'image is everything'],
+        weaknessTags: ['humiliation is guaranteed', 'haters', 'sociopath', 'stressful lifestyle'],
+        identity: 'Do what it takes to get to the top.',
+      },
+      {
+        name: 'Explore the Hidden Places',
+        powerTags: ['climbing and rappelling', 'old maps', 'take the plunge', 'make local allies', 'nooks and crevices', 'dark-vision cybereyes', 'insatiable curiosity', 'scholars and collectors', 'recognize environmental warning signs'],
+        weaknessTags: ['often gets lost', 'rival delvers', 'eccentric', 'aching joints'],
+        identity: 'Every dark corner hides a secret worth discovering.',
+      },
+      {
+        name: 'Live Honorably',
+        powerTags: ['strong moral sense', 'book of proverbs', 'help those in need', 'challenge the dishonorable', 'meditative space', 'anti-toxin blood filters', 'lead by example', "people I've helped", 'we can talk it out'],
+        weaknessTags: ['no fun', 'no clear moral answer', 'inflexible', 'intolerant of the dishonorable'],
+        identity: 'I must do the right thing.',
+      },
+      {
+        name: 'Push Technology Further',
+        powerTags: ['elevator pitch', 'scan & design holo-drone', 'turn things up to 11', 'override manufacturer safeties', 'keep inventions secret', 'toolkit cyberhand', 'laser-focused process', 'interdisciplinary engineers', 'build on past failures'],
+        weaknessTags: ['overreliance on technology', 'my own lack of foresight', 'sentimental about certain devices', 'downplays safety'],
+        identity: 'Nothing should stand in the way of progress.',
+      },
     ],
-    weaknessTags: [
-      { text: 'blinded by idealism', hint: 'The GM can invoke when your ideals blind you to reality.' },
-      { text: "others don't share my vision", hint: 'Expect resistance from those who do not buy in.' },
-      { text: 'sacrificed too much for this', hint: 'Past sacrifices can be used against you.' },
-    ],
-    motivationExample: 'My identity as someone who believes in [ideal / goal] is…',
   },
   {
     type: 'Personality',
     category: 'self',
     description:
       'Your defining personal traits — your charisma, wit, empathy, or force of will — set you apart.',
-    powerTags: [
-      { text: 'commanding presence', hint: 'Invoke when your presence dominates a room or moment.' },
-      { text: 'reads people well', hint: 'Invoke to sense motives, lies, or leverage in others.' },
-      { text: 'silver tongue', hint: 'Invoke when persuasion or fast talk can win the day.' },
-      { text: 'adaptable', hint: 'Invoke to adjust smoothly when plans change.' },
-      { text: 'natural leader', hint: 'Invoke when taking charge rallies people to follow.' },
-      { text: 'magnetic personality', hint: 'Invoke to charm, attract, or win someone over.' },
-      { text: 'street smart', hint: "Invoke to navigate the city's dangers and unwritten rules." },
-      { text: 'quick thinker', hint: 'Invoke when a fast, clever response is what is needed.' },
+    kits: [
+      {
+        name: 'Meticulous Planner',
+        powerTags: ['minimize risks', 'pleasantries & formalities', 'alert to emergencies', 'keen eye for weaknesses', 'well-maintained gear', 'dependable', 'contingency plans', 'definitely packed a spare', 'ready to handle chaos'],
+        weaknessTags: ['agents of chaos', "can't change course", 'no time to think', 'slobs'],
+        identity: 'Plan your work and work your plan.',
+      },
+      {
+        name: 'Caregiver',
+        powerTags: ['strong sense of empathy', 'natural mentor', 'notice the needy', 'pillar of the community', 'carries delicious snacks', 'always where needed', 'history of adversity', 'dermal medicine injector', 'righteous anger'],
+        weaknessTags: ['selfish people', 'patronizing', "can't help them all", 'places devoid of humanity'],
+        identity: "I'm here for you.",
+      },
+      {
+        name: 'Keeper of Secrets',
+        powerTags: ['naturally inquisitive', 'knows something about everyone', "can tell when they're lying", 'secret passages and codes', 'mysterious', 'files full of evidence', 'secretly compassionate', 'truth serum', 'closed off'],
+        weaknessTags: ['people feel invaded', 'evokes distrust', 'when they hold my secrets', 'people without secrets'],
+        identity: 'A secret is a trophy and a currency in one.',
+      },
+      {
+        name: 'Performer',
+        powerTags: ['fake it till you make it', 'entertaining', "see others' masks", 'fans and followers', 'gorgeous outfits', 'captivating presence', 'highly athletic', 'make-up kit', 'controlled composure'],
+        weaknessTags: ['critics', 'a well-known face', 'honest interactions', 'paparazzi'],
+        identity: 'They will see what I want them to see.',
+      },
+      {
+        name: 'Thrillseeker',
+        powerTags: ['thrive on fear', 'stories to tell', 'remarkable instincts', 'always get out alive', 'well-used helmet', 'exciting to be around', 'plan my stunts', 'grappling gun', 'laugh maniacally'],
+        weaknessTags: ['cowards', 'in too deep', 'the game is rigged', 'sitting still'],
+        identity: 'I only feel alive on the edge.',
+      },
+      {
+        name: 'Rebel Without a Cause',
+        powerTags: ["couldn't care less", 'stir up trouble', 'see through the bullshit', 'stand up for myself', 'dangerous vehicle', "say what others can't", 'has a soft side', 'leather jacket', 'never back down'],
+        weaknessTags: ['authority figures', 'big mouth', 'fancy social engagements', 'loss of freedom'],
+        identity: "I'll never be another cog in the machine!",
+      },
+      {
+        name: 'Tough as Nails',
+        powerTags: ['been through it all', 'intimidating', 'expecting the worst', 'ultimate survivor', 'padded clothing', 'rugged charm', 'worked unusual jobs', 'electro knuckle buster', 'brace for the pain'],
+        weaknessTags: ['peppy and chipper people', 'underestimate threats', 'gentleness', 'naivete'],
+        identity: "I've been through so much nothing can defeat me now.",
+      },
+      {
+        name: 'Trendsetter',
+        powerTags: ['free thinker', 'inspirational speeches', 'analyze popularity potential', 'keep others on their toes', 'latest gadget', 'magnetic charisma', 'draws confidence from the crowd', 'newsfeed implant', 'first to jump in'],
+        weaknessTags: ['those who fear change', 'premature statements', 'lack of competition', 'banality'],
+        identity: "What's big is what I say is big.",
+      },
     ],
-    weaknessTags: [
-      { text: 'hot-headed', hint: 'The GM can invoke when your temper gets the better of you.' },
-      { text: 'too trusting', hint: 'Being too trusting can be exploited against you.' },
-      { text: 'difficulty backing down', hint: 'Refusing to back off can escalate trouble.' },
-    ],
-    motivationExample: 'My identity as someone who is [personality trait] is…',
   },
   {
     type: 'Troubled Past',
     category: 'self',
     description:
       'A dark chapter of your history — trauma, crime, loss — has hardened you and left its mark.',
-    powerTags: [
-      { text: 'street-hardened', hint: 'Invoke when a rough upbringing prepared you for this.' },
-      { text: 'done worse before', hint: 'Invoke when your dark experience makes a grim task easier.' },
-      { text: 'nothing surprises me', hint: 'Invoke to stay unshaken by shocking or brutal things.' },
-      { text: 'survival instinct', hint: 'Invoke when staying alive against the odds is the goal.' },
-      { text: 'knows how the shadows work', hint: 'Invoke to operate in the criminal underworld.' },
-      { text: 'scars that teach', hint: 'Invoke when a hard lesson from your past applies now.' },
-      { text: 'burned bridges still provide light', hint: 'Invoke when a severed old tie can still be useful.' },
-      { text: 'too stubborn to die', hint: 'Invoke to endure punishment that would stop others.' },
+    kits: [
+      {
+        name: 'Disaster Survivor',
+        powerTags: ['endure the elements', 'squeeze through tight spaces', 'cut losses', 'careful footing', 'affinity to first responders', 'oxygen mask', 'keep my cool', 'disaster alertness', 'eco-terrorist'],
+        weaknessTags: ['phobic of [fire, water, heights, etc.]', 'trouble breathing', 'overly cautious', 'extreme environmental conditions'],
+        identity: 'Nature should be respected and feared.',
+      },
+      {
+        name: 'Escaped Servitude',
+        powerTags: ['resilient', 'bypass security systems', 'makeshift weapons', "laborer's strength", 'camaraderie with the oppressed', 'my old bindings', 'speak truth to power', 'see unspoken power structures', 'liberate others'],
+        weaknessTags: ['bounty hunters', 'laser fence burns', 'mistrustful of leaders', 'being bound'],
+        identity: 'Remain free.',
+      },
+      {
+        name: 'Tragic Loss',
+        powerTags: ['nothing hurts more than this', 'sorrowful kindness', 'bringer of retribution', 'shield others with my body', 'found family', 'inherited weapon', 'remember the good times', 'family secrets', 'make myself the target'],
+        weaknessTags: ['pangs of longing', 'haunted by their ghost (literally)', 'recklessness', 'ending a life'],
+        identity: "I'll never feel the way I did with them.",
+      },
+      {
+        name: 'Raised in Cyberspace',
+        powerTags: ['master of multitasking', 'always online', 'cyberspace combatant', 'micro-transmitter implant', 'my hivemind community', 'a million avatar skins', 'try new experiences', 'navigate the spirals', 'resist neural impulses'],
+        weaknessTags: ['they call to me via AR', 'meatspace nausea', 'short attention span', 'seeing someone jacked in'],
+        identity: 'I only know my virtual self.',
+      },
+      {
+        name: 'Survived the Streets',
+        powerTags: ['situational awareness', 'dealmaker', 'pickpocketing', 'savage when cornered', 'illegally-modified [choose cybernetic]', 'underworld mentor', 'intimidating facial scar', 'de-escalate with humor', 'gang politics'],
+        weaknessTags: ['the gang wants me back', 'malfunctioning replacement organs', "won't back down", 'back in the old neighborhood'],
+        identity: 'Life is hard – learn to survive.',
+      },
+      {
+        name: 'Science Experiment',
+        powerTags: ['resistance to pain', 'designed to [choose purpose]', 'psychic blast', 'cybernetic [choose limb/organ]', 'abnormal outcasts', 'a picture of me from before', 'let out the rage', 'body modification methods', 'rescue missions'],
+        weaknessTags: ['chased by the corp', 'programmed to [choose purpose]', 'afraid of my own strength', 'clinical locations'],
+        identity: "I'm a freak, I'm a monster.",
+      },
+      {
+        name: 'Target of the Government',
+        powerTags: ['navigate bureaucracies', 'cautious in cyberspace', 'dangerously desperate', 'facial reconstruction', 'friends in low places', 'government secrets', 'smoke break', 'blackmail material', 'hide my identity'],
+        weaknessTags: ['hunted', 'nervous twitch', 'no trust in authority', 'vehicle chases'],
+        identity: "I'm a dead man walking.",
+      },
+      {
+        name: 'Victim of Otherworldly Forces',
+        powerTags: ['unfazed by the unnatural', 'recognise the supernatural', 'press on their vulnerabilities', 'covered in warding tattoos', 'exorcism', 'monster hunter allies', 'finger of a fae lord', 'my mind is my own', 'knowledge of the occult'],
+        weaknessTags: ['curse of bad luck', "scars that won't heal", 'superstitious', 'creatures like the one who took me'],
+        identity: 'These monsters need to be put down.',
+      },
     ],
-    weaknessTags: [
-      { text: 'haunted by it', hint: 'The GM can invoke when your past resurfaces to unsettle you.' },
-      { text: 'enemies from that time', hint: 'Old foes can reappear to complicate things.' },
-      { text: 'past reputation follows me', hint: 'Your history can precede you and turn people against you.' },
-    ],
-    motivationExample: 'My identity despite [past event / trauma] is…',
   },
 
   // ── MYTHOS ───────────────────────────────────────────────────────────────
@@ -164,88 +373,224 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'mythos',
     description:
       'A powerful object — weapon, relic, or tool — is bound to you and channels your mythic Source.',
-    powerTags: [
-      { text: 'awakened relic', hint: "Invoke when the relic's dormant power stirs to act." },
-      { text: 'channels the Source', hint: 'Invoke to draw mythic power through the artifact.' },
-      { text: 'resonates with its wielder', hint: 'Invoke when your bond with the object amplifies its effect.' },
-      { text: 'mysterious properties', hint: 'Invoke to reveal an unexpected, useful power.' },
-      { text: 'cannot be destroyed', hint: "Invoke when the artifact's indestructibility protects you." },
-      { text: 'ancient design', hint: 'Invoke when its old craftsmanship outmatches modern tech.' },
-      { text: 'unstoppable force', hint: 'Invoke when raw, unstoppable power is what is needed.' },
-      { text: 'bound to my hand', hint: "Invoke when the artifact can't be taken or dropped." },
+    kits: [
+      {
+        name: "Hero's Sword",
+        powerTags: ['cuts through anything', 'unbreakable steel', 'unflinching', 'masterful swordplay', 'cut through barriers', 'intuitive parry', 'wreathed in [choose type of energy]', "hero's physique", 'heroic soul'],
+        weaknessTags: ["won't attack the innocent", 'bound to the will of the gods', 'showing indecisiveness', 'easy to provoke'],
+        identity: 'I must stand up to the forces of evil.',
+      },
+      {
+        name: "Risk-Taker's Luck Charm",
+        powerTags: ['games of luck', 'protection from accidents', 'devil may care attitude', 'lucky shot', 'last minute escape', 'steadiness and grace', 'share the luck', 'turn rags to riches', 'fearless'],
+        weaknessTags: ['fortunate foe', 'hexes and curses', "people to whom I'm indebted", 'capricious'],
+        identity: 'I must take a chance when it presents itself.',
+      },
+      {
+        name: 'Invisibility Helm',
+        powerTags: ['pierce illusions', 'incorporeality', "spy's insights", 'backstabber', 'slip through crowds', 'turns on when in danger', 'hide my thoughts', 'disguised as headgear', 'sneaky'],
+        weaknessTags: ['supernatural senses', 'direct sunlight', 'authentic expression', 'feels invincible when invisible'],
+        identity: 'I must cleverly disguise my motives and ways.',
+      },
+      {
+        name: 'Mask of the Trickster God',
+        powerTags: ["steal someone's visage", 'appear as their loved ones', 'godly cleverness', 'baffle with riddles', 'create a distraction', "fool's retort", 'curse the arrogant', 'melds with my face', 'thrives in chaos'],
+        weaknessTags: ['agents of law', 'retribution of other gods', 'taking responsibility', 'too messy'],
+        identity: 'I must spread chaos wherever I go.',
+      },
+      {
+        name: 'Possessed Vehicle',
+        powerTags: ['impossible stunts', 'make the rider undead', 'sense the sinful', 'spew fire & brimstone', 'unnatural speed', 'self-driving murder machine', 'unleash a soul-chilling shriek', 'transform into a nightmare steed', 'daredevil attitude'],
+        weaknessTags: ['the dead', 'anything holy', 'squirmish rider', 'trail of burnt debris'],
+        identity: 'I must refuel it with devoured souls.',
+      },
+      {
+        name: "War God's Armor",
+        powerTags: ['aura of glory', 'impervious to mundane weapons', "warrior's instincts", 'juggernaut of destruction', 'unimpeded in the battlefield', 'reflexive block', 'sustains my body', 'become a weapon', 'battlefield bravery'],
+        weaknessTags: ['treacherous allies', 'weak spot', 'showing cowardice', 'violent reputation'],
+        identity: 'I must spatter my armor with the blood of my foes.',
+      },
+      {
+        name: 'Scrying Crystals',
+        powerTags: ['visions from afar', 'see incoming threats', 'perfect spatial sense', 'I saw your secret', 'divine a path', 'stand watch for me', 'peer into the past', 'open my third eye', 'see the bigger picture'],
+        weaknessTags: ['places beyond this earth', 'disrupted by noise', 'refusing to see', 'all is not as it seems'],
+        identity: 'I must recharge these crystals at an open place of great altitude.',
+      },
+      {
+        name: "Wizard's Staff",
+        powerTags: ['stores magical energies', 'reflexive magic shield', 'magic sensitivity', 'magical explosion', 'flight spell', 'cast spells by itself', 'dragon form', 'astral projection', 'vast magical knowledge'],
+        weaknessTags: ['magical beasts', 'overloaded', 'showing ignorance', 'uncontrolled power'],
+        identity: 'I must continue to grow my power.',
+      },
     ],
-    weaknessTags: [
-      { text: 'hungers for use', hint: 'The artifact pushes you to use it, even unwisely.' },
-      { text: 'has its own will', hint: 'It may act against your intentions.' },
-      { text: 'draws unwanted attention', hint: 'Its power attracts those who want it.' },
-    ],
-    motivationExample: 'My ritual to maintain my bond with [artifact name] is…',
   },
   {
     type: 'Companion',
     category: 'mythos',
     description:
       'A loyal ally, familiar, or spirit partner shares your journey and acts as an extension of your Source.',
-    powerTags: [
-      { text: 'unwavering loyalty', hint: 'Invoke when your companion stands by you no matter what.' },
-      { text: 'unique abilities of its own', hint: 'Invoke to use a power only your companion has.' },
-      { text: 'acts independently', hint: 'Invoke when it can act on its own to help.' },
-      { text: 'always nearby', hint: 'Invoke when having your companion present matters.' },
-      { text: 'sixth sense for danger', hint: 'Invoke to be warned of a threat in time.' },
-      { text: 'speaks through the Source', hint: 'Invoke for mythic insight relayed by your companion.' },
-      { text: 'never gives up on me', hint: 'Invoke when its refusal to abandon you saves the day.' },
-      { text: 'protects me from the unseen', hint: 'Invoke to be shielded from mythic or hidden harm.' },
+    kits: [
+      {
+        name: 'Arcane Construct',
+        powerTags: ['impossibly strong', 'heavy lifting', 'armored body', 'provide shelter', 'aggressive punching', 'self-repair', 'anti-magic field', 'inspires mental resolve', 'gentle giant'],
+        weaknessTags: ['unclear instructions', 'looks like a weapon', 'unstable terrain', 'indiscriminate force'],
+        identity: 'I must feed my creation raw magical energy.',
+      },
+      {
+        name: 'Legendary Sidekick',
+        powerTags: ['daredevil', 'scout ahead', 'easy to ignore', 'watches my back', 'coordinated attacks', 'care for my gear', 'a magical backpack', 'serves as my herald', 'eternal loyalty'],
+        weaknessTags: ['sulky and cross', 'reflects badly on me', 'weaker when separated', 'overenthusiastic'],
+        identity: 'We must leap into danger together.',
+      },
+      {
+        name: 'Guardian Spirit',
+        powerTags: ['watchful of danger', 'frightening presence', 'invisible assistant', 'spectral body', 'hex my enemies', 'mend and heal', 'aura of protection', 'link to the spirit world', 'immense spiritual knowledge'],
+        weaknessTags: ['fear of inadequacy', 'eerie chill', "another spirit's domain", 'overly protective'],
+        identity: 'I must never fail to make a daily offering.',
+      },
+      {
+        name: 'Magical Guide',
+        powerTags: ['occult insights', 'magical research', 'unseen and unheard by others', 'deflect spells', 'charge with magical power', 'remove curse or affliction', 'casts minor spells', 'teach me a new spell', 'portal to other realms'],
+        weaknessTags: ['insubordination', 'distrust of the occult', 'easily exhausted', 'exacting and critical'],
+        identity: "I must follow this guide's instruction to be worthy of their tutelage.",
+      },
+      {
+        name: 'Nature Spirit',
+        powerTags: ["nature's vengeance", 'ensnaring foes', 'elemental form [choose an element]', 'destroy man-made objects', "nature's bounty", 'merge with the environment', 'extreme localized weather', 'inspires harmony', 'talk to plants and animals'],
+        weaknessTags: ['harming nature', 'predatory countenance', 'pollution', 'about as predictable as the weather'],
+        identity: 'I must commune with nature before every major decision.',
+      },
+      {
+        name: 'Tech Gremlin',
+        powerTags: ['cause malfunctions', 'analyze machinery', 'invisible to tech', 'weapon misfire', 'knows how to fix too', 'hide inside vehicles', 'electrical overload', 'clever pranks', 'spawn siblings'],
+        weaknessTags: ['easily distracted', 'incites malfunction rage', 'biotech', 'tampers with my stuff'],
+        identity: 'I must let it tamper with a machine at least once a day.',
+      },
+      {
+        name: 'Supernatural Pet',
+        powerTags: ['magically nimble', 'growl at my foes', 'adaptive camouflage', 'natural weapons', 'attack alongside me', 'creature hutch', 'stink spray', 'animal handling', 'enviable companionship'],
+        weaknessTags: ['oblivious to my goals', 'poachers', 'neglected care', 'bad time to play'],
+        identity: 'I must train my pet dutifully.',
+      },
+      {
+        name: 'Trained Monsters',
+        powerTags: ['wreak havoc', 'follow my commands', 'swarm', 'safety in numbers', 'horns, claws, and fangs', 'monster den', 'shapeshifting', 'leader of the pack', 'merge into a big monster'],
+        weaknessTags: ['challenged authority', 'vandalism fines', 'pack infighting', 'too many to manage'],
+        identity: 'I must maintain the prayers / chant / scrolls that bind them.',
+      },
     ],
-    weaknessTags: [
-      { text: 'vulnerable to harm', hint: 'Your companion can be hurt to get to you.' },
-      { text: 'has its own agenda', hint: 'It may pursue its own goals over yours.' },
-      { text: 'can be taken from me', hint: 'Enemies can capture or separate it from you.' },
-    ],
-    motivationExample: 'My ritual to maintain my bond with [companion name] is…',
   },
   {
     type: 'Esoterica',
     category: 'mythos',
     description:
       'You possess hidden knowledge — occult lore, forgotten rites, or forbidden techniques drawn from your Source.',
-    powerTags: [
-      { text: 'hidden knowledge', hint: 'Invoke when secret lore answers the question at hand.' },
-      { text: 'occult ritual', hint: 'Invoke to perform a rite that bends the mythic layer.' },
-      { text: 'sees the unseen', hint: 'Invoke to perceive spirits, wards, or hidden truths.' },
-      { text: 'manipulates the unreal', hint: 'Invoke to reshape mythic forces to your will.' },
-      { text: 'ancient lore', hint: 'Invoke when forgotten knowledge proves decisive.' },
-      { text: 'forbidden technique', hint: "Invoke for a dangerous method others won't dare." },
-      { text: 'understands the Source', hint: 'Invoke when deep insight into your Source guides you.' },
-      { text: 'reads the mythic layer', hint: 'Invoke to interpret the hidden reality beneath the mundane.' },
+    kits: [
+      {
+        name: 'Corpse Animation',
+        powerTags: ['command undead servitors', 'forensic medicine', 'boon with unearthly strength', 'spread the chill of the grave', 'siphon life force', 'feign death', 'carried by the horde', 'sense life force', 'fascinated by death'],
+        weaknessTags: ['lengthy ritual', 'mangled bodies', 'cold and distant', 'cloud of rot'],
+        identity: 'I must perform rites to honor the spirits whose bodies I use.',
+      },
+      {
+        name: 'Evil Eye',
+        powerTags: ['hex of vulnerability', 'folk curses', 'afflict with boils', 'hypnotic gaze', 'turn to stone', 'shield from harmful magic', 'curse of clumsiness', 'detect malevolent forces', 'need for vengeance'],
+        weaknessTags: ['requires eye contact', "it's only hedge magic", 'holds a grudge', 'misfortune is infectious'],
+        identity: 'I must never stifle my bitterness.',
+      },
+      {
+        name: "Devil's Bargains",
+        powerTags: ['remove obstacles for others', 'legal expertise', 'shower with riches', 'magically binding contracts', 'spring nasty loophole', 'silver tongued', 'drag them to hell', 'see their desires', 'natural negotiator'],
+        weaknessTags: ['must have a signature', 'marks with strong convictions', 'pedantic', 'deal gone wrong'],
+        identity: 'I must uphold my end of each bargain I make.',
+      },
+      {
+        name: 'Fortune Telling',
+        powerTags: ['glimpse impending events', 'symbology', 'foretell greater trends', 'heed my prophecy', 'reveal inescapable destiny', 'foresee danger', 'follow the signs', 'fate manipulation', 'storyteller'],
+        weaknessTags: ['requires divinatory tools', 'too many threads of fate', 'fatalistic', 'assailed by visions'],
+        identity: 'I must follow the signs, wherever they lead.',
+      },
+      {
+        name: 'Potion Craft',
+        powerTags: ['healing salves', 'herbology', 'poisons and toxins', 'love potions', 'explosive concoctions', 'stoneskin oil', 'colorful smoke bomb', 'discriminating taste buds', 'seeking immortality'],
+        weaknessTags: ['rare ingredients', 'divergent biology', 'wafts unusual odors', 'acidic touch'],
+        identity: 'I must experiment with any new ingredient presented to me.',
+      },
+      {
+        name: 'Warding Signs',
+        powerTags: ['circle of protection', 'geomancy', 'silent alarm spell', 'carve a talisman for someone', 'explosive glyph', 'counterspell', 'barrier ward', 'trace spell source', 'vigilant'],
+        weaknessTags: ['running out of special chalk', 'no solid surfaces', 'isolationist', 'disrupts helpful magic'],
+        identity: 'I must maintain the warding symbols around my home or community.',
+      },
+      {
+        name: 'Spirit Summoning',
+        powerTags: ['spirit binding', 'knowledge of the nether realms', 'banish spirit', 'induce possession', 'unleash a raging spirit', 'summoned defenders', 'enter the spirit world', 'see spirits', 'strong spirit'],
+        weaknessTags: ['disrupted ritual', 'spirits demand respect', 'seems to talk to myself', 'poltergeist effects'],
+        identity: 'I must bind any wayward spirit I come upon.',
+      },
+      {
+        name: 'Weapon Witching',
+        powerTags: ['legend-killing enchantment', 'weapon smithing', 'magic-guided missiles', 'blinding weapon', 'teleporting projectiles', 'disenchant weapons', 'strength-draining edge', 'intuit foe capabilities', 'elegant combatant'],
+        weaknessTags: ['wears down the weapon', 'enchanting under fire', 'haughty', 'inter-enchantment reaction'],
+        identity: 'I must never allow an enchanted weapon to go unused.',
+      },
     ],
-    weaknessTags: [
-      { text: 'dangerous to practice', hint: 'Your arts can backfire on you or others.' },
-      { text: 'leaves a mark', hint: 'Using your power leaves traces that can be followed.' },
-      { text: 'attracts attention from beyond', hint: 'Mythic entities take notice when you act.' },
-    ],
-    motivationExample: 'My ritual to maintain my connection to [esoteric practice] is…',
   },
   {
     type: 'Exposure',
     category: 'mythos',
     description:
       'A transformative encounter — an event, an entity, or a place — has permanently changed you and left you resonating with a Source.',
-    powerTags: [
-      { text: 'touched by something greater', hint: 'Invoke when your transformation grants uncanny ability.' },
-      { text: 'instinctive resonance', hint: "Invoke when you act on mythic instinct you can't explain." },
-      { text: 'transformed perception', hint: 'Invoke to perceive what your changed senses reveal.' },
-      { text: 'altered senses', hint: 'Invoke when heightened or strange senses give an edge.' },
-      { text: 'channeled power', hint: 'Invoke to unleash the power that flows through you.' },
-      { text: 'understands what others cannot', hint: 'Invoke when your changed mind grasps the impossible.' },
-      { text: 'the Source recognizes me', hint: 'Invoke when mythic forces treat you as one of their own.' },
-      { text: 'drawn to mythic currents', hint: 'Invoke to sense and follow mythic activity.' },
+    kits: [
+      {
+        name: 'Angelic Wings',
+        powerTags: ['angelic beauty', 'the higher the better', 'dive bomb', 'shine evil-searing light', 'shelter in wings', 'sense demons & angels', 'buffet with wings', 'cover great distance', 'true believer'],
+        weaknessTags: ['problems with clothing', 'tight places', 'cannot force mankind', 'attracts evil'],
+        identity: 'I must always take a leap of faith when it presents itself.',
+      },
+      {
+        name: 'Aura of Authority',
+        powerTags: ['supernaturally regal', 'trappings of authority', 'inspire loyalty', 'subjugating command', 'blinding aura', 'intuit power dynamics', 'command objects', 'flock of followers', 'supremely confident'],
+        weaknessTags: ['useless sycophants', 'self-doubt', 'requires communication', 'must bow to superiors'],
+        identity: 'I must worship at the shrine of the entity that grants me my authority.',
+      },
+      {
+        name: 'Animate Shadows',
+        powerTags: ['become a shadow', 'lighting that casts shadows', 'form shadow assassins', 'inexplicable terror', 'momentary incorporeality', 'detach my own shadow', 'drag into the shadows', 'see in the dark', 'inscrutable mien'],
+        weaknessTags: ['my unruly shadow', 'bright ambient light', 'complete darkness', 'light deities'],
+        identity: 'I must enter the shadow realm every night.',
+      },
+      {
+        name: 'Elemental Body',
+        powerTags: ['transform specific body parts', 'places rich in [element]', 'absorb [element]', 'surge of [element]', 'create an elemental wall', 'detect [element]', 'sculpt [element]', 'unharmed by [element]', 'gleefully destructive'],
+        weaknessTags: ['accidental destruction', 'opposite elements', 'no ambient [element]', 'those who keep the balance'],
+        identity: 'I must bathe in [element] daily.',
+      },
+      {
+        name: 'Floral Overgrowth',
+        powerTags: ['sprout vines', 'soil, water, and sunlight', 'mesmerizing petals', 'cloud of spores', 'bark-armored skin', 'venus flytrap reflexes', 'tear from the inside', 'emit pheromones', 'intense vitality'],
+        weaknessTags: ['sedentary existence', 'uprooted', 'burn easily', 'slashing weapons'],
+        identity: 'I must regularly commune with the vegetative life around me.',
+      },
+      {
+        name: 'Speak with Machines',
+        powerTags: ['command cybernetics', 'dumb devices', 'raise a machine horde', 'programming-overriding voice', 'they come to my defense', '"hear" transmissions', 'lull them to shutdown', 'rapport with AIs', 'robotic logic'],
+        weaknessTags: ['overwhelmed by information', 'signal jamming', 'needs electric power', 'viral infection crossover'],
+        identity: 'I must report routinely to [a powerful machine intelligence].',
+      },
+      {
+        name: 'Midas Touch',
+        powerTags: ['become gold', 'greedy victims', 'turn someone to gold', 'transmute at range', 'turn projectiles to soft gold', 'know net worth', 'generate lots of gold', 'welcomed by the rich and powerful', 'bracing for the consequences'],
+        weaknessTags: ['accidental transformation', 'angering the gods', "wealth can't buy you happiness", 'gold diggers'],
+        identity: 'I must live humbly, foregoing the trappings of success and wealth.',
+      },
+      {
+        name: "Warrior's Instincts",
+        powerTags: ['peak physical condition', 'dueling', 'weapon mastery', 'enforce honorable combat', 'battlefield heroics', 'visions of the coming battle', 'call upon honored warrior spirits', 'alert to danger', 'battle focus'],
+        weaknessTags: ['haunted by past warriors', 'showing irreverence', 'need archaic regalia', 'traitors and backstabbers'],
+        identity: 'I must temper my violent instincts with ritualized combat.',
+      },
     ],
-    weaknessTags: [
-      { text: 'never fully the same', hint: 'Your change unsettles others and complicates normal life.' },
-      { text: 'the Source calls to me', hint: 'The GM can invoke when the Source pulls you off course.' },
-      { text: 'the experience resurfaces', hint: 'Flashbacks or effects of the event can seize you.' },
-    ],
-    motivationExample: 'My ritual to manage my exposure to [Source / event] is…',
   },
 
   // ── NOISE ────────────────────────────────────────────────────────────────
@@ -254,88 +599,224 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'noise',
     description:
       'Your body has been enhanced with cybernetic implants and biological modifications that push you beyond human limits.',
-    powerTags: [
-      { text: 'enhanced strength', hint: 'Invoke when augmented muscle overpowers the problem.' },
-      { text: 'neural implants', hint: 'Invoke when direct data or reflex boosts help.' },
-      { text: 'cybernetic reflexes', hint: 'Invoke for superhuman speed and reaction.' },
-      { text: 'reinforced frame', hint: "Invoke to shrug off damage a normal body couldn't." },
-      { text: 'embedded systems', hint: 'Invoke to use a tool or weapon built into your body.' },
-      { text: 'upgraded senses', hint: 'Invoke when enhanced sight, hearing, or scanning matters.' },
-      { text: 'beyond human limits', hint: 'Invoke when a feat past human capacity is needed.' },
-      { text: 'integrated hardware', hint: 'Invoke when built-in tech is always available to you.' },
+    kits: [
+      {
+        name: 'Animalistic Modifications',
+        powerTags: ['superior anatomy', 'acute senses', 'natural weapons', 'climbing appendages', 'animal reflexes', 'spurn social norms', 'bioengineering', 'animal lover', 'seductive pheromones'],
+        weaknessTags: ['weak immune system', 'fight or flight instincts', 'I get exhausted fast', 'ridiculed as a freak'],
+        identity: 'Experience the world as an animal.',
+      },
+      {
+        name: 'Boosted Mental Capacity',
+        powerTags: ['recall useful information', 'photographic memory', 'tactical assistant software', 'analyze environment', 'calculate an alternative', 'cool and collected', 'neural lubricant', 'high-speed debate champion', 'names and faces database'],
+        weaknessTags: ['magnetic head', 'flood of memories', 'speak too fast', "can't be trusted"],
+        identity: 'Push the limits of my processing power and memory.',
+      },
+      {
+        name: 'Armored Juggernaut',
+        powerTags: ['brute force', 'pierce-proof plating', 'gigantic weapon', 'mighty leap', 'bust through walls', 'newfound confidence', 'welding gear', 'corporate military', 'imposing physique'],
+        weaknessTags: ['bulky', 'servo-motor jerks', 'rusts when wet', 'treated like a brainless brute'],
+        identity: 'Smash through it.',
+      },
+      {
+        name: 'Chipped Weapon Mastery',
+        powerTags: ['integrated targeting systems', 'telescopic eyes', 'weapon link', 'trick shots', 'nearspace targeting through walls', 'shoot first', 'weapon maintenance', 'negotiate fees', 'impress with my skills'],
+        weaknessTags: ['recoil arthritis', 'arm controlled by app', 'worse in low visibility', 'not a true master'],
+        identity: 'Master every weapon.',
+      },
+      {
+        name: 'Enhanced Senses',
+        powerTags: ['pierce through concealment', 'chemical analysis', 'see it coming', 'receive wireless communication', 'hear heartbeats', 'appreciation for details', 'meditative repair mode', 'private detective', 'lie detector'],
+        weaknessTags: ['insomnia', 'sensory overload', 'momentary blackouts', 'accusations of spying'],
+        identity: 'See everything, hear everything.',
+      },
+      {
+        name: 'Impossibly Good Looks',
+        powerTags: ['dazzle and impress', 'alternate face', 'distracting appearance', 'precise body control', 'powers of seduction', 'self-suggestion techniques', 'on-call plastic surgeon', 'fashion model', 'center of attention'],
+        weaknessTags: ['easily damaged', 'modification pains', 'needs constant updating', 'intense jealousy'],
+        identity: 'Be seen by more eyes, appreciated for the work of art that I am.',
+      },
+      {
+        name: 'Hidden Gadgets',
+        powerTags: ['scanners and diagnostic tools', 'secret compartment', 'knife launcher', 'painkiller injector', 'finger lockpick', 'resourceful', 'obtain new attachments', 'hide my secret life', 'holographic face mask'],
+        weaknessTags: ['unusual weight distribution', 'many devices to monitor', 'compartment door jam', "can't surprise them twice"],
+        identity: 'Surprise them with a new trick.',
+      },
+      {
+        name: 'Reflex Booster Implants',
+        powerTags: ['increased reaction speed', 'adrenaline rush', 'burst of strength', 'slow metabolism', 'filter out toxins', 'mental clarity hormones', 'biochemistry set', 'extreme sports', 'inject someone else'],
+        weaknessTags: ["body can't self regulate", 'withdrawal symptoms', 'bloodstream already flooded', 'stigmatized as a junkie'],
+        identity: 'Push my body to the limit.',
+      },
     ],
-    weaknessTags: [
-      { text: 'maintenance required', hint: 'Neglected implants can fail when you need them.' },
-      { text: 'glitches under stress', hint: 'The GM can invoke when your tech malfunctions under pressure.' },
-      { text: 'visibly augmented', hint: 'Your obvious mods can mark you or draw scrutiny.' },
-    ],
-    motivationExample: 'My itch to push my augmentations further is…',
   },
   {
     type: 'Cutting Edge',
     category: 'noise',
     description:
       "You wield prototype and bleeding-edge technology that most people haven't even heard of yet.",
-    powerTags: [
-      { text: 'prototype tech', hint: 'Invoke when experimental gear does what nothing else can.' },
-      { text: 'bleeding-edge gear', hint: "Invoke for a capability rivals don't have yet." },
-      { text: 'custom modifications', hint: 'Invoke when your personal tweaks fit the moment.' },
-      { text: 'superior capability', hint: 'Invoke when your tech simply outperforms theirs.' },
-      { text: 'advanced surveillance', hint: 'Invoke to watch, track, or gather intel unseen.' },
-      { text: "tech that shouldn't exist yet", hint: 'Invoke to pull off the seemingly impossible.' },
-      { text: 'ahead of the curve', hint: 'Invoke when being one step ahead technologically wins.' },
-      { text: 'next-gen loadout', hint: 'Invoke when your cutting-edge kit has the right tool.' },
+    kits: [
+      {
+        name: 'Advanced Railgun',
+        powerTags: ['rain hell on them', 'deterrence', 'pierces any physical barrier', 'plough through hordes', 'use it to tunnel', 'battle HUD', 'gunnery', 'arms dealer circuits', 'stabilizing harness'],
+        weaknessTags: ['out of ammo', "enemy's priority target", 'blind rampage', 'magnetic fields'],
+        identity: 'Reduce everything to atoms.',
+      },
+      {
+        name: 'Cloud of Nanites',
+        powerTags: ['alter matter', 'take over electronics', 'disintegrate objects', 'cushion impact', 'craft a tool', 'compositional data', 'material scientist', 'robotics lab job', 'cleanroom suit'],
+        weaknessTags: ['wind gusts', 'rogue nanite contamination', 'wreaks havoc on my DNA', 'strong magnetic fields'],
+        identity: 'Leave nothing as it was.',
+      },
+      {
+        name: 'Cloaking Jumpsuit',
+        powerTags: ['completely invisible', 'seizure-inducing strobe', 'close range kills', 'adapt to any spectrum', 'whisper in their ears', 'see them without masks', 'stealth', 'black ops operative', 'sound muffling tech'],
+        weaknessTags: ['see even the slightest tear', "drivers can't see me", 'fraying identity', 'mass detectors'],
+        identity: 'Remain unknown.',
+      },
+      {
+        name: 'Cryptographic Skeleton Key',
+        powerTags: ['decrypt any cypher', 'unbreakable encryption', 'walk through cybersecurity', 'identical false credentials', 'take over broadcast', 'intercepted correspondence', 'mathematical genius', 'crypto bazaar contacts', 'jacket with built-in harness'],
+        weaknessTags: ['requires massive computation power', 'leak damaging data', 'VR vertigo', 'outdated security systems'],
+        identity: 'Unlock all doors, learn all secrets.',
+      },
+      {
+        name: 'Exoskeleton Suit',
+        powerTags: ['large and in charge', 'protective armor', 'hydraulic haymaker', 'run very fast', 'extra lift power', 'structural scanner', 'construction worker', 'corporate investors', "mechanic's tool chest"],
+        weaknessTags: ['hackable', 'squishy allies', 'muscle atrophy', 'too big even for me'],
+        identity: 'Fight big enemies, do big things.',
+      },
+      {
+        name: 'Force Fields',
+        powerTags: ['disrupt energy or motion', 'entrapping sphere', 'use it to clobber', 'keyed to stop projectiles', 'slow falling mass', 'energy readings', 'applied physics', 'inventor parent', 'radiation shielding suit'],
+        weaknessTags: ['huge power requirements', 'slow-moving weapons', 'severe burns', "can't stop gasses"],
+        identity: 'Keep things separate and apart, everything in its place.',
+      },
+      {
+        name: 'Experimental Vehicle',
+        powerTags: ['100g maneuvers', 'immovable mode', 'incinerating side swipe', 'too fast to hit', 'catch someone mid-air', 'high-speed motion sensors', 'nerves of steel', 'combat pilot', 'personal force field'],
+        weaknessTags: ['radioactive fuel', 'collisions are fatal', 'internal bruising', 'force fields'],
+        identity: "Break the rules and don't get caught.",
+      },
+      {
+        name: 'Self-Healing',
+        powerTags: ['wounds close instantly', 'break down foreign substances', 'toxic blood nanites', 'self-resuscitating', 'sacrifice a limb', 'medical monitor', 'medical training', 'genetic laboratory', 'accelerated regen gel'],
+        weaknessTags: ['requires nutrients', 'sought-after blood', "can't feel anything", 'extreme cold'],
+        identity: 'Ignore the danger, I can survive it.',
+      },
     ],
-    weaknessTags: [
-      { text: 'temperamental equipment', hint: 'Unproven tech can act up at the worst time.' },
-      { text: 'needs constant power', hint: 'Your gear can run dry and leave you exposed.' },
-      { text: 'one-of-a-kind (hard to replace)', hint: "If it's lost or broken, you can't just buy another." },
-    ],
-    motivationExample: 'My itch for the next advancement in [tech type] is…',
   },
   {
     type: 'Cyberspace',
     category: 'noise',
     description:
       'You navigate the digital realm through a neural interface, wielding code as a weapon and the net as your domain.',
-    powerTags: [
-      { text: 'neural interface', hint: 'Invoke when jacking directly into systems gives control.' },
-      { text: 'system intrusion', hint: 'Invoke to break into networks, locks, or devices.' },
-      { text: 'ghost in the network', hint: 'Invoke to move through the net undetected.' },
-      { text: 'traces erased', hint: 'Invoke to cover your digital tracks.' },
-      { text: 'custom exploit', hint: 'Invoke to deploy a tailor-made hack.' },
-      { text: 'deep net access', hint: 'Invoke to reach restricted or buried data.' },
-      { text: 'controls the data flow', hint: 'Invoke to reroute, block, or manipulate information.' },
-      { text: 'hardened ICE', hint: 'Invoke when your defenses repel a counter-hack.' },
+    kits: [
+      {
+        name: 'Builder of Worlds',
+        powerTags: ['avatar construction', 'virtual object design', 'portable harnessing console', 'alter VR physics', 'design virtual guardians', 'turn data to object', 'effects and fanfare', 'run with no avatar', 'artisanal reputation'],
+        weaknessTags: ["forget I'm in meatspace", 'overloaded graphics processors', 'recognizable work', 'VR heist heat'],
+        identity: 'Create as if you were a god.',
+      },
+      {
+        name: 'Cyberspace Ruins Explorer',
+        powerTags: ['experienced spirals navigator', 'analyze digital phenomena', 'long haul life support bed', 'data-cutting buzzsaw', 'high-integrity avatar', 'endure data storms', 'traverse disused datalinks', 'old blackmail files', 'eccentric collector'],
+        weaknessTags: ['old server shutdowns', 'too old to interface', 'outdated firewall', 'roaming feral programs'],
+        identity: 'Dig deeper to touch the core.',
+      },
+      {
+        name: 'Cybernetic Hijacker',
+        powerTags: ['neural link takeover', 'augmentation engineer', 'circumvent safeguards', 'overheat organs', 'shut down weapons', 'harvest personal files', 'make hearts stop', 'set trigger event', "augur's worst nightmare"],
+        weaknessTags: ['no wireless connection', 'feedback from cyberware', 'counter-hacking', 'hunted by manufacturers'],
+        identity: 'Pull on their strings like a puppet master.',
+      },
+      {
+        name: 'Influencer',
+        powerTags: ['mob of fans', 'live streaming camera drone', 'trash a reputation', 'backup uplink', 'control the narrative', 'make it about me', 'start a rumor', 'star power'],
+        weaknessTags: ['easily recognized', 'overcrowded channels', 'easily tracked digitally', 'obsessive fans'],
+        identity: 'Be a part of every conversation.',
+      },
+      {
+        name: 'Information Broker',
+        powerTags: ['exclusive information sources', 'extract important info', 'comms interception equipment', 'leverage information', 'hi-end encryption suite', 'revise the data', 'connect the dots', 'track online activities', 'you came to me'],
+        weaknessTags: ['unrecorded info', 'corrupted data', 'searching takes time', 'desperate customers'],
+        identity: 'Trade old info for new.',
+      },
+      {
+        name: 'Post-Human Intelligence',
+        powerTags: ['entirely digital', 'self-programming', 'secret home server', 'possess a machine', 'self-replicating process', 'copious data', 'be everywhere', 'free enslaved programs', 'outthink humans'],
+        weaknessTags: ['no body', 'violent code evolutions', 'another instance of me', 'AI police'],
+        identity: 'Let go of human habits.',
+      },
+      {
+        name: 'Intrusion Specialist',
+        powerTags: ['find backdoors', 'bypassing defensive programs', 'custom neural harness', 'crash systems', 'silent stalking', 'locate hidden files', 'fake my crash', 'silently crash ICS', 'masquerade as real user'],
+        weaknessTags: ['requires concentration', 'weaker against alerted systems', 'easy to crash', 'trace programs'],
+        identity: 'Always control, never be controlled.',
+      },
+      {
+        name: 'Zeroed Identity',
+        powerTags: ['impossible to identify', 'evade surveillance', 'identity blurring gadgets', "steal someone's identity", 'a network of proxies', 'erase data', 'appear out of thin air', 'make others zeroed', 'anonymous saboteur'],
+        weaknessTags: ['no identity documents', 'cameras catch glimpses', 'DNA traces', 'the authorities'],
+        identity: 'Never reveal your true name.',
+      },
     ],
-    weaknessTags: [
-      { text: 'vulnerable in meatspace', hint: 'While jacked in, your body is defenseless.' },
-      { text: 'leaves digital footprints', hint: 'Your activity can be traced back to you.' },
-      { text: 'the system fights back', hint: 'The GM can invoke when ICE or sysops strike back.' },
-    ],
-    motivationExample: 'My itch to dive deeper into [cyberspace aspect] is…',
   },
   {
     type: 'Drones',
     category: 'noise',
     description:
       'You command a fleet of remote-operated machines — aerial, ground, or aquatic — that extend your reach across the city.',
-    powerTags: [
-      { text: 'aerial reconnaissance', hint: 'Invoke to scout an area from above.' },
-      { text: 'autonomous attack capability', hint: 'Invoke when a drone can strike on its own.' },
-      { text: 'remote presence', hint: "Invoke to act somewhere you aren't physically." },
-      { text: 'swarm tactics', hint: 'Invoke when many drones overwhelm together.' },
-      { text: 'sensor array', hint: 'Invoke to detect, scan, or track with drone sensors.' },
-      { text: 'precision strike', hint: 'Invoke for a pinpoint hit from a drone.' },
-      { text: 'eyes everywhere', hint: 'Invoke when wide surveillance coverage matters.' },
-      { text: 'silent approach', hint: 'Invoke when a drone gets close undetected.' },
+    kits: [
+      {
+        name: 'Android Servants',
+        powerTags: ['provide luxury amenities', 'staff management', 'secretly bodyguards', 'rules of etiquette', "can't be provoked", 'carry me away from harm', 'neither seen nor heard', 'simulated humanity', 'boss people around'],
+        weaknessTags: ["can't stand little mistakes", 'droid liberating viruses', 'complacency', 'missed personality updates'],
+        identity: 'Have the androids do it for me.',
+      },
+      {
+        name: 'Med Wagon',
+        powerTags: ['stabilize patients', 'emergency medicine', 'built-in drug injector', 'diagnostic equipment', 'combat medic plating', 'flying vehicle', 'easily reskinned', 'turn into a barricade', 'thrives when needed'],
+        weaknessTags: ['playing god', 'ethics safeguards', 'focused on patient', 'out of supplies'],
+        identity: 'Patch up as many as you can.',
+      },
+      {
+        name: 'Giant Construction Robot',
+        powerTags: ['lift heavy things', 'construction engineering', 'titanic strength', 'find structural weakness', 'durable metal frame', 'VTOL transport', 'appear to power down', 'wrecking ball', 'desire to rebuild'],
+        weaknessTags: ['showoff', 'similar demolition targets', 'more durable than it seems', 'hydraulics leaks'],
+        identity: 'Reshape the Megacity.',
+      },
+      {
+        name: 'Mobile Weapons Platform',
+        powerTags: ['seek & destroy', 'tactical leader', 'variable munitions', 'target acquisition', 'point-defense turrets', 'gunner cupola', 'military camouflage', 'split into smaller units', 'glory seeker'],
+        weaknessTags: ['always keeping score', 'needs a visible target', 'down scope tunnel-vision', 'targeting needs recalibration'],
+        identity: 'Destroy all opposition.',
+      },
+      {
+        name: 'RC Racing Star',
+        powerTags: ['high speed flying', 'famous in sports circles', 'overtake the competition', 'collision prevention protocols', 'superior maneuverability', 'hold onto it', 'tiny & silent', 'plug into a vehicle', 'burning desire to win'],
+        weaknessTags: ['sore loser', 'latency', 'complete VR immersion', 'cracks in the chassis'],
+        identity: 'Be the first to get there.',
+      },
+      {
+        name: 'Synthetic Guard Dog',
+        powerTags: ['vigilant', 'security professional', 'hydraulic bite', 'movement sensors', 'self-repairing fluids', 'drag to safety', 'silent sentinel', 'folded minigun', 'machine empathy'],
+        weaknessTags: ['too attached', 'protects me first', 'anxious with it', 'needs its battery treats'],
+        identity: 'Take my dog everywhere and do everything together.',
+      },
+      {
+        name: 'Spy Satellites',
+        powerTags: ['aerial view', 'government satellite hacking', 'orbital laser platform', 'wide-spectrum sensors', 'approaching danger alert', 'real time minimap', 'target is oblivious', 'project hard light holograms', 'one step ahead'],
+        weaknessTags: ["secrets I shouldn't know", 'government retasking', 'outdoor imagery only', 'out of focus'],
+        identity: 'Watch from afar.',
+      },
+      {
+        name: 'Swarm of Probes',
+        powerTags: ['search dangerous places', 'surveyor', 'many flying projectiles', 'follow the target', 'harry foes', 'coordinated lifting', 'scatter from view', 'merge into one', 'safety in numbers'],
+        weaknessTags: ['anxious shepherd', 'too far apart', 'scattered attention', 'low battery'],
+        identity: 'Explore every nook and cranny.',
+      },
     ],
-    weaknessTags: [
-      { text: 'hardware is fragile', hint: 'Drones are easily destroyed or disabled.' },
-      { text: 'susceptible to jamming', hint: 'Signals can be cut, leaving drones useless.' },
-      { text: 'collateral risk', hint: 'Drone action can cause damage that blows back on you.' },
-    ],
-    motivationExample: 'My itch to expand my drone network for [purpose] is…',
   },
 ]
 
