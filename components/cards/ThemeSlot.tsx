@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { ThemeCard } from '@/components/cards/ThemeCard'
 import { ThemeBookModal } from '@/components/modals/ThemeBookModal'
-import type { ThemeBookEntry } from '@/lib/themeBook'
+import type { ThemeBookEntry, ThemeKit } from '@/lib/themeBook'
 import type { IThemeCard, ITag } from '@/types'
 
 interface Props {
@@ -32,22 +32,25 @@ export function ThemeSlot({ theme, index, onChange }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const isConfigured = theme.themeType !== ''
 
-  // Preselect current tags when editing
-  const currentTitle = theme.tags.find(t => t.isTitle && t.text)?.text ?? null
+  // Preselect current kit + tags when editing (the kit's name is the title tag)
+  const currentKitName = theme.tags.find(t => t.isTitle && t.text)?.text ?? null
   const currentSupporting = theme.tags
     .filter(t => t.isPower && !t.isTitle && t.text)
     .map(t => t.text)
-  const currentWeakness = theme.tags.filter(t => t.isWeakness && t.text).map(t => t.text)
+  const currentWeakness = theme.tags.find(t => t.isWeakness && t.text)?.text ?? null
 
-  function handleApply(entry: ThemeBookEntry, selectedTags: ITag[]) {
+  function handleApply(entry: ThemeBookEntry, kit: ThemeKit, selectedTags: ITag[]) {
     const filled = selectedTags.slice(0, 8)
     const blanks: ITag[] = Array.from({ length: 8 - filled.length }, () => ({ ...EMPTY_TAG }))
     // Keep any inline-edited fields (name/motivation/decay/upgrade/specials);
     // for an empty slot those are already blank, so one path covers create + edit.
+    // Only default name/motivation from the kit when the player hasn't set their own.
     onChange({
       ...theme,
       category: entry.category,
       themeType: entry.type,
+      name: theme.name || kit.name,
+      motivation: theme.motivation || kit.identity,
       tags: [...filled, ...blanks],
     })
     setModalOpen(false)
@@ -64,9 +67,9 @@ export function ThemeSlot({ theme, index, onChange }: Props) {
         <ThemeBookModal
           defaultCategory={theme.category}
           initialType={isConfigured ? theme.themeType : undefined}
-          initialTitleTag={isConfigured ? currentTitle : undefined}
+          initialKitName={isConfigured ? currentKitName ?? undefined : undefined}
           initialSupportingTags={isConfigured ? currentSupporting : undefined}
-          initialWeaknessTags={isConfigured ? currentWeakness : undefined}
+          initialWeaknessTag={isConfigured ? currentWeakness : undefined}
           onApply={handleApply}
           onClose={() => setModalOpen(false)}
         />
