@@ -16,11 +16,23 @@ export interface ThemeKit {
   identity: string
 }
 
+/**
+ * Each themebook has 5 base Theme Specials — perks unlocked as a theme
+ * Upgrade (per the rulebook's "Choosing Upgrades" rules, p.133): when a
+ * theme's upgrade track fills, the player may select any Special available
+ * for that theme, each choosable only once per theme.
+ */
+export interface ThemeSpecial {
+  name: string
+  description: string
+}
+
 export interface ThemeBookEntry {
   type: ThemeType
   category: ThemeCategory
   description: string
   kits: ThemeKit[]
+  specials: ThemeSpecial[]
 }
 
 /** A theme is built as: 1 title tag (the chosen kit) + exactly this many
@@ -35,6 +47,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'self',
     description:
       'You belong to a group, organization, or crew whose backing and codes define a part of who you are.',
+    specials: [
+      { name: 'I Know Somebody', description: "Once per job, you may declare that you know an NPC with the resources (skills, equipment, information, etc.) you need for your current goal. Their help isn't guaranteed and might carry a cost, but they are sympathetic-2 to your Affiliation." },
+      { name: 'Jargon Fluency', description: 'You know how to communicate effectively with members of your Affiliation. Whenever you roll to interact socially with your Affiliation, treat a mixed hit (7-9) as a strong hit (10+).' },
+      { name: 'Membership Perks', description: 'Once per session, you may gain a story tag representing Affiliation resources that you can call on, request, or requisition in time of need.' },
+      { name: 'Mentorship', description: 'You have gained a mentor or a role model thanks to your Affiliation. Choose a power tag question from the Expertise, Horizon, or Personality themebooks that reflects lessons and values imparted by your mentor. Write down the answer as a new power tag on this theme.' },
+      { name: 'Power of Belief', description: 'Once per scene, when you take action to uphold your Affiliation Identity, you may first gain committed-2, which expires after that action.' },
+    ],
     kits: [
       {
         name: 'Criminal Syndicate',
@@ -91,6 +110,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'self',
     description:
       'You possess material resources — money, gear, property, or contacts — that you leverage to survive and succeed.',
+    specials: [
+      { name: 'Ace Up My Sleeve', description: 'One of your items or possessions is unusually enhanced, magically or technologically. Choose a power tag question from the Artifact or Cutting Edge themebooks and answer it. Write down the answer as a new power tag on this theme.' },
+      { name: 'Eclectic Arsenal', description: 'Once per session, you can discover something surprisingly useful you have on you or have access to, or a new use for your items. Create a story tag that describes an item or a feature of one of your items.' },
+      { name: "I'm Keeping This", description: 'When you choose this Special, choose one of your loadout tags and move it to this theme (it becomes a standard power tag). Whenever you Load Off, you may return this tag to your loadout theme and pick a new loadout tag to move to this theme.' },
+      { name: 'Quality Matters', description: 'One of your items or possessions is state of the art or exceptionally crafted. Choose an item or possession tag from this theme; any time you use it, you can treat a mixed hit (7-9) as a strong hit (10+).' },
+      { name: 'Quartermaster', description: 'When Loading Up, you may choose one tag in this theme describing an item of which you have several copies. Any crew member can Load Up this tag as if it were in their loadout theme.' },
+    ],
     kits: [
       {
         name: 'Explosives',
@@ -147,6 +173,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'self',
     description:
       'Years of training and professional experience have made you exceptionally skilled in your field.',
+    specials: [
+      { name: 'Evolving Technique', description: "Once per session, you may replace one of this theme's power tags with a new tag that represents a revolutionary way to apply your Expertise." },
+      { name: 'Flexible Discipline', description: 'During downtime, you may gain a story tag that reflects a specialized discipline or practice that you brush up on for the upcoming job.' },
+      { name: "If at First You Don't Succeed", description: 'Once per session, when you use tags from this theme and roll a miss (6-), you may reroll the dice and take the new result instead.' },
+      { name: 'Sense of Purpose', description: 'Choose and answer a power tag question from the Affiliation, Horizon, or Troubled Past themebooks that describes the motivation for your Expertise or the circumstance of you acquiring it. Write down the answer as a new power tag on this theme.' },
+      { name: 'Strength from Adversity', description: 'Once per session, when a weakness tag from this theme is invoked in a roll and you get a strong hit (10+), you may gain a great success or +1 Power to spend without Consequences.' },
+    ],
     kits: [
       {
         name: 'Gunslinger',
@@ -203,6 +236,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'self',
     description:
       'You are driven by a powerful vision, ideal, or goal that gives your life direction and meaning.',
+    specials: [
+      { name: "Can't Be Too Ready", description: 'Choose a power tag question from the Expertise or Assets themebooks that reflects something you acquired in order to reach your Horizon and answer it. Write down the answer as a new power tag on this theme.' },
+      { name: 'Careful Planner', description: 'Once per session, when you act to uncover new details about the next obstacle or challenge on your way to your Horizon and roll a hit, you gain a story tag or a tier-2 status that represents your readiness for that challenge.' },
+      { name: 'Follow me!', description: 'Once per session, when you roll to recruit someone to join your cause and spend your Power to Create ally story tags, they cost 1 Power each instead of 2.' },
+      { name: 'Indomitable', description: 'Once per scene, when you take Consequences with Effects that would make you despair or tire on the way to your Horizon, you may avoid these Consequences completely.' },
+      { name: 'Learn from My Mistakes', description: 'Once per session, when you roll a miss (6-) while acting to reach your Horizon, mark 1 upgrade box on this theme.' },
+    ],
     kits: [
       {
         name: 'Attain Enlightenment',
@@ -259,6 +299,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'self',
     description:
       'Your defining personal traits — your charisma, wit, empathy, or force of will — set you apart.',
+    specials: [
+      { name: 'Big Personality', description: 'Select a power tag from this theme. When you burn it for a hit, it adds 4 Power instead of 3.' },
+      { name: 'Lasting Impression', description: 'Once per scene, when you take a social action and roll a hit, you may give a lasting impression to everyone you affect with this action.' },
+      { name: 'Not Giving a Fuck', description: 'Once per scene, when you mitigate social Consequences and roll a strong hit, you may spend all your Power to completely avoid all Consequence Effects.' },
+      { name: "Why I'm Like This", description: 'Choose and answer a power tag question from the Affiliation, Horizon, or Troubled Past themebooks that reflects the motivation or background at the source of your Personality. Write down the answer as a new power tag on this theme.' },
+      { name: 'Winning Attitude', description: 'When you take an action aligned with your Personality using tags from this theme, you can treat a mixed hit (7-9) as a strong hit (10+).' },
+    ],
     kits: [
       {
         name: 'Meticulous Planner',
@@ -315,6 +362,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'self',
     description:
       'A dark chapter of your history — trauma, crime, loss — has hardened you and left its mark.',
+    specials: [
+      { name: 'Echoes From The Past', description: 'Choose and answer a power tag question from the Expertise, Affiliation, or Horizon themebooks that reflects a re-emerging aspect of who you were before. Write down the answer as a new power tag on this theme.' },
+      { name: 'Not Letting Go', description: 'Whenever you burn a tag from this theme for Power, you can mark Decay on any other theme instead of marking that tag as burnt.' },
+      { name: 'Touchy Subject', description: 'Whenever someone else mentions your past in a way that irks or offends you, you can choose to go into an emotional state and take an appropriate tier-2 status of your choice for the rest of the scene or until you calm down, whichever comes sooner.' },
+      { name: 'Transcend the Pain', description: 'When you Go Out In A Blaze risking this theme with an Ultimate sacrifice, you may choose to achieve a strong success (10+) without rolling (you replace this theme).' },
+      { name: 'Vivid Recall', description: 'Once per session, when a weakness tag from this theme is invoked, you may discover (ask the MC) or reveal (choose yourself) a detail from your Troubled Past, in addition to marking an upgrade box.' },
+    ],
     kits: [
       {
         name: 'Disaster Survivor',
@@ -373,6 +427,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'mythos',
     description:
       'A powerful object — weapon, relic, or tool — is bound to you and channels your mythic Source.',
+    specials: [
+      { name: 'Overcharged and Overclocked', description: 'Choose and answer a power tag question from the Cutting Edge or Drones themebooks that reflects a technological upgrade to your Artifact. Write down the answer as a new power tag on this theme.' },
+      { name: 'Reckless Discharge', description: 'Whenever you roll a miss (6-) with tags from this theme, you may treat it as a mixed hit (7-9) and mark Decay on this theme, or treat it as a strong hit (10+) and mark two Decay on this theme.' },
+      { name: 'Sharing is Caring', description: 'Once per session, you can let another player use power tags from this theme, provided they can access and use your Artifact for their action.' },
+      { name: 'Signature Move', description: 'Choose a power tag from this theme and an appropriate tier-2 status that you can give using this tag. Once per session, when you use this tag and roll a hit, you may give this status in addition to the normal outcome.' },
+      { name: 'Status Symbol', description: 'Once per scene, when you openly wield or wear your Artifact in interactions where Sources grant prestige or respect, you may gain a tier-2 social status such as respected, feared, impressive, etc.' },
+    ],
     kits: [
       {
         name: "Hero's Sword",
@@ -429,6 +490,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'mythos',
     description:
       'A loyal ally, familiar, or spirit partner shares your journey and acts as an extension of your Source.',
+    specials: [
+      { name: 'Back-to-back', description: 'Once per session, when you act alongside your Companion and roll a miss (6-), you may burn a tag in this theme to reroll the dice with the same Power and take the new result instead. You do not gain Power from burning a tag in this way.' },
+      { name: 'Caregiver', description: 'Once per session, when you or your Companion take action to heal one another or help the other recover from harm, you can mark an upgrade box on this theme. This does not apply during downtime.' },
+      { name: 'Hands Off', description: 'When you take this Special, you become protective-2 of your Companion. This status helps you protect your Companion, but may reduce your ability to mitigate risk to yourself. If this status is reduced, removed, or increased, you may reset it at the end of each downtime.' },
+      { name: 'New Tricks', description: "Choose and answer a power tag question from the Esoterica or Exposure themebooks that reflects your Companion's new manifested powers. Write down the answer as a new power tag on this theme." },
+      { name: 'Strategic Positioning', description: 'Once per session, you can place your Companion anywhere in the scene that it could get to normally and give it a tier-2 status that represents its advantageous position.' },
+    ],
     kits: [
       {
         name: 'Arcane Construct',
@@ -485,6 +553,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'mythos',
     description:
       'You possess hidden knowledge — occult lore, forgotten rites, or forbidden techniques drawn from your Source.',
+    specials: [
+      { name: 'Daily Practice', description: 'Choose and answer a power tag question from the Assets, Expertise, or Personality themebooks that reflects how your training, equipment, or demeanor complements your magical abilities. Write down the answer as a new power tag on this theme.' },
+      { name: 'Mystical Savvy', description: 'Once per scene, when you witness a Mythical effect, you can ask the MC one question about it and get a valuable answer as in Discover.' },
+      { name: 'Something Extra', description: 'Once per scene, when you roll a strong hit (10+) with tags from this theme and choose to take Consequences, you can gain an extra story tag of your choice in addition to the normal outcome.' },
+      { name: 'Tools of the Practice', description: 'Once per session, you may gain a story tag describing an item you use as part of your Esoteric practice.' },
+      { name: 'Universal Toolbox', description: 'Once per session, you can invoke a broad or very broad tag from this theme as directly relevant, instead of indirectly relevant, skipping the required preparatory action.' },
+    ],
     kits: [
       {
         name: 'Corpse Animation',
@@ -541,6 +616,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'mythos',
     description:
       'A transformative encounter — an event, an entity, or a place — has permanently changed you and left you resonating with a Source.',
+    specials: [
+      { name: 'Discipline', description: 'You learned how to express your abilities in a more refined manner. Choose and gain a Special from the Expertise themebook.' },
+      { name: 'Durable', description: "You've experienced change and survived it. Whenever you mitigate against body- or mind-altering Mythical Consequences with tags from this theme, treat a miss (6-) as a mixed hit (7-9)." },
+      { name: 'Mythic Residue', description: 'At the end of a scene, you may leave behind a Mythic residue. You may only have one such tag; if you create another, the previous one is removed. You may burn this tag as an interjection at any time to take an action using tags from this theme as if you were there.' },
+      { name: 'Secondary Contamination', description: 'Your Source rubs off on a nearby item or creature. Choose and answer a power tag question from the Artifact or Companion themebooks that reflects that item or creature. Write down the answer as a new power tag on this theme.' },
+      { name: 'Surge of Power', description: 'Once per session, when burning a tag from this theme for Power, you may add 5 Power to the roll instead of 3. After the roll is resolved, you take exhausted-2. You cannot mitigate this status.' },
+    ],
     kits: [
       {
         name: 'Angelic Wings',
@@ -599,6 +681,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'noise',
     description:
       'Your body has been enhanced with cybernetic implants and biological modifications that push you beyond human limits.',
+    specials: [
+      { name: 'Backstory', description: 'Choose and answer a power tag question from the Horizon, Personality, or Troubled Past themebooks that reflects the reason you have this Augmentation. Write down the answer as a new power tag on this theme.' },
+      { name: 'Formidable Tech', description: 'Once per session, when you roll a strong hit (10+) with tags from this theme, you can perform an amazing display with your Augmentation and give any one observer a tier-2 status representing amazement, respect, or fear.' },
+      { name: 'More than Human', description: 'Whenever you roll with tags from this theme while scratching your Itch, you may ignore any status of tier 3 or lower representing harm to you or your equipment, as long as it is not damage done directly to your Augmentation.' },
+      { name: 'Quick Reboot', description: 'Once per session, you may remove 2 tiers of a negative malfunction status or recover a burnt tag from your Augmentation.' },
+      { name: 'This is Who I Am', description: 'During downtime, if you spend time on this theme and mark an upgrade box, you may in addition remove one Decay or recover 1 burnt tag on this theme.' },
+    ],
     kits: [
       {
         name: 'Animalistic Modifications',
@@ -655,6 +744,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'noise',
     description:
       "You wield prototype and bleeding-edge technology that most people haven't even heard of yet.",
+    specials: [
+      { name: 'Amp Up', description: 'Once per session, if you can ready yourself for an action involving your Cutting Edge tech, you may gain amped-up-2 or a similar tier-2 status.' },
+      { name: 'Modular Design', description: "Once per session, you may replace one of this theme's power tags with a new tag that represents a part, material, or code you substitute for another." },
+      { name: 'Occult Blueprints', description: 'Choose and answer a power tag question from the Esoterica or Exposure themebooks that reflects magical methods used in the construction of this Cutting Edge tech. Write down the answer as a new power tag on this theme.' },
+      { name: 'Still in Prototype', description: 'Whenever you roll with tags from this theme and then suffer a status as a Consequence, you may increase the tier of that status by 1 and then mark an upgrade box on this theme.' },
+      { name: 'Void the Warranty', description: 'When you Go Out In A Blaze when using your Cutting Edge tech, if you risk this theme in a Significant or No Return sacrifice, you may treat a miss (6-) as a mixed hit (7-9).' },
+    ],
     kits: [
       {
         name: 'Advanced Railgun',
@@ -711,6 +807,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'noise',
     description:
       'You navigate the digital realm through a neural interface, wielding code as a weapon and the net as your domain.',
+    specials: [
+      { name: 'Avatar Flourish', description: 'Whenever you Harness yourself or others, you may create a story tag representing an aesthetic feature for each Harnessed avatar. This tag lasts until the Harnessed mind disconnects.' },
+      { name: 'Counter-Hacking', description: 'Whenever you Mitigate a cyberspace attack with tags from this theme, you may also receive one free valuable detail (as in Discover) about the source of the Consequence.' },
+      { name: 'Cyber-Daemon', description: 'Choose and answer a power tag question from the Companion or Drones themebooks that reflects a helpful cyberspace entity you acquired. Write down the answer as a new power tag on this theme.' },
+      { name: 'Undo', description: 'Once per session, when you take action with tags from this theme and suffer Consequences, you may forego both the success and the Consequence, keep the spotlight, and do something else.' },
+      { name: 'Visionary', description: 'When you create something new with tags from this theme, whether in meatspace or in cyberspace, and roll a hit, you get one extra point of Power to spend on Create or Bestow.' },
+    ],
     kits: [
       {
         name: 'Builder of Worlds',
@@ -767,6 +870,13 @@ export const THEME_BOOK: ThemeBookEntry[] = [
     category: 'noise',
     description:
       'You command a fleet of remote-operated machines — aerial, ground, or aquatic — that extend your reach across the city.',
+    specials: [
+      { name: "Asimov's First Law", description: 'When you take a harmful physical status, you may have your drones take it instead of you (if possible).' },
+      { name: 'Everywhere at Once', description: "Once per session, you can have your drones show up at a scene anywhere in the Megacity, if it's even remotely possible that they can get there." },
+      { name: 'Like Family', description: 'Choose and answer a power tag question from the Affiliation, Personality, or Companion themebooks that reflects your treatment of your drones as family members or beloved pets. Write down the answer as a new power tag on this theme.' },
+      { name: 'Self-Repairing', description: 'Once per session, you may remove 2 tiers of a negative statuses or recover a burnt tag from your Drones.' },
+      { name: 'Swarm Deployment', description: 'Once per job, you may burn a tag from this theme to allow your drones to have a Scale of 2 for the duration of the scene.' },
+    ],
     kits: [
       {
         name: 'Android Servants',
