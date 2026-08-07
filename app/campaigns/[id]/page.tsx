@@ -14,20 +14,36 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
   const [campaign, setCampaign] = useState<ICampaign | null>(null)
   const [characters, setCharacters] = useState<ICharacter[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [saveTimer, setSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
 
-  useEffect(() => {
-    async function load() {
-      const [cRes, chRes] = await Promise.all([
-        fetch(`/api/campaigns/${id}`),
-        fetch(`/api/characters?campaignId=${id}`),
-      ])
+  async function errorFrom(res: Response, fallback: string) {
+    const body = await res.json().catch(() => null)
+    return body?.error ?? `${fallback} (${res.status})`
+  }
+
+  async function load() {
+    setError(null)
+    let firstError: string | null = null
+    const [cRes, chRes] = await Promise.all([
+      fetch(`/api/campaigns/${id}`),
+      fetch(`/api/characters?campaignId=${id}`),
+    ])
+    if (cRes.ok) {
       setCampaign(await cRes.json())
-      setCharacters(await chRes.json())
-      setLoading(false)
+    } else {
+      firstError = await errorFrom(cRes, 'Failed to load campaign')
     }
-    load()
-  }, [id])
+    if (chRes.ok) {
+      setCharacters(await chRes.json())
+    } else if (!firstError) {
+      firstError = await errorFrom(chRes, 'Failed to load characters')
+    }
+    if (firstError) setError(firstError)
+    setLoading(false)
+  }
+
+  useEffect(() => { load() }, [id])
 
   function updateCampaign(updated: ICampaign) {
     setCampaign(updated)
@@ -48,6 +64,10 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ campaignId: id, name: 'New Character' }),
     })
+    if (!res.ok) {
+      setError(await errorFrom(res, 'Failed to create character'))
+      return
+    }
     const char = await res.json()
     router.push(`/campaigns/${id}/character/${char._id}`)
   }
@@ -65,7 +85,17 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
     </div>
   )
 
-  if (!campaign) return null
+  if (!campaign) return (
+    <div className="min-h-screen flex items-center justify-center px-8" style={{ background: '#080c18' }}>
+      <div className="rounded-xl p-6 max-w-md w-full text-center" style={{ background: '#1f1420', border: '1px solid #ff3b5c' }}>
+        <div className="font-display text-sm tracking-widest mb-2" style={{ color: '#ff3b5c' }}>CONNECTION ERROR</div>
+        <div className="text-sm mb-4" style={{ color: '#e8eaf0' }}>{error ?? 'Failed to load campaign.'}</div>
+        <button onClick={load} className="px-4 py-2 rounded font-display tracking-widest text-sm transition-all hover:opacity-80" style={{ background: '#ff3b5c', color: '#080c18' }}>
+          RETRY
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen" style={{ background: '#080c18' }}>
@@ -116,6 +146,18 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
                 <Plus size={14} /> ADD CHARACTER
               </button>
             </div>
+
+            {error && (
+              <div className="rounded-xl p-4 mb-4 flex items-center justify-between" style={{ background: '#1f1420', border: '1px solid #ff3b5c' }}>
+                <div>
+                  <div className="font-display text-xs tracking-widest" style={{ color: '#ff3b5c' }}>CONNECTION ERROR</div>
+                  <div className="text-sm mt-1" style={{ color: '#e8eaf0' }}>{error}</div>
+                </div>
+                <button onClick={load} className="px-3 py-1.5 rounded font-display tracking-widest text-xs transition-all hover:opacity-80" style={{ background: '#ff3b5c', color: '#080c18' }}>
+                  RETRY
+                </button>
+              </div>
+            )}
 
             {characters.length === 0 ? (
               <div className="rounded-xl p-12 text-center" style={{ background: '#141929', border: '1px dashed #2a3352' }}>

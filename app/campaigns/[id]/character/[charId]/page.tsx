@@ -15,14 +15,27 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
   const { id, charId } = use(params)
   const [character, setCharacter] = useState<ICharacter | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [saveTimer, setSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
   const [savedAt, setSavedAt] = useState<Date | null>(null)
 
-  useEffect(() => {
-    fetch(`/api/characters/${charId}`)
-      .then(r => r.json())
-      .then(data => { setCharacter(data); setLoading(false) })
-  }, [charId])
+  async function load() {
+    setError(null)
+    try {
+      const res = await fetch(`/api/characters/${charId}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => null)
+        throw new Error(body?.error ?? `Failed to load character (${res.status})`)
+      }
+      setCharacter(await res.json())
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load character')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { load() }, [charId])
 
   function updateCharacter(updated: ICharacter) {
     setCharacter(updated)
@@ -44,7 +57,17 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
     </div>
   )
 
-  if (!character) return null
+  if (!character) return (
+    <div className="min-h-screen flex items-center justify-center px-8" style={{ background: '#080c18' }}>
+      <div className="rounded-xl p-6 max-w-md w-full text-center" style={{ background: '#1f1420', border: '1px solid #ff3b5c' }}>
+        <div className="font-display text-sm tracking-widest mb-2" style={{ color: '#ff3b5c' }}>CONNECTION ERROR</div>
+        <div className="text-sm mb-4" style={{ color: '#e8eaf0' }}>{error ?? 'Failed to load character.'}</div>
+        <button onClick={load} className="px-4 py-2 rounded font-display tracking-widest text-sm transition-all hover:opacity-80" style={{ background: '#ff3b5c', color: '#080c18' }}>
+          RETRY
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen" style={{ background: '#080c18' }}>
