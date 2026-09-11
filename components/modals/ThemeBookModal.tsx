@@ -5,8 +5,8 @@ import { X, BookOpen, Check, Star } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import {
   THEME_BOOK,
-  REQUIRED_SUPPORTING_TAGS,
-  REQUIRED_WEAKNESS_TAGS,
+  MIN_SUPPORTING_TAGS,
+  MIN_WEAKNESS_TAGS,
   type ThemeBookEntry,
   type ThemeKit,
 } from '@/lib/themeBook'
@@ -40,7 +40,7 @@ interface Selection {
   entry: ThemeBookEntry
   kit: ThemeKit
   supportingTags: Set<string>
-  weaknessTag: string | null
+  weaknessTags: Set<string>
 }
 
 interface Props {
@@ -49,7 +49,7 @@ interface Props {
   initialType?: string
   initialKitName?: string
   initialSupportingTags?: string[]
-  initialWeaknessTag?: string | null
+  initialWeaknessTags?: string[]
   onApply: (entry: ThemeBookEntry, kit: ThemeKit, tags: ITag[]) => void
   onClose: () => void
 }
@@ -59,7 +59,7 @@ export function ThemeBookModal({
   initialType,
   initialKitName,
   initialSupportingTags,
-  initialWeaknessTag,
+  initialWeaknessTags,
   onApply,
   onClose,
 }: Props) {
@@ -83,7 +83,7 @@ export function ThemeBookModal({
           entry: initialEntry,
           kit: initialKit,
           supportingTags: new Set(initialSupportingTags ?? []),
-          weaknessTag: initialWeaknessTag ?? null,
+          weaknessTags: new Set(initialWeaknessTags ?? []),
         }
       : null
   )
@@ -111,31 +111,25 @@ export function ThemeBookModal({
     if (first) setActiveType(first.type)
   }
 
+  function freshSelection(entry: ThemeBookEntry, kit: ThemeKit): Selection {
+    return { entry, kit, supportingTags: new Set(), weaknessTags: new Set() }
+  }
+
   function pickKit(entry: ThemeBookEntry, kit: ThemeKit) {
     setSelection(prev => {
       if (prev && prev.kit.name === kit.name && prev.entry.type === entry.type) return null // deselect
-      return { entry, kit, supportingTags: new Set(), weaknessTag: null }
+      return freshSelection(entry, kit)
     })
   }
 
-  function toggleSupporting(entry: ThemeBookEntry, kit: ThemeKit, tag: string) {
+  // Checking a tag in a different kit switches the selection to that kit.
+  function toggleTag(entry: ThemeBookEntry, kit: ThemeKit, tag: string, kind: 'supportingTags' | 'weaknessTags') {
     setSelection(prev => {
-      const base = prev && prev.kit.name === kit.name ? prev : { entry, kit, supportingTags: new Set<string>(), weaknessTag: null }
-      const supporting = new Set(base.supportingTags)
-      if (supporting.has(tag)) {
-        supporting.delete(tag)
-      } else {
-        if (supporting.size >= REQUIRED_SUPPORTING_TAGS) return base // at limit
-        supporting.add(tag)
-      }
-      return { ...base, supportingTags: supporting }
-    })
-  }
-
-  function toggleWeakness(entry: ThemeBookEntry, kit: ThemeKit, tag: string) {
-    setSelection(prev => {
-      const base = prev && prev.kit.name === kit.name ? prev : { entry, kit, supportingTags: new Set<string>(), weaknessTag: null }
-      return { ...base, weaknessTag: base.weaknessTag === tag ? null : tag }
+      const base = prev && prev.kit.name === kit.name ? prev : freshSelection(entry, kit)
+      const next = new Set(base[kind])
+      if (next.has(tag)) next.delete(tag)
+      else next.add(tag)
+      return { ...base, [kind]: next }
     })
   }
 
@@ -149,14 +143,16 @@ export function ThemeBookModal({
   }
 
   const supportingCount = selection?.supportingTags.size ?? 0
-  const canApply = !!selection && supportingCount === REQUIRED_SUPPORTING_TAGS && !!selection.weaknessTag
+  const weaknessCount = selection?.weaknessTags.size ?? 0
+  const canApply = !!selection && supportingCount >= MIN_SUPPORTING_TAGS && weaknessCount >= MIN_WEAKNESS_TAGS
+  const hasExtras = supportingCount > MIN_SUPPORTING_TAGS || weaknessCount > MIN_WEAKNESS_TAGS
 
   const handleApply = useCallback(() => {
-    if (!selection || !canApply || !selection.weaknessTag) return
+    if (!selection || !canApply) return
     const tags: ITag[] = [
       { text: selection.kit.name, isPower: true, isTitle: true, isWeakness: false, isBurned: false },
       ...[...selection.supportingTags].map(text => ({ text, isPower: true, isTitle: false, isWeakness: false, isBurned: false })),
-      { text: selection.weaknessTag, isPower: false, isTitle: false, isWeakness: true, isBurned: false },
+      ...[...selection.weaknessTags].map(text => ({ text, isPower: false, isTitle: false, isWeakness: true, isBurned: false })),
     ]
     onApply(selection.entry, selection.kit, tags)
   }, [selection, canApply, onApply])
@@ -187,7 +183,7 @@ export function ThemeBookModal({
                 THEME BOOK
               </span>
               <span style={{ fontSize: 11, color: '#4a5570', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.1em' }}>
-                PICK A KIT · TITLE + {REQUIRED_SUPPORTING_TAGS} POWER + {REQUIRED_WEAKNESS_TAGS} WEAKNESS
+                PICK A KIT · TITLE + AT LEAST {MIN_SUPPORTING_TAGS} POWER + {MIN_WEAKNESS_TAGS} WEAKNESS
               </span>
             </div>
             <button
@@ -260,21 +256,24 @@ export function ThemeBookModal({
             {activeBook.description}
           </div>
           <div className="grid gap-4 items-start" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-            {activeBook.kits.map(kit => (
-              <ThemeKitCard
-                key={kit.name}
-                entry={activeBook}
-                kit={kit}
-                isSelected={selection?.entry.type === activeBook.type && selection.kit.name === kit.name}
-                isExpanded={expanded.has(kit.name)}
-                supportingTags={selection?.kit.name === kit.name ? selection.supportingTags : undefined}
-                weaknessTag={selection?.kit.name === kit.name ? selection.weaknessTag : null}
-                onToggleExpand={() => toggleExpanded(kit.name)}
-                onPickKit={() => pickKit(activeBook, kit)}
-                onToggleSupporting={tag => toggleSupporting(activeBook, kit, tag)}
-                onToggleWeakness={tag => toggleWeakness(activeBook, kit, tag)}
-              />
-            ))}
+            {activeBook.kits.map(kit => {
+              const isSel = selection?.entry.type === activeBook.type && selection.kit.name === kit.name
+              return (
+                <ThemeKitCard
+                  key={kit.name}
+                  entry={activeBook}
+                  kit={kit}
+                  isSelected={isSel}
+                  isExpanded={expanded.has(kit.name)}
+                  supportingTags={isSel ? selection!.supportingTags : undefined}
+                  weaknessTags={isSel ? selection!.weaknessTags : undefined}
+                  onToggleExpand={() => toggleExpanded(kit.name)}
+                  onPickKit={() => pickKit(activeBook, kit)}
+                  onToggleSupporting={tag => toggleTag(activeBook, kit, tag, 'supportingTags')}
+                  onToggleWeakness={tag => toggleTag(activeBook, kit, tag, 'weaknessTags')}
+                />
+              )
+            })}
           </div>
         </div>
 
@@ -285,16 +284,20 @@ export function ThemeBookModal({
               <>
                 <span style={{ color: TITLE_COLOR }}>★ {selection.kit.name}</span>
                 {' · '}
-                <span style={{ color: supportingCount === REQUIRED_SUPPORTING_TAGS ? '#90ee90' : '#7a8099' }}>
-                  {supportingCount}/{REQUIRED_SUPPORTING_TAGS} power
+                <span style={{ color: supportingCount >= MIN_SUPPORTING_TAGS ? '#90ee90' : '#7a8099' }}>
+                  {supportingCount} power
                 </span>
                 {' · '}
-                <span style={{ color: selection.weaknessTag ? '#ee9090' : '#7a8099' }}>
-                  {selection.weaknessTag ? 1 : 0}/{REQUIRED_WEAKNESS_TAGS} weakness
+                <span style={{ color: weaknessCount >= MIN_WEAKNESS_TAGS ? '#ee9090' : '#7a8099' }}>
+                  {weaknessCount} weakness
                 </span>
-                {!canApply && (
+                {!canApply ? (
                   <span style={{ color: '#ffb84d', marginLeft: 8 }}>
-                    (pick {REQUIRED_SUPPORTING_TAGS} power + {REQUIRED_WEAKNESS_TAGS} weakness tag)
+                    (pick at least {MIN_SUPPORTING_TAGS} power + {MIN_WEAKNESS_TAGS} weakness)
+                  </span>
+                ) : hasExtras && (
+                  <span style={{ color: '#4a5570', marginLeft: 8 }}>
+                    (tags beyond {MIN_SUPPORTING_TAGS} power + {MIN_WEAKNESS_TAGS} weakness come from upgrades)
                   </span>
                 )}
               </>
@@ -342,7 +345,7 @@ interface CardProps {
   isSelected: boolean
   isExpanded: boolean
   supportingTags?: Set<string>
-  weaknessTag: string | null
+  weaknessTags?: Set<string>
   onToggleExpand: () => void
   onPickKit: () => void
   onToggleSupporting: (tag: string) => void
@@ -355,14 +358,15 @@ function ThemeKitCard({
   isSelected,
   isExpanded,
   supportingTags,
-  weaknessTag,
+  weaknessTags,
   onToggleExpand,
   onPickKit,
   onToggleSupporting,
   onToggleWeakness,
 }: CardProps) {
   const color = CATEGORY_COLOR[entry.category]
-  const supportingAtLimit = (supportingTags?.size ?? 0) >= REQUIRED_SUPPORTING_TAGS
+  const supportingCount = supportingTags?.size ?? 0
+  const weaknessCount = weaknessTags?.size ?? 0
 
   return (
     <div
@@ -428,36 +432,32 @@ function ThemeKitCard({
           {/* Supporting power tags */}
           <div className="px-4 py-3">
             <div className="font-display text-xs tracking-widest mb-2 flex items-center justify-between" style={{ color: '#90ee90', fontSize: 10 }}>
-              <span>POWER TAGS — choose {REQUIRED_SUPPORTING_TAGS}</span>
-              <span style={{ color: supportingAtLimit ? '#ffb84d' : '#4a5570' }}>
-                {supportingTags?.size ?? 0}/{REQUIRED_SUPPORTING_TAGS}
+              <span>POWER TAGS — at least {MIN_SUPPORTING_TAGS}</span>
+              <span style={{ color: supportingCount >= MIN_SUPPORTING_TAGS ? '#90ee90' : '#4a5570' }}>
+                {supportingCount} selected
               </span>
             </div>
             <div className="flex flex-col gap-1">
-              {kit.powerTags.map(tag => {
-                const checked = supportingTags?.has(tag) ?? false
-                return (
-                  <CheckTagRow
-                    key={tag}
-                    text={tag}
-                    checked={checked}
-                    disabled={supportingAtLimit && !checked}
-                    activeColor="#90ee90"
-                    activeBg="#1a3a1a"
-                    activeBorder="#3a6a3a"
-                    onToggle={() => onToggleSupporting(tag)}
-                  />
-                )
-              })}
+              {kit.powerTags.map(tag => (
+                <CheckTagRow
+                  key={tag}
+                  text={tag}
+                  checked={supportingTags?.has(tag) ?? false}
+                  activeColor="#90ee90"
+                  activeBg="#1a3a1a"
+                  activeBorder="#3a6a3a"
+                  onToggle={() => onToggleSupporting(tag)}
+                />
+              ))}
             </div>
           </div>
 
           {/* Weakness tags */}
           <div className="px-4 pb-3" style={{ borderTop: '1px solid #141929' }}>
             <div className="font-display text-xs tracking-widest mb-2 pt-3 flex items-center justify-between" style={{ color: '#ee9090', fontSize: 10 }}>
-              <span>WEAKNESS TAGS — choose {REQUIRED_WEAKNESS_TAGS}</span>
-              <span style={{ color: weaknessTag ? '#4a5570' : '#4a5570' }}>
-                {weaknessTag ? 1 : 0}/{REQUIRED_WEAKNESS_TAGS}
+              <span>WEAKNESS TAGS — at least {MIN_WEAKNESS_TAGS}</span>
+              <span style={{ color: weaknessCount >= MIN_WEAKNESS_TAGS ? '#ee9090' : '#4a5570' }}>
+                {weaknessCount} selected
               </span>
             </div>
             <div className="flex flex-col gap-1">
@@ -465,8 +465,7 @@ function ThemeKitCard({
                 <CheckTagRow
                   key={tag}
                   text={tag}
-                  checked={weaknessTag === tag}
-                  disabled={false}
+                  checked={weaknessTags?.has(tag) ?? false}
                   activeColor="#ee9090"
                   activeBg="#3a1a1a"
                   activeBorder="#6a3a3a"
@@ -496,23 +495,20 @@ function ThemeKitCard({
 interface CheckTagRowProps {
   text: string
   checked: boolean
-  disabled: boolean
   activeColor: string
   activeBg: string
   activeBorder: string
   onToggle: () => void
 }
 
-function CheckTagRow({ text, checked, disabled, activeColor, activeBg, activeBorder, onToggle }: CheckTagRowProps) {
+function CheckTagRow({ text, checked, activeColor, activeBg, activeBorder, onToggle }: CheckTagRowProps) {
   return (
     <div
       role="button"
-      tabIndex={disabled ? -1 : 0}
+      tabIndex={0}
       aria-pressed={checked}
-      aria-disabled={disabled}
-      onClick={() => !disabled && onToggle()}
+      onClick={onToggle}
       onKeyDown={e => {
-        if (disabled) return
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
           onToggle()
@@ -522,8 +518,7 @@ function CheckTagRow({ text, checked, disabled, activeColor, activeBg, activeBor
       style={{
         background: checked ? activeBg : 'transparent',
         border: `1px solid ${checked ? activeBorder : 'transparent'}`,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.4 : 1,
+        cursor: 'pointer',
       }}
     >
       <div

@@ -3,16 +3,14 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { ThemeCard } from '@/components/cards/ThemeCard'
 import { ThemeBookModal } from '@/components/modals/ThemeBookModal'
-import type { ThemeBookEntry, ThemeKit } from '@/lib/themeBook'
-import type { IThemeCard, ITag } from '@/types'
+import { THEME_BOOK_BY_TYPE, type ThemeBookEntry, type ThemeKit } from '@/lib/themeBook'
+import type { IThemeCard, ITag, ThemeType } from '@/types'
 
 interface Props {
   theme: IThemeCard
   index: number
   onChange: (theme: IThemeCard) => void
 }
-
-const EMPTY_TAG: ITag = { text: '', isPower: false, isWeakness: false, isBurned: false }
 
 /** Reset a slot back to the model's empty-theme defaults. */
 function emptyTheme(): IThemeCard {
@@ -21,10 +19,10 @@ function emptyTheme(): IThemeCard {
     category: 'self',
     themeType: '',
     motivation: '',
-    tags: Array.from({ length: 8 }, () => ({ ...EMPTY_TAG })),
+    tags: [],
     decay: 0,
     upgrade: 0,
-    specials: Array.from({ length: 4 }, () => ''),
+    specials: [],
   }
 }
 
@@ -34,16 +32,29 @@ export function ThemeSlot({ theme, index, onChange }: Props) {
 
   // Preselect current kit + tags when editing (the kit's name is the title tag)
   const currentKitName = theme.tags.find(t => t.isTitle && t.text)?.text ?? null
+  const currentKit = isConfigured && currentKitName
+    ? THEME_BOOK_BY_TYPE[theme.themeType as ThemeType]?.kits.find(k => k.name === currentKitName)
+    : undefined
+  // Only preselect tags the picker can actually show (the kit's own tags);
+  // custom tags typed on the card are preserved separately in handleApply.
   const currentSupporting = theme.tags
-    .filter(t => t.isPower && !t.isTitle && t.text)
+    .filter(t => t.isPower && !t.isTitle && currentKit?.powerTags.includes(t.text))
     .map(t => t.text)
-  const currentWeakness = theme.tags.find(t => t.isWeakness && t.text)?.text ?? null
+  const currentWeakness = theme.tags
+    .filter(t => t.isWeakness && currentKit?.weaknessTags.includes(t.text))
+    .map(t => t.text)
 
   function handleApply(entry: ThemeBookEntry, kit: ThemeKit, selectedTags: ITag[]) {
-    const filled = selectedTags.slice(0, 8)
-    const blanks: ITag[] = Array.from({ length: 8 - filled.length }, () => ({ ...EMPTY_TAG }))
-    // Keep any inline-edited fields (name/motivation/decay/upgrade/specials);
-    // for an empty slot those are already blank, so one path covers create + edit.
+    // Keep burn state on tags that stay selected, and keep custom tags the
+    // player typed on the card (not from the old kit) — the picker can't show
+    // or deselect those, so re-applying must not silently drop them.
+    const burned = new Set(theme.tags.filter(t => t.isBurned).map(t => t.text))
+    const oldKitTags = new Set([...(currentKit?.powerTags ?? []), ...(currentKit?.weaknessTags ?? [])])
+    const picked = selectedTags.map(t => ({ ...t, isBurned: burned.has(t.text) }))
+    const pickedTexts = new Set(picked.map(t => t.text))
+    const custom = theme.tags.filter(
+      t => t.text.trim() && !t.isTitle && !oldKitTags.has(t.text) && !pickedTexts.has(t.text)
+    )
     // Only default name/motivation from the kit when the player hasn't set their own.
     onChange({
       ...theme,
@@ -51,7 +62,7 @@ export function ThemeSlot({ theme, index, onChange }: Props) {
       themeType: entry.type,
       name: theme.name || kit.name,
       motivation: theme.motivation || kit.identity,
-      tags: [...filled, ...blanks],
+      tags: [...picked, ...custom],
     })
     setModalOpen(false)
   }
@@ -69,7 +80,7 @@ export function ThemeSlot({ theme, index, onChange }: Props) {
           initialType={isConfigured ? theme.themeType : undefined}
           initialKitName={isConfigured ? currentKitName ?? undefined : undefined}
           initialSupportingTags={isConfigured ? currentSupporting : undefined}
-          initialWeaknessTag={isConfigured ? currentWeakness : undefined}
+          initialWeaknessTags={isConfigured ? currentWeakness : undefined}
           onApply={handleApply}
           onClose={() => setModalOpen(false)}
         />

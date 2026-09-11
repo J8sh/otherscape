@@ -19,7 +19,7 @@ const ThemeCardSchema = new Schema({
   category: { type: String, enum: ['self', 'mythos', 'noise'], default: 'self' },
   themeType: { type: String, default: '' },
   motivation: { type: String, default: '' },
-  tags: { type: [TagSchema], default: () => Array(8).fill(null).map(() => ({ text: '', isPower: false, isWeakness: false, isBurned: false })) },
+  tags: { type: [TagSchema], default: () => [] }, // grows as tags are picked/added; power vs weakness via flags
   decay: { type: Number, default: 0, min: 0, max: 3 },
   upgrade: { type: Number, default: 0, min: 0, max: 2 },
   specials: { type: [String], default: () => [] }, // chosen Theme Special names, picked via ThemeSpecialsPicker
