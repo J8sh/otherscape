@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { X, BookOpen, Check, Star } from 'lucide-react'
+import { X, BookOpen, Check, Star, ArrowLeft, Repeat } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 import {
   THEME_BOOK,
@@ -88,6 +88,14 @@ export function ThemeBookModal({
       : null
   )
 
+  // Editing an existing theme opens focused on its kit — upgrades add unused
+  // tags from the same kit (rulebook p.133). "Switch kit" opens the full book.
+  const [focused, setFocused] = useState(!!initialKit)
+  const showFocused = focused && !!selection
+  // Tags the theme already had, so newly ticked ones can be marked NEW.
+  const ownedSupporting = new Set(initialKit ? initialSupportingTags ?? [] : [])
+  const ownedWeakness = new Set(initialKit ? initialWeaknessTags ?? [] : [])
+
   // Which kit cards are expanded. Follows the viewport: all open on
   // tablet/desktop, all closed on mobile (except the kit being edited).
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
@@ -109,6 +117,15 @@ export function ThemeBookModal({
     setActiveCategory(cat)
     const first = THEME_BOOK.find(e => e.category === cat)
     if (first) setActiveType(first.type)
+  }
+
+  function switchKit() {
+    // Open the full book on the current kit's themebook.
+    if (selection) {
+      setActiveCategory(selection.entry.category)
+      setActiveType(selection.entry.type)
+    }
+    setFocused(false)
   }
 
   function freshSelection(entry: ThemeBookEntry, kit: ThemeKit): Selection {
@@ -176,25 +193,51 @@ export function ThemeBookModal({
       >
         {/* ── Header ─────────────────────────────────────────────────── */}
         <div className="flex flex-col shrink-0" style={{ borderBottom: '1px solid #1e2840', background: '#080c18' }}>
-          <div className="flex items-center justify-between px-6 pt-4 pb-3">
-            <div className="flex items-center gap-3">
-              <BookOpen size={18} style={{ color: '#7a8099' }} />
-              <span className="font-display tracking-widest" style={{ fontSize: 20, color: '#e8eaf0' }}>
-                THEME BOOK
+          <div className="flex items-center justify-between gap-3 px-6 pt-4 pb-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <BookOpen size={18} style={{ color: '#7a8099' }} className="shrink-0" />
+              <span className="font-display tracking-widest shrink-0" style={{ fontSize: 20, color: '#e8eaf0' }}>
+                {showFocused ? 'EDIT THEME' : 'THEME BOOK'}
               </span>
-              <span style={{ fontSize: 11, color: '#4a5570', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.1em' }}>
-                PICK A KIT · TITLE + AT LEAST {MIN_SUPPORTING_TAGS} POWER + {MIN_WEAKNESS_TAGS} WEAKNESS
+              <span className="truncate" style={{ fontSize: 11, color: '#4a5570', fontFamily: 'Rajdhani, sans-serif', letterSpacing: '0.1em' }}>
+                {showFocused && selection
+                  ? `${CATEGORY_LABEL[selection.entry.category]} · ${selection.entry.type.toUpperCase()} · ADD TAGS FROM YOUR KIT`
+                  : `PICK A KIT · TITLE + AT LEAST ${MIN_SUPPORTING_TAGS} POWER + ${MIN_WEAKNESS_TAGS} WEAKNESS`}
               </span>
             </div>
-            <button
-              onClick={onClose}
-              className="flex items-center justify-center rounded transition-all"
-              style={{ width: 32, height: 32, border: '1px solid #2a3352', background: 'transparent', color: '#7a8099', cursor: 'pointer' }}
-            >
-              <X size={16} />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              {showFocused ? (
+                <Tooltip content="Browse the full Theme Book to pick a different kit for this theme. Picking a new kit starts its tags fresh.">
+                  <button
+                    onClick={switchKit}
+                    className="flex items-center gap-1.5 font-display tracking-widest transition-all"
+                    style={{ fontSize: 11, padding: '6px 12px', borderRadius: 6, border: '1px solid #2a3352', background: 'transparent', color: '#7a8099', cursor: 'pointer' }}
+                  >
+                    <Repeat size={12} /> SWITCH KIT
+                  </button>
+                </Tooltip>
+              ) : initialKit && selection && (
+                <button
+                  onClick={() => setFocused(true)}
+                  className="flex items-center gap-1.5 font-display tracking-widest transition-all"
+                  style={{ fontSize: 11, padding: '6px 12px', borderRadius: 6, border: '1px solid #2a3352', background: 'transparent', color: '#7a8099', cursor: 'pointer' }}
+                >
+                  <ArrowLeft size={12} /> BACK TO {selection.kit.name.toUpperCase()}
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                aria-label="Close"
+                className="flex items-center justify-center rounded transition-all"
+                style={{ width: 32, height: 32, border: '1px solid #2a3352', background: 'transparent', color: '#7a8099', cursor: 'pointer' }}
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
 
+          {!showFocused && (
+          <>
           {/* Level 1: category tabs */}
           <div className="flex items-center gap-2 px-6 pb-3">
             {CATEGORIES.map(cat => {
@@ -248,10 +291,35 @@ export function ThemeBookModal({
               )
             })}
           </div>
+          </>
+          )}
         </div>
 
         {/* ── Body ────────────────────────────────────────────────────── */}
         <div className="flex-1 overflow-y-auto p-6" style={{ scrollbarColor: '#2a3352 transparent' }}>
+          {showFocused && selection ? (
+            <div className="mx-auto" style={{ maxWidth: 560 }}>
+              <div className="mb-4" style={{ fontSize: 13, color: '#7a8099', fontFamily: 'Rajdhani, sans-serif', lineHeight: 1.5 }}>
+                Tick any extra power or weakness tags your upgrades have earned. Tags you already have are checked; new picks are marked NEW.
+              </div>
+              <ThemeKitCard
+                entry={selection.entry}
+                kit={selection.kit}
+                focused
+                isSelected
+                isExpanded
+                supportingTags={selection.supportingTags}
+                weaknessTags={selection.weaknessTags}
+                ownedSupporting={ownedSupporting}
+                ownedWeakness={ownedWeakness}
+                onToggleExpand={() => {}}
+                onPickKit={() => {}}
+                onToggleSupporting={tag => toggleTag(selection.entry, selection.kit, tag, 'supportingTags')}
+                onToggleWeakness={tag => toggleTag(selection.entry, selection.kit, tag, 'weaknessTags')}
+              />
+            </div>
+          ) : (
+          <>
           <div className="mb-4" style={{ fontSize: 13, color: '#7a8099', fontFamily: 'Rajdhani, sans-serif', lineHeight: 1.5 }}>
             {activeBook.description}
           </div>
@@ -275,6 +343,8 @@ export function ThemeBookModal({
               )
             })}
           </div>
+          </>
+          )}
         </div>
 
         {/* ── Footer ──────────────────────────────────────────────────── */}
@@ -344,8 +414,12 @@ interface CardProps {
   kit: ThemeKit
   isSelected: boolean
   isExpanded: boolean
+  /** Edit-focused view: the kit is locked in and always expanded. */
+  focused?: boolean
   supportingTags?: Set<string>
   weaknessTags?: Set<string>
+  ownedSupporting?: Set<string>
+  ownedWeakness?: Set<string>
   onToggleExpand: () => void
   onPickKit: () => void
   onToggleSupporting: (tag: string) => void
@@ -357,8 +431,11 @@ function ThemeKitCard({
   kit,
   isSelected,
   isExpanded,
+  focused = false,
   supportingTags,
   weaknessTags,
+  ownedSupporting,
+  ownedWeakness,
   onToggleExpand,
   onPickKit,
   onToggleSupporting,
@@ -367,6 +444,7 @@ function ThemeKitCard({
   const color = CATEGORY_COLOR[entry.category]
   const supportingCount = supportingTags?.size ?? 0
   const weaknessCount = weaknessTags?.size ?? 0
+  const open = focused || isExpanded
 
   return (
     <div
@@ -382,52 +460,69 @@ function ThemeKitCard({
       {/* Header — click the star to pick this kit (its name = title tag), click elsewhere to expand */}
       <div className="px-4 pt-3 pb-3 flex items-start justify-between gap-2">
         <div className="flex-1 flex items-start gap-2">
-          <Tooltip content="Pick this kit — its name becomes your theme's title tag, the theme's main focus.">
-            <button
-              onClick={onPickKit}
-              aria-pressed={isSelected}
-              aria-label={isSelected ? 'Unpick this kit' : 'Pick this kit as your title tag'}
-              className="shrink-0 flex items-center justify-center rounded transition-all mt-0.5"
-              style={{
-                width: 26,
-                height: 26,
-                border: `1.5px solid ${isSelected ? TITLE_COLOR : '#3a4462'}`,
-                background: isSelected ? `${TITLE_COLOR}22` : 'transparent',
-                color: isSelected ? TITLE_COLOR : '#4a5570',
-                cursor: 'pointer',
-              }}
+          {focused ? (
+            <div
+              aria-label="Title tag"
+              className="shrink-0 flex items-center justify-center rounded mt-0.5"
+              style={{ width: 26, height: 26, border: `1.5px solid ${TITLE_COLOR}`, background: `${TITLE_COLOR}22`, color: TITLE_COLOR }}
             >
-              <Star size={14} fill={isSelected ? TITLE_COLOR : 'none'} />
-            </button>
-          </Tooltip>
+              <Star size={14} fill={TITLE_COLOR} />
+            </div>
+          ) : (
+            <Tooltip content="Pick this kit — its name becomes your theme's title tag, the theme's main focus.">
+              <button
+                onClick={onPickKit}
+                aria-pressed={isSelected}
+                aria-label={isSelected ? 'Unpick this kit' : 'Pick this kit as your title tag'}
+                className="shrink-0 flex items-center justify-center rounded transition-all mt-0.5"
+                style={{
+                  width: 26,
+                  height: 26,
+                  border: `1.5px solid ${isSelected ? TITLE_COLOR : '#3a4462'}`,
+                  background: isSelected ? `${TITLE_COLOR}22` : 'transparent',
+                  color: isSelected ? TITLE_COLOR : '#4a5570',
+                  cursor: 'pointer',
+                }}
+              >
+                <Star size={14} fill={isSelected ? TITLE_COLOR : 'none'} />
+              </button>
+            </Tooltip>
+          )}
           <button
-            onClick={onToggleExpand}
-            aria-expanded={isExpanded}
+            onClick={focused ? undefined : onToggleExpand}
+            aria-expanded={open}
             className="flex-1 text-left transition-all"
-            style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+            style={{ background: 'transparent', border: 'none', cursor: focused ? 'default' : 'pointer' }}
           >
             <div className="font-display tracking-wide" style={{ fontSize: 19, color: isSelected ? TITLE_COLOR : '#e8eaf0', lineHeight: 1.2 }}>
               {kit.name}
             </div>
+            {focused && (
+              <div style={{ fontSize: 11, color: '#7a8099', fontFamily: 'Rajdhani, sans-serif', marginTop: 2 }}>
+                Title tag · {entry.type}
+              </div>
+            )}
           </button>
         </div>
-        <div
-          className="shrink-0 flex items-center justify-center rounded transition-all mt-0.5"
-          style={{
-            width: 22,
-            height: 22,
-            border: `1px solid ${isExpanded ? color : '#2a3352'}`,
-            background: isExpanded ? `${color}22` : 'transparent',
-            color: isExpanded ? color : '#4a5570',
-            cursor: 'pointer',
-          }}
-          onClick={onToggleExpand}
-        >
-          <span style={{ fontSize: 13, lineHeight: 1 }}>{isExpanded ? '−' : '+'}</span>
-        </div>
+        {!focused && (
+          <div
+            className="shrink-0 flex items-center justify-center rounded transition-all mt-0.5"
+            style={{
+              width: 22,
+              height: 22,
+              border: `1px solid ${open ? color : '#2a3352'}`,
+              background: open ? `${color}22` : 'transparent',
+              color: open ? color : '#4a5570',
+              cursor: 'pointer',
+            }}
+            onClick={onToggleExpand}
+          >
+            <span style={{ fontSize: 13, lineHeight: 1 }}>{open ? '−' : '+'}</span>
+          </div>
+        )}
       </div>
 
-      {isExpanded && (
+      {open && (
         <div style={{ borderTop: '1px solid #1e2840' }}>
           {/* Supporting power tags */}
           <div className="px-4 py-3">
@@ -438,17 +533,21 @@ function ThemeKitCard({
               </span>
             </div>
             <div className="flex flex-col gap-1">
-              {kit.powerTags.map(tag => (
-                <CheckTagRow
-                  key={tag}
-                  text={tag}
-                  checked={supportingTags?.has(tag) ?? false}
-                  activeColor="#90ee90"
-                  activeBg="#1a3a1a"
-                  activeBorder="#3a6a3a"
-                  onToggle={() => onToggleSupporting(tag)}
-                />
-              ))}
+              {kit.powerTags.map(tag => {
+                const checked = supportingTags?.has(tag) ?? false
+                return (
+                  <CheckTagRow
+                    key={tag}
+                    text={tag}
+                    checked={checked}
+                    isNew={focused && checked && !ownedSupporting?.has(tag)}
+                    activeColor="#90ee90"
+                    activeBg="#1a3a1a"
+                    activeBorder="#3a6a3a"
+                    onToggle={() => onToggleSupporting(tag)}
+                  />
+                )
+              })}
             </div>
           </div>
 
@@ -461,17 +560,21 @@ function ThemeKitCard({
               </span>
             </div>
             <div className="flex flex-col gap-1">
-              {kit.weaknessTags.map(tag => (
-                <CheckTagRow
-                  key={tag}
-                  text={tag}
-                  checked={weaknessTags?.has(tag) ?? false}
-                  activeColor="#ee9090"
-                  activeBg="#3a1a1a"
-                  activeBorder="#6a3a3a"
-                  onToggle={() => onToggleWeakness(tag)}
-                />
-              ))}
+              {kit.weaknessTags.map(tag => {
+                const checked = weaknessTags?.has(tag) ?? false
+                return (
+                  <CheckTagRow
+                    key={tag}
+                    text={tag}
+                    checked={checked}
+                    isNew={focused && checked && !ownedWeakness?.has(tag)}
+                    activeColor="#ee9090"
+                    activeBg="#3a1a1a"
+                    activeBorder="#6a3a3a"
+                    onToggle={() => onToggleWeakness(tag)}
+                  />
+                )
+              })}
             </div>
           </div>
 
@@ -495,13 +598,15 @@ function ThemeKitCard({
 interface CheckTagRowProps {
   text: string
   checked: boolean
+  /** Newly ticked while editing — not on the theme yet. */
+  isNew?: boolean
   activeColor: string
   activeBg: string
   activeBorder: string
   onToggle: () => void
 }
 
-function CheckTagRow({ text, checked, activeColor, activeBg, activeBorder, onToggle }: CheckTagRowProps) {
+function CheckTagRow({ text, checked, isNew = false, activeColor, activeBg, activeBorder, onToggle }: CheckTagRowProps) {
   return (
     <div
       role="button"
@@ -535,6 +640,14 @@ function CheckTagRow({ text, checked, activeColor, activeBg, activeBorder, onTog
       <span style={{ fontSize: 13, color: checked ? activeColor : '#c8d8e8', fontFamily: 'Rajdhani, sans-serif', fontWeight: 500, fontStyle: checked ? 'italic' : 'normal' }}>
         {text}
       </span>
+      {isNew && (
+        <span
+          className="font-display tracking-widest ml-auto"
+          style={{ fontSize: 9, padding: '1px 6px', borderRadius: 3, border: '1px solid #c8ff0066', color: '#c8ff00' }}
+        >
+          NEW
+        </span>
+      )}
     </div>
   )
 }
