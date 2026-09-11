@@ -35,10 +35,11 @@ export interface ThemeBookEntry {
   specials: ThemeSpecial[]
 }
 
-/** A theme is built as: 1 title tag (the chosen kit) + exactly this many
- * supporting power tags + exactly this many weakness tags. */
-export const REQUIRED_SUPPORTING_TAGS = 2
-export const REQUIRED_WEAKNESS_TAGS = 1
+/** A new theme is 1 title tag (the chosen kit) + at least this many
+ * supporting power tags + at least this many weakness tags. Extra tags
+ * from the same kit come from upgrades (rulebook p.133). */
+export const MIN_SUPPORTING_TAGS = 2
+export const MIN_WEAKNESS_TAGS = 1
 
 export const THEME_BOOK: ThemeBookEntry[] = [
   // ── SELF ─────────────────────────────────────────────────────────────────

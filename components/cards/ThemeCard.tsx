@@ -1,9 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { Flame, Pencil, Trash2, ChevronDown, ChevronUp, Star } from 'lucide-react'
+import { Flame, Pencil, Trash2, ChevronDown, ChevronUp, Star, Plus, X } from 'lucide-react'
 import { ThemeSpecialsPicker } from '@/components/cards/ThemeSpecialsPicker'
-import type { IThemeCard, ThemeCategory } from '@/types'
+import type { IThemeCard, ITag, ThemeCategory, ThemeType } from '@/types'
 
 // Cards default to expanded on tablet/desktop (≥768px) and collapsed on mobile.
 const DESKTOP_QUERY = '(min-width: 768px)'
@@ -30,6 +30,20 @@ const MOTIVATION_TOOLTIP: Record<ThemeCategory, string> = {
   self: 'Identity — the core of who you are that you must uphold. Acting against it marks Decay.',
   mythos: 'Ritual — what you must perform to maintain your connection with your Source. Neglecting it marks Decay.',
   noise: 'Itch — the impulse you must satisfy to stay integrated with your tech. Resisting it marks Decay.',
+}
+
+const TITLE_COLOR = '#ffcf4d'
+const POWER_STYLE = { bg: '#1a3a1a', border: '#3a6a3a', text: '#90ee90' }
+const TITLE_STYLE = { bg: '#3a2f10', border: '#6b5320', text: TITLE_COLOR }
+const BURNED_STYLE = { bg: '#3d2800', border: '#6b3d00', text: '#cc7700' }
+const WEAKNESS_STYLE = { bg: '#3a1a1a', border: '#6a3a3a', text: '#ee9090' }
+
+const NEW_POWER_TAG: ITag = { text: '', isPower: true, isWeakness: false, isBurned: false, isTitle: false }
+const NEW_WEAKNESS_TAG: ITag = { text: '', isPower: false, isWeakness: true, isBurned: false, isTitle: false }
+
+/** Unflagged tags with text (typed before power/weakness were split) count as power. */
+function isPowerTag(t: ITag) {
+  return !t.isWeakness && (t.isPower || !!t.isTitle || t.text.trim() !== '')
 }
 
 interface Props {
@@ -70,9 +84,89 @@ function TrackDots({
   )
 }
 
+function TagInput({
+  tag, style, placeholder, autoFocus, onFocus, onChange,
+}: {
+  tag: ITag; style: typeof POWER_STYLE; placeholder: string; autoFocus: boolean; onFocus: () => void; onChange: (text: string) => void
+}) {
+  return (
+    <div
+      className="flex-1 rounded px-2 py-1"
+      style={{ background: style.bg, border: `1px solid ${style.border}`, opacity: tag.isBurned ? 0.7 : 1 }}
+    >
+      <input
+        className="w-full bg-transparent outline-none text-sm"
+        style={{ color: style.text, fontFamily: 'Rajdhani, sans-serif', fontWeight: 500, fontStyle: 'italic' }}
+        value={tag.text}
+        autoFocus={autoFocus}
+        onFocus={onFocus}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  )
+}
+
+function ToggleButton({
+  label, tooltip, pressed, color, onClick, children,
+}: {
+  label: string; tooltip: string; pressed: boolean; color: string; onClick: () => void; children: React.ReactNode
+}) {
+  return (
+    <Tooltip content={tooltip}>
+      <button
+        onClick={onClick}
+        aria-label={label}
+        aria-pressed={pressed}
+        className="w-5 h-5 shrink-0 flex items-center justify-center rounded border transition-all"
+        style={{
+          background: pressed ? `${color}22` : 'transparent',
+          borderColor: pressed ? color : '#2a3352',
+          color: pressed ? color : '#3a4462',
+        }}
+      >
+        {children}
+      </button>
+    </Tooltip>
+  )
+}
+
+function RemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className="w-5 h-5 shrink-0 flex items-center justify-center rounded border transition-all"
+      style={{ borderColor: '#2a3352', background: 'transparent', color: '#3a4462', cursor: 'pointer' }}
+      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#ff3b5c'; (e.currentTarget as HTMLButtonElement).style.color = '#ff3b5c' }}
+      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a3352'; (e.currentTarget as HTMLButtonElement).style.color = '#3a4462' }}
+    >
+      <X size={11} />
+    </button>
+  )
+}
+
+function AddTagButton({ label, tooltip, color, onClick }: { label: string; tooltip: string; color: string; onClick: () => void }) {
+  return (
+    <Tooltip content={tooltip}>
+      <button
+        onClick={onClick}
+        className="mt-1.5 flex items-center gap-1.5 font-display tracking-widest transition-all"
+        style={{ fontSize: 11, padding: '5px 10px', borderRadius: 5, border: '1px dashed #2a3352', background: 'transparent', color: '#7a8099', cursor: 'pointer' }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = color; (e.currentTarget as HTMLButtonElement).style.color = color }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = '#2a3352'; (e.currentTarget as HTMLButtonElement).style.color = '#7a8099' }}
+      >
+        <Plus size={11} /> {label}
+      </button>
+    </Tooltip>
+  )
+}
+
 export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
   const color = CATEGORY_COLOR[theme.category]
   const [collapsed, setCollapsed] = useState(false)
+  // Index of a just-added blank tag, so its input takes focus on mount.
+  const [focusIndex, setFocusIndex] = useState<number | null>(null)
 
   // Follow the viewport: expanded on tablet/desktop, collapsed on mobile.
   // Runs after mount (viewport settled) and on each breakpoint crossing;
@@ -89,7 +183,7 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
     onChange({ ...theme, [key]: value })
   }
 
-  function updateTag(i: number, field: string, value: string | boolean) {
+  function updateTag(i: number, field: keyof ITag, value: string | boolean) {
     const tags = theme.tags.map((t, idx) => idx === i ? { ...t, [field]: value } : t)
     onChange({ ...theme, tags })
   }
@@ -108,6 +202,22 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
     onChange({ ...theme, tags })
   }
 
+  function addTag(tag: ITag) {
+    setFocusIndex(theme.tags.length)
+    onChange({ ...theme, tags: [...theme.tags, { ...tag }] })
+  }
+
+  function removeTag(i: number) {
+    setFocusIndex(null)
+    onChange({ ...theme, tags: theme.tags.filter((_, idx) => idx !== i) })
+  }
+
+  // Keep each tag's index into theme.tags so edits hit the right entry.
+  const rows = theme.tags.map((tag, i) => ({ tag, i }))
+  const powerRows = rows
+    .filter(r => isPowerTag(r.tag))
+    .sort((a, b) => Number(!!b.tag.isTitle) - Number(!!a.tag.isTitle)) // title first
+  const weaknessRows = rows.filter(r => r.tag.isWeakness)
 
   return (
     <div className="rounded-xl overflow-hidden card-chamfer" style={{ background: '#141929', border: `1px solid #2a3352` }}>
@@ -172,7 +282,7 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
                 {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
               </button>
             </Tooltip>
-            <Tooltip content="Edit this theme — reopen the Theme Book to change the theme type or its power/weakness tags.">
+            <Tooltip content="Edit this theme — reopen the Theme Book to change the kit or pick more of its power/weakness tags.">
               <button
                 onClick={onEdit}
                 aria-label="Edit theme"
@@ -218,103 +328,91 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete }: Props) {
         />
       </div>
 
-      {/* Tags */}
+      {/* Power tags */}
       <div className="px-4 py-3">
         <div className="flex items-center justify-between mb-2">
-          <Tooltip content="Tags are short descriptors. Power tags (+1 Power) help you succeed. Weakness tags (−1 Power) create narrative trouble. BURN a tag for a one-time major effect — it's unavailable until recovered.">
-            <span className="font-display text-xs tracking-widest cursor-help" style={{ color: '#7a8099' }}>TAGS</span>
+          <Tooltip content="Power tags add Power to actions they help with. The title tag (★) is the theme's main focus. BURN a power tag for a big one-time boost — it's unavailable until recovered.">
+            <span className="font-display text-xs tracking-widest cursor-help" style={{ color: '#90ee90' }}>POWER TAGS</span>
           </Tooltip>
-          <div className="flex gap-3.5 text-xs" style={{ color: '#7a8099', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.1em', fontSize: 10 }}>
-            <span style={{ color: '#ffcf4d' }}>TITLE</span>
-            <span>PWR</span>
-            <span>WKN</span>
+          <div className="flex gap-3 text-xs" style={{ color: '#7a8099', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.1em', fontSize: 10, paddingRight: 28 }}>
+            <span style={{ color: TITLE_COLOR }}>TITLE</span>
             <span>BURN</span>
           </div>
         </div>
         <div className="flex flex-col gap-1">
-          {theme.tags.map((tag, i) => (
+          {powerRows.map(({ tag, i }) => (
             <div key={i} className="flex items-center gap-2">
-              <div
-                className="flex-1 rounded px-2 py-1"
-                style={{
-                  background: tag.isBurned ? '#3d2800' : tag.isTitle ? '#3a2f10' : tag.isPower ? '#1a3a1a' : tag.isWeakness ? '#3a1a1a' : '#0f1520',
-                  border: `1px solid ${tag.isBurned ? '#6b3d00' : tag.isTitle ? '#6b5320' : tag.isPower ? '#3a6a3a' : tag.isWeakness ? '#6a3a3a' : '#1e2840'}`,
-                  opacity: tag.isBurned ? 0.7 : 1,
-                }}
+              <TagInput
+                tag={tag}
+                style={tag.isBurned ? BURNED_STYLE : tag.isTitle ? TITLE_STYLE : POWER_STYLE}
+                placeholder="power tag..."
+                autoFocus={i === focusIndex}
+                onFocus={() => focusIndex !== null && setFocusIndex(null)}
+                onChange={text => updateTag(i, 'text', text)}
+              />
+              <ToggleButton
+                label="Mark as title tag"
+                tooltip="Title tag — the theme's main power tag (its central focus). Only one per theme."
+                pressed={!!tag.isTitle}
+                color={TITLE_COLOR}
+                onClick={() => toggleTitle(i)}
               >
-                <input
-                  className="w-full bg-transparent outline-none text-sm"
-                  style={{
-                    color: tag.isBurned ? '#cc7700' : tag.isTitle ? '#ffcf4d' : tag.isPower ? '#90ee90' : tag.isWeakness ? '#ee9090' : '#e8eaf0',
-                    fontFamily: 'Rajdhani, sans-serif',
-                    fontWeight: 500,
-                    fontStyle: tag.isPower || tag.isWeakness ? 'italic' : 'normal',
-                  }}
-                  value={tag.text}
-                  onChange={e => updateTag(i, 'text', e.target.value)}
-                  placeholder={`tag ${i + 1}...`}
-                />
-              </div>
-              {/* Title */}
-              <Tooltip content="Title tag — the theme's main power tag (its central focus). Only one per theme.">
-                <button
-                  onClick={() => toggleTitle(i)}
-                  aria-label="Mark as title tag"
-                  aria-pressed={!!tag.isTitle}
-                  className="w-5 h-5 flex items-center justify-center rounded border transition-all"
-                  style={{
-                    background: tag.isTitle ? '#6b532022' : 'transparent',
-                    borderColor: tag.isTitle ? '#ffcf4d' : '#2a3352',
-                    color: tag.isTitle ? '#ffcf4d' : '#3a4462',
-                  }}
-                >
-                  <Star size={11} fill={tag.isTitle ? '#ffcf4d' : 'none'} />
-                </button>
-              </Tooltip>
-              {/* Power */}
-              <Tooltip content="Mark as Power tag — adds +1 Power when invoked">
-                <button
-                  onClick={() => updateTag(i, 'isPower', !tag.isPower)}
-                  className="w-5 h-5 rounded border transition-all"
-                  style={{
-                    background: tag.isPower ? '#3a6a3a' : 'transparent',
-                    borderColor: tag.isPower ? '#90ee90' : '#2a3352',
-                  }}
-                />
-              </Tooltip>
-              {/* Weakness */}
-              <Tooltip content="Mark as Weakness tag — subtracts −1 Power but helps character grow">
-                <button
-                  onClick={() => updateTag(i, 'isWeakness', !tag.isWeakness)}
-                  className="w-5 h-5 rounded border transition-all"
-                  style={{
-                    background: tag.isWeakness ? '#6a3a3a' : 'transparent',
-                    borderColor: tag.isWeakness ? '#ee9090' : '#2a3352',
-                  }}
-                />
-              </Tooltip>
-              {/* Burn */}
-              <Tooltip content="Burn this tag — use it for a major one-time effect. Unavailable until recovered.">
-                <button
-                  onClick={() => updateTag(i, 'isBurned', !tag.isBurned)}
-                  className="w-5 h-5 flex items-center justify-center rounded border transition-all"
-                  style={{
-                    background: tag.isBurned ? '#6b3d00' : 'transparent',
-                    borderColor: tag.isBurned ? '#cc7700' : '#2a3352',
-                    color: tag.isBurned ? '#cc7700' : '#3a4462',
-                  }}
-                >
-                  <Flame size={11} />
-                </button>
-              </Tooltip>
+                <Star size={11} fill={tag.isTitle ? TITLE_COLOR : 'none'} />
+              </ToggleButton>
+              <ToggleButton
+                label="Burn tag"
+                tooltip="Burn this tag — use it for a major one-time effect. Unavailable until recovered."
+                pressed={tag.isBurned}
+                color="#cc7700"
+                onClick={() => updateTag(i, 'isBurned', !tag.isBurned)}
+              >
+                <Flame size={11} />
+              </ToggleButton>
+              <RemoveButton label={`Remove power tag ${tag.text || '(blank)'}`} onClick={() => removeTag(i)} />
             </div>
           ))}
         </div>
+        <AddTagButton
+          label="ADD POWER TAG"
+          tooltip="Add a custom power tag. To add another tag from this theme's kit (e.g. from an upgrade), use Edit (✎)."
+          color="#90ee90"
+          onClick={() => addTag(NEW_POWER_TAG)}
+        />
+      </div>
+
+      {/* Weakness tags */}
+      <div className="px-4 py-3" style={{ borderTop: '1px solid #1e2840' }}>
+        <div className="mb-2">
+          <Tooltip content="Weakness tags subtract Power when they get in your way — but each time one is invoked, you mark an upgrade box on this theme.">
+            <span className="font-display text-xs tracking-widest cursor-help" style={{ color: '#ee9090' }}>WEAKNESS TAGS</span>
+          </Tooltip>
+        </div>
+        <div className="flex flex-col gap-1">
+          {weaknessRows.map(({ tag, i }) => (
+            <div key={i} className="flex items-center gap-2">
+              <TagInput
+                tag={tag}
+                style={WEAKNESS_STYLE}
+                placeholder="weakness tag..."
+                autoFocus={i === focusIndex}
+                onFocus={() => focusIndex !== null && setFocusIndex(null)}
+                onChange={text => updateTag(i, 'text', text)}
+              />
+              <RemoveButton label={`Remove weakness tag ${tag.text || '(blank)'}`} onClick={() => removeTag(i)} />
+            </div>
+          ))}
+        </div>
+        <AddTagButton
+          label="ADD WEAKNESS TAG"
+          tooltip="Add a custom weakness tag. To add another from this theme's kit, use Edit (✎)."
+          color="#ee9090"
+          onClick={() => addTag(NEW_WEAKNESS_TAG)}
+        />
       </div>
 
       {/* Theme Specials */}
       <ThemeSpecialsPicker
-        themeType={theme.themeType as import('@/types').ThemeType}
+        themeType={theme.themeType as ThemeType}
         color={color}
         specials={theme.specials}
         onChange={specials => updateField('specials', specials)}
