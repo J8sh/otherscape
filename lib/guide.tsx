@@ -367,6 +367,7 @@ export const GUIDE: GuideTopic[] = [
           <li>Restore all burnt crew relationship tags, and rewrite any relationships that changed.</li>
           <li>Recover one crew power tag for each member of the crew.</li>
         </ul>
+        <OnTheSite>MCs have a <b>Credit Roll</b> button in Table Tools on the campaign page that does both, and a <b>Load Off</b> button for the end of a job.</OnTheSite>
       </>
     ),
   },
