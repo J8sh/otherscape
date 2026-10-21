@@ -37,7 +37,7 @@ export function RollLog({ campaignId, limit = 8 }: { campaignId: string; limit?:
           {rolls.slice(0, limit).map(r => (
             <li key={r._id} className="text-sm">
               <div className="flex items-baseline justify-between gap-2">
-                <span><b>{r.characterName || 'Someone'}</b>{r.note === 'mitigation' && <span style={{ color: 'var(--text-muted)' }}> mitigates</span>} <span style={{ color: 'var(--text-muted)' }}>{r.dice.join('+')} {r.power >= 0 ? '+' : '−'} {Math.abs(r.power)} = </span><b>{r.total}</b></span>
+                <span><b>{r.characterName || 'Someone'}</b>{r.note === 'mitigation' && <span style={{ color: 'var(--text-muted)' }}> mitigates</span>}{r.note === 'blaze' && <span style={{ color: '#ff8c42' }}> goes out in a blaze</span>} <span style={{ color: 'var(--text-muted)' }}>{r.dice.join('+')} {r.power >= 0 ? '+' : '−'} {Math.abs(r.power)} = </span><b>{r.total}</b></span>
                 <span className="font-display tracking-widest shrink-0" style={{ color: OUTCOME[r.outcome].color }}>{OUTCOME[r.outcome].label}</span>
               </div>
               <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{ago(r.createdAt)}{r.tags.length ? ` · ${r.tags.join(', ')}` : ''}</div>
