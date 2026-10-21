@@ -96,6 +96,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
   const [statusPicks, setStatusPicks] = useState<Set<number>>(new Set())
   const [manualBest, setManualBest] = useState(0)
   const [manualWorst, setManualWorst] = useState(0)
+  const [scaleGap, setScaleGap] = useState(0)
   const [dice, setDice] = useState<[number, number] | null>(null)
   // Power is frozen when you roll, so updating the sheet afterwards
   // (which clears the tag picks) doesn't change the result shown.
@@ -120,7 +121,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
   const positive = cap != null ? Math.min(rawPositive, cap) : rawPositive
   const negative = chosen.filter(c => c.sign < 0).length + extraNeg
   const burned = burnKey !== null && selected.has(burnKey)
-  const power = actionPower({ positive, negative, burned, bestStatus: best, worstStatus: worst })
+  const power = actionPower({ positive, negative, burned, bestStatus: best, worstStatus: worst, scaleGap })
   const result = dice ? rollOutcome(dice[0], dice[1], rolledPower) : null
 
   function toggle(c: Chip) {
@@ -158,7 +159,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
 
   function reset() {
     setSelected(new Set()); setBurnKey(null); setExtraPos(0); setExtraNeg(0)
-    setStatusPicks(new Set()); setManualBest(0); setManualWorst(0); setDice(null); setApplied(null)
+    setStatusPicks(new Set()); setManualBest(0); setManualWorst(0); setScaleGap(0); setDice(null); setApplied(null)
   }
 
   function apply() {
@@ -248,6 +249,14 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
           )}
           <TierPicker label="Best helpful status" value={manualBest} onChange={v => { setManualBest(v); setDice(null) }}
             help="Only your single highest relevant helpful status counts — add its tier." />
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[15px] font-semibold flex items-center gap-2">Scale gap<InfoTip label="Scale gap">When the target (or the effect you want) is bigger than you — a gang, a building, the whole crew — lose 1 Power per Scale step. Gain it when your side is bigger. PCs are Scale 0; a few people or a room is 1, a dozen or a house is 2, dozens or a skyscraper 3, an army or a block 4.</InfoTip></span>
+            <div className="flex items-center gap-1">
+              <button type="button" className="btn btn-ghost btn-icon" style={{ minHeight: 40, minWidth: 40 }} onClick={() => { setScaleGap(g => Math.max(-4, g - 1)); setDice(null) }} aria-label="Target is bigger"><Minus size={16} /></button>
+              <span className="w-10 text-center font-display text-2xl" aria-live="polite">{scaleGap > 0 ? `+${scaleGap}` : scaleGap}</span>
+              <button type="button" className="btn btn-ghost btn-icon" style={{ minHeight: 40, minWidth: 40 }} onClick={() => { setScaleGap(g => Math.min(4, g + 1)); setDice(null) }} aria-label="Your side is bigger"><Plus size={16} /></button>
+            </div>
+          </div>
           <TierPicker label="Worst hindering status" value={manualWorst} onChange={v => { setManualWorst(v); setDice(null) }}
             help="Only the single highest relevant negative status counts — yours, or one on the target that stops you (e.g. their behind-cover)." />
         </section>
@@ -271,7 +280,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
           {power > 0 ? `+${power}` : power}
         </div>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          {positive} helpful{cap != null && rawPositive > cap ? ` (capped at ${cap})` : ''}{burned ? ' (one burned: +3)' : ''} · {negative} hindering{best ? ` · +${best} status` : ''}{worst ? ` · −${worst} status` : ''}
+          {positive} helpful{cap != null && rawPositive > cap ? ` (capped at ${cap})` : ''}{burned ? ' (one burned: +3)' : ''} · {negative} hindering{best ? ` · +${best} status` : ''}{worst ? ` · −${worst} status` : ''}{scaleGap ? ` · Scale ${scaleGap > 0 ? '+' : ''}${scaleGap}` : ''}
         </p>
 
         {onShare && (
