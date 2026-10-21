@@ -57,9 +57,18 @@ function StatusCard({ status, onChange, onRemove, limit }: {
   return (
     <div className="tracking-card" style={{ ['--status-color' as string]: meta.color }}>
       <div className="tracking-card-head">
-        <Tooltip content={meta.help}>
-          <span className="flex items-center gap-1.5 font-display tracking-widest cursor-help">{meta.icon}{meta.label.toUpperCase()}</span>
-        </Tooltip>
+        <span className="flex items-center gap-1.5">
+          <Tooltip content={meta.help}><span className="flex items-center cursor-help" aria-hidden>{meta.icon}</span></Tooltip>
+          <select
+            value={status.type}
+            onChange={e => onChange({ ...status, type: e.target.value as StatusType })}
+            aria-label={`Type of ${status.name}`}
+            className="bg-transparent font-display tracking-widest outline-none cursor-pointer"
+            style={{ color: '#0b2733', fontSize: 15 }}
+          >
+            {(Object.keys(STATUS_TYPES) as StatusType[]).map(t => <option key={t} value={t}>{STATUS_TYPES[t].label.toUpperCase()}</option>)}
+          </select>
+        </span>
         <button type="button" onClick={onRemove} className="slot-btn remove edit-only" style={{ color: '#203040', width: 32, height: 32 }} aria-label={`Remove ${status.name}`}>
           <X size={15} />
         </button>
