@@ -1,27 +1,50 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { route } from '@/lib/apiHandler'
-import { Campaign } from '@/lib/models/Campaign'
+import { HttpError, readJson, route } from '@/lib/apiHandler'
+import { requireUser } from '@/lib/auth/session'
+import { loadCampaignFor, pick } from '@/lib/auth/access'
+import { parseText } from '@/lib/auth/validate'
+import { serializeCampaign } from '@/lib/serialize'
+import { Character } from '@/lib/models/Character'
 
-export const GET = route(async (_: Request, { params }: { params: Promise<{ id: string }> }) => {
-  await connectDB()
+type Ctx = { params: Promise<{ id: string }> }
+
+export const GET = route(async (_: Request, { params }: Ctx) => {
+  const user = await requireUser()
   const { id } = await params
-  const campaign = await Campaign.findById(id).lean()
-  if (!campaign) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  return NextResponse.json(campaign)
+  const { campaign, access } = await loadCampaignFor(id, user)
+  return NextResponse.json(await serializeCampaign(campaign, access))
 })
 
-export const PATCH = route(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
-  await connectDB()
+/**
+ * MCs edit everything about the campaign; players may only update the shared
+ * crew theme card (burning crew tags, marking decay/upgrade during play).
+ */
+export const PATCH = route(async (req: Request, { params }: Ctx) => {
+  const user = await requireUser()
   const { id } = await params
-  const body = await req.json()
-  const campaign = await Campaign.findByIdAndUpdate(id, body, { new: true }).lean()
-  return NextResponse.json(campaign)
+  const { campaign, access } = await loadCampaignFor(id, user)
+  const body = await readJson(req)
+
+  const wantsDetails = ['name', 'description', 'megacity'].some(k => k in body)
+  if (wantsDetails && !access.canManage) throw new HttpError(403, 'Only the MC can edit campaign details.')
+  if ('crewTheme' in body && !access.canEditCrew) throw new HttpError(403, 'Spectators can’t edit the crew.')
+
+  const update = pick(body, ['name', 'description', 'megacity', 'crewTheme'] as const)
+  if ('name' in update) campaign.name = parseText(update.name, 'Campaign name', { required: true, max: 80 })
+  if ('description' in update) campaign.description = parseText(update.description, 'Description', { max: 500 })
+  if ('megacity' in update) campaign.megacity = parseText(update.megacity, 'Megacity', { max: 80 })
+  if ('crewTheme' in update) campaign.set('crewTheme', update.crewTheme)
+  await campaign.save()
+  return NextResponse.json(await serializeCampaign(campaign, access))
 })
 
-export const DELETE = route(async (_: Request, { params }: { params: Promise<{ id: string }> }) => {
-  await connectDB()
+/** Only the owner (or an admin) can delete a campaign; its characters go with it. */
+export const DELETE = route(async (_: Request, { params }: Ctx) => {
+  const user = await requireUser()
   const { id } = await params
-  await Campaign.findByIdAndDelete(id)
+  const { campaign, access } = await loadCampaignFor(id, user)
+  if (!access.isOwner && !access.isAdmin) throw new HttpError(403, 'Only the campaign owner can delete it.')
+  await Character.deleteMany({ campaignId: campaign._id })
+  await campaign.deleteOne()
   return NextResponse.json({ success: true })
 })

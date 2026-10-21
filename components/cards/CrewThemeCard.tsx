@@ -6,9 +6,10 @@ import type { ICrewThemeCard } from '@/types'
 interface Props {
   crew: ICrewThemeCard
   onChange: (crew: ICrewThemeCard) => void
+  readOnly?: boolean
 }
 
-export function CrewThemeCard({ crew, onChange }: Props) {
+export function CrewThemeCard({ crew, onChange, readOnly = false }: Props) {
   function updateTag(i: number, field: string, value: string | boolean) {
     const tags = crew.tags.map((t, idx) => idx === i ? { ...t, [field]: value } : t)
     onChange({ ...crew, tags })
@@ -20,7 +21,7 @@ export function CrewThemeCard({ crew, onChange }: Props) {
   }
 
   return (
-    <div className="rounded-xl overflow-hidden card-chamfer" style={{ background: '#141929', border: '1px solid #2a3352' }}>
+    <fieldset disabled={readOnly} className="rounded-xl overflow-hidden card-chamfer min-w-0" style={{ background: '#141929', border: '1px solid #2a3352' }}>
       {/* Cyan accent bar — crew color */}
       <div style={{ height: 4, background: 'linear-gradient(90deg, #00d4ff, #0080cc)' }} />
 
@@ -145,6 +146,6 @@ export function CrewThemeCard({ crew, onChange }: Props) {
           ))}
         </div>
       </div>
-    </div>
+    </fieldset>
   )
 }

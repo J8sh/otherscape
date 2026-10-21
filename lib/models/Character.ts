@@ -56,7 +56,8 @@ const CrewRelationshipSchema = new Schema({
 
 const CharacterSchema = new Schema(
   {
-    campaignId: { type: Schema.Types.ObjectId, ref: 'Campaign', required: true },
+    campaignId: { type: Schema.Types.ObjectId, ref: 'Campaign', required: true, index: true },
+    ownerId: { type: Schema.Types.ObjectId, ref: 'User', index: true }, // the player who controls this character
     name: { type: String, required: true },
     player: { type: String, default: '' },
     themes: { type: [ThemeCardSchema], default: () => Array(4).fill(null).map(() => ({})) },

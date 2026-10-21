@@ -1,111 +1,92 @@
 'use client'
-import { useEffect, useState, use } from 'react'
+import { useCallback, useEffect, useState, use } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Zap } from 'lucide-react'
+import { ArrowLeft, Eye, Zap } from 'lucide-react'
 import { CharacterCard } from '@/components/cards/CharacterCard'
 import { ThemeSlot } from '@/components/cards/ThemeSlot'
 import { LoadoutThemeCard } from '@/components/cards/LoadoutThemeCard'
 import { TrackingCards } from '@/components/cards/TrackingCard'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { SaveIndicator } from '@/components/ui/SaveIndicator'
+import { api } from '@/lib/api'
+import { useAutosave } from '@/lib/useAutosave'
 import type { ICharacter } from '@/types'
 
-const SAVE_DELAY = 800
+type CharacterView = ICharacter & { canEdit: boolean; campaignName?: string }
 
 export default function CharacterPage({ params }: { params: Promise<{ id: string; charId: string }> }) {
   const { id, charId } = use(params)
-  const [character, setCharacter] = useState<ICharacter | null>(null)
+  const [character, setCharacter] = useState<CharacterView | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [saveTimer, setSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
-  const [savedAt, setSavedAt] = useState<Date | null>(null)
 
-  async function load() {
+  const autosave = useAutosave((c: ICharacter) =>
+    api(`/api/characters/${charId}`, { method: 'PATCH', json: c }))
+
+  const load = useCallback(async () => {
     setError(null)
     try {
-      const res = await fetch(`/api/characters/${charId}`)
-      if (!res.ok) {
-        const body = await res.json().catch(() => null)
-        throw new Error(body?.error ?? `Failed to load character (${res.status})`)
-      }
-      setCharacter(await res.json())
+      setCharacter(await api<CharacterView>(`/api/characters/${charId}`))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load character')
     } finally {
       setLoading(false)
     }
-  }
+  }, [charId])
 
-  useEffect(() => { load() }, [charId])
+  useEffect(() => { load() }, [load])
 
   function updateCharacter(updated: ICharacter) {
-    setCharacter(updated)
-    if (saveTimer) clearTimeout(saveTimer)
-    const t = setTimeout(async () => {
-      await fetch(`/api/characters/${charId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-      })
-      setSavedAt(new Date())
-    }, SAVE_DELAY)
-    setSaveTimer(t)
+    if (!character?.canEdit) return
+    setCharacter({ ...character, ...updated })
+    autosave.schedule(updated)
   }
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#080c18' }}>
-      <div className="font-display text-3xl tracking-widest" style={{ color: '#2a3352' }}>LOADING...</div>
-    </div>
-  )
+  if (loading) return <p className="font-display text-3xl tracking-widest text-center py-24" style={{ color: 'var(--border-card)' }}>LOADING…</p>
 
   if (!character) return (
-    <div className="min-h-screen flex items-center justify-center px-8" style={{ background: '#080c18' }}>
-      <div className="rounded-xl p-6 max-w-md w-full text-center" style={{ background: '#1f1420', border: '1px solid #ff3b5c' }}>
-        <div className="font-display text-sm tracking-widest mb-2" style={{ color: '#ff3b5c' }}>CONNECTION ERROR</div>
-        <div className="text-sm mb-4" style={{ color: '#e8eaf0' }}>{error ?? 'Failed to load character.'}</div>
-        <button onClick={load} className="px-4 py-2 rounded font-display tracking-widest text-sm transition-all hover:opacity-80" style={{ background: '#ff3b5c', color: '#080c18' }}>
-          RETRY
-        </button>
+    <div className="max-w-md mx-auto px-4 py-16">
+      <div role="alert" className="alert-error text-center">
+        <div className="font-display tracking-widest mb-2" style={{ color: 'var(--danger)' }}>COULDN’T LOAD CHARACTER</div>
+        <p className="mb-4">{error ?? 'Failed to load character.'}</p>
+        <div className="flex gap-2 justify-center">
+          <button onClick={load} className="btn btn-danger btn-sm">RETRY</button>
+          <Link href={`/campaigns/${id}`} className="btn btn-ghost btn-sm">BACK TO CREW</Link>
+        </div>
       </div>
     </div>
   )
 
+  const readOnly = !character.canEdit
+
   return (
-    <div className="min-h-screen" style={{ background: '#080c18' }}>
-      {/* Nav */}
-      <div className="px-8 py-4" style={{ borderBottom: '1px solid #2a3352' }}>
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href={`/campaigns/${id}`} className="flex items-center gap-1.5 text-sm transition-colors hover:text-white" style={{ color: '#7a8099', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.15em' }}>
-              <ArrowLeft size={14} /> CREW
-            </Link>
-            <span style={{ color: '#2a3352' }}>/</span>
-            <input
-              className="font-display text-xl tracking-wide bg-transparent border-none outline-none"
-              style={{ color: '#e8eaf0', minWidth: 40, width: `${Math.max(character.name.length, 4)}ch` }}
-              value={character.name}
-              onChange={e => updateCharacter({ ...character, name: e.target.value })}
-            />
-          </div>
-          <div className="flex items-center gap-3">
-            {savedAt && <span className="text-xs" style={{ color: '#3a4462', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.1em' }}>SAVED {savedAt.toLocaleTimeString()}</span>}
-            <Link href={`/campaigns/${id}/effects`} className="flex items-center gap-2 px-3 py-1.5 rounded text-sm font-display tracking-widest transition-all hover:opacity-80" style={{ background: '#1a2a1a', color: '#c8ff00', border: '1px solid #2a4a2a' }}>
-              <Zap size={13} /> EFFECTS REF
-            </Link>
-          </div>
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <Link href={`/campaigns/${id}`} className="inline-flex items-center gap-1.5 font-display tracking-widest text-sm hover:text-white" style={{ color: 'var(--text-muted)', minHeight: 32 }}>
+          <ArrowLeft size={14} aria-hidden /> {character.campaignName ? character.campaignName.toUpperCase() : 'CREW'}
+        </Link>
+        <div className="flex items-center gap-3">
+          <SaveIndicator state={autosave.state} error={autosave.error} />
+          <Link href="/guide/effects" className="btn btn-ghost btn-sm"><Zap size={14} aria-hidden /> EFFECTS</Link>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
-        {/* Character Card */}
+      {readOnly && (
+        <div className="panel px-4 py-3 mb-4 flex items-center gap-2" style={{ borderColor: 'var(--accent-cyan)' }}>
+          <Eye size={16} style={{ color: 'var(--accent-cyan)' }} aria-hidden />
+          <span>You’re viewing a crewmate’s sheet. Only its player and the MC can change it.</span>
+        </div>
+      )}
+
+      <fieldset disabled={readOnly} className="space-y-8 min-w-0">
         <CharacterCard character={character} onChange={updateCharacter} />
 
-        {/* Themes */}
-        <div>
+        <section>
           <div className="flex items-center gap-2 mb-4">
             <Tooltip content="Each character has exactly 4 themes — their major aspects. Themes hold your power tags, weakness tags, and define your Essence.">
-              <h2 className="font-display text-2xl tracking-widest cursor-help" style={{ color: '#e8eaf0' }}>THEMES</h2>
+              <h2 className="font-display text-2xl tracking-widest cursor-help">THEMES</h2>
             </Tooltip>
-            <span className="font-display text-sm tracking-widest" style={{ color: '#7a8099' }}>({character.themes.filter(t => t.themeType !== '').length}/4)</span>
+            <span className="font-display text-sm tracking-widest" style={{ color: 'var(--text-muted)' }}>({character.themes.filter(t => t.themeType !== '').length}/4)</span>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {character.themes.map((theme, i) => (
@@ -120,27 +101,25 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
               />
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Loadout */}
-        <div>
-          <Tooltip content="The Loadout Theme Card records your gear. Tags must be selected before a job and can be invoked for Power when relevant.">
-            <h2 className="font-display text-2xl tracking-widest mb-4 cursor-help" style={{ color: '#e8eaf0' }}>LOADOUT</h2>
+        <section>
+          <Tooltip content="The Loadout Theme Card records your gear. Tags must be loaded up before a job and can be invoked for Power when relevant.">
+            <h2 className="font-display text-2xl tracking-widest mb-4 cursor-help">LOADOUT</h2>
           </Tooltip>
           <LoadoutThemeCard
             loadout={character.loadoutTheme}
             onChange={loadout => updateCharacter({ ...character, loadoutTheme: loadout })}
           />
-        </div>
+        </section>
 
-        {/* Tracking Cards */}
-        <div className="rounded-xl p-6" style={{ background: '#141929', border: '1px solid #2a3352' }}>
+        <section className="panel p-4 md:p-6">
           <TrackingCards
             statuses={character.statuses}
             onChange={statuses => updateCharacter({ ...character, statuses })}
           />
-        </div>
-      </div>
+        </section>
+      </fieldset>
     </div>
   )
 }

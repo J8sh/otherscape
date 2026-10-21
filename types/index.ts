@@ -76,6 +76,7 @@ export interface IStatus {
 export interface ICharacter {
   _id: string
   campaignId: string
+  ownerId?: string
   name: string
   player: string
   themes: IThemeCard[]       // exactly 4
@@ -98,12 +99,45 @@ export interface ICrewThemeCard {
   specials: string[]
 }
 
+export type SiteRole = 'admin' | 'user'
+export type CampaignRole = 'mc' | 'player' | 'spectator'
+
+export interface IUser {
+  _id: string
+  username: string
+  displayName: string
+  role: SiteRole
+  disabled?: boolean
+  createdAt?: string
+}
+
+export interface ICampaignMember {
+  userId: string
+  username: string
+  displayName: string
+  role: CampaignRole
+  joinedAt?: string
+}
+
+/** What the signed-in user may do in a campaign (computed server-side). */
+export interface ICampaignPermissions {
+  role: CampaignRole
+  isOwner: boolean
+  canManage: boolean
+  canEditCrew: boolean
+  canCreateCharacter: boolean
+}
+
 export interface ICampaign {
   _id: string
   name: string
   description: string
   megacity: string
   crewTheme: ICrewThemeCard
+  ownerId?: string
+  inviteCode?: string // only sent to members who can manage the campaign
+  members?: ICampaignMember[]
+  me?: ICampaignPermissions
   createdAt: string
   updatedAt: string
 }
