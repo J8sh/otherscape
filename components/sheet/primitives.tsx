@@ -62,6 +62,8 @@ interface TagSlotProps {
   burnHelp?: string
   /** Extra controls rendered between the input and the burn toggle. */
   extra?: React.ReactNode
+  /** id of a <datalist> with suggestions. */
+  list?: string
 }
 
 const KIND_LABEL: Record<SlotKind, string> = {
@@ -73,7 +75,7 @@ const KIND_LABEL: Record<SlotKind, string> = {
  * title-star, burn-flame and remove controls on the right.
  */
 export function TagSlot({
-  kind, text, burned = false, placeholder, autoFocus, onText, onBurn, onTitle, onRemove, onFocus, burnHelp, extra,
+  kind, text, burned = false, placeholder, autoFocus, onText, onBurn, onTitle, onRemove, onFocus, burnHelp, extra, list,
 }: TagSlotProps) {
   const label = KIND_LABEL[kind]
   return (
@@ -85,6 +87,8 @@ export function TagSlot({
         autoFocus={autoFocus}
         onFocus={onFocus}
         onChange={e => onText(e.target.value)}
+        list={list}
+        autoComplete={list ? 'off' : undefined}
         aria-label={`${label}${burned ? ' (burned)' : ''}`}
       />
       <div className="tag-slot-controls">
