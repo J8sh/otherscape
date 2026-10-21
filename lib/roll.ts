@@ -1,5 +1,5 @@
 import { UPGRADE_BOXES } from './rules.ts'
-import type { ICharacter } from '../types/index.ts'
+import type { ICharacter, ICrewThemeCard } from '../types/index.ts'
 
 /** A tag on a character sheet that can be invoked in a roll. */
 export type TagRef =
@@ -7,6 +7,8 @@ export type TagRef =
   | { kind: 'story'; index: number }
   | { kind: 'loadout'; index: number }
   | { kind: 'relationship'; index: number }
+  /** A tag on the shared crew theme card. */
+  | { kind: 'crew'; index: number }
 
 export const refKey = (r: TagRef) =>
   r.kind === 'theme' ? `theme:${r.theme}:${r.tag}` : `${r.kind}:${r.index}`
@@ -79,6 +81,31 @@ export function applyRoll(c: ICharacter, sel: RollSelection): ApplyResult {
     character: { ...c, themes, loadoutTheme: loadout, storyTags, crewRelationships: relationships },
     changes,
   }
+}
+
+/**
+ * What a roll does to the shared crew card: a crew tag burned for Power is
+ * burned, and each invoked crew weakness marks the crew's upgrade track
+ * (capped at 3). Returns null when the roll used no crew tags.
+ */
+export function applyCrewRoll(crew: ICrewThemeCard, sel: RollSelection): { crew: ICrewThemeCard; changes: string[] } | null {
+  const touchesCrew = sel.burnedForPower?.kind === 'crew' || sel.weaknesses.some(r => r.kind === 'crew')
+  if (!touchesCrew) return null
+  const changes: string[] = []
+  const tags = (crew.tags ?? []).map(t => ({ ...t }))
+  let upgrade = crew.upgrade ?? 0
+  const burn = sel.burnedForPower
+  if (burn?.kind === 'crew' && tags[burn.index]) {
+    tags[burn.index].isBurned = true
+    changes.push(`Burned crew tag “${tags[burn.index].text}”`)
+  }
+  for (const r of sel.weaknesses) {
+    if (r.kind === 'crew' && upgrade < UPGRADE_BOXES) {
+      upgrade += 1
+      changes.push(`Marked crew upgrade (${upgrade}/${UPGRADE_BOXES})`)
+    }
+  }
+  return { crew: { ...crew, tags, upgrade }, changes }
 }
 
 /** A fair d6 using the browser/Node crypto RNG. */
