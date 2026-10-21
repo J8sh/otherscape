@@ -50,6 +50,23 @@ export function CrewThemeCard({ crew, onChange, readOnly = false }: Props) {
             <span className="text-sm" style={{ color: 'var(--card-ink-soft)' }}>Start from one of the book’s 8 crew kits.</span>
           </div>
         )}
+        {crew.decay >= DECAY_BOXES && (
+          <div role="alert" className="mx-3 mt-3 rounded-lg p-3" style={{ background: '#fde2e7', border: '1px solid #e8a0b0' }}>
+            <div className="font-display tracking-widest" style={{ color: '#a01838' }}>CREW DECAY FULL</div>
+            <p className="text-[15px] leading-snug">The crew theme is replaced: the crew breaks up, and has to find a new reason to work together before building a new (nascent) crew theme.</p>
+          </div>
+        )}
+        {crew.upgrade >= UPGRADE_BOXES && !readOnly && (
+          <div className="mx-3 mt-3 rounded-lg p-3" style={{ background: '#e3fbff', border: '1px solid #8fdcef' }}>
+            <div className="font-display tracking-widest" style={{ color: '#0b5566' }}>CREW UPGRADE — DECIDE TOGETHER</div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => update({ upgrade: 0, tags: [...tags, { text: '', isPower: true, isWeakness: false, isBurned: false }] })}>POWER TAG</button>
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => update({ upgrade: 0, tags: [...tags, { text: '', isPower: false, isWeakness: true, isBurned: false }] })}>WEAKNESS TAG</button>
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => update({ upgrade: 0 })}>CREW SPECIAL (PICK BELOW)</button>
+              {crew.decay > 0 && <button type="button" className="btn btn-sm btn-ghost" onClick={() => update({ upgrade: 0, decay: 0 })}>RESET DECAY</button>}
+            </div>
+          </div>
+        )}
         <CardStrip right={<><LegendChip>POWER</LegendChip><LegendChip>WEAKNESS</LegendChip><LegendChip>BURN</LegendChip></>}>TAGS</CardStrip>
         {power.map(({ tag, i }, n) => (
           <TagSlot
