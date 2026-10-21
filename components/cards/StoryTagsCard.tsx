@@ -1,5 +1,5 @@
 'use client'
-import { Plus, ThumbsDown } from 'lucide-react'
+import { Backpack, Plus, ThumbsDown } from 'lucide-react'
 import { Tooltip, InfoTip } from '@/components/ui/Tooltip'
 import { CardStrip, PaperCard, TagSlot } from '@/components/sheet/primitives'
 import type { IStoryTag } from '@/types'
@@ -9,7 +9,7 @@ import type { IStoryTag } from '@/types'
  * contact's favor. They expire when the story says so. Burning one (for +3
  * Power, or because it's used up) removes it.
  */
-export function StoryTagsCard({ tags, onChange }: { tags: IStoryTag[]; onChange: (tags: IStoryTag[]) => void }) {
+export function StoryTagsCard({ tags, onChange, onKeep }: { tags: IStoryTag[]; onChange: (tags: IStoryTag[]) => void; onKeep?: (tag: IStoryTag, index: number) => void }) {
   const update = (i: number, patch: Partial<IStoryTag>) => onChange(tags.map((t, idx) => idx === i ? { ...t, ...patch } : t))
 
   return (
@@ -31,11 +31,20 @@ export function StoryTagsCard({ tags, onChange }: { tags: IStoryTag[]; onChange:
           onText={text => update(i, { text })}
           onRemove={() => onChange(tags.filter((_, idx) => idx !== i))}
           extra={
+            <>
+            {onKeep && !tag.isNegative && tag.text.trim() && (
+              <Tooltip content="Keep it: move this tag into your loadout so you can pack it again on future jobs (it stays packed until the next Load Off).">
+                <button type="button" className="slot-btn edit-only" onClick={() => onKeep(tag, i)} aria-label={`Keep ${tag.text} as a loadout tag`}>
+                  <Backpack size={14} />
+                </button>
+              </Tooltip>
+            )}
             <Tooltip content={tag.isNegative ? 'Works against you. Tap to make it helpful.' : 'Mark as working against you (−1 Power when relevant).'}>
               <button type="button" className={`slot-btn edit-only ${tag.isNegative ? 'is-on' : ''}`} style={tag.isNegative ? { color: '#a01838' } : undefined} onClick={() => update(i, { isNegative: !tag.isNegative })} aria-pressed={!!tag.isNegative} aria-label="Works against me">
                 <ThumbsDown size={14} />
               </button>
             </Tooltip>
+            </>
           }
         />
       ))}
