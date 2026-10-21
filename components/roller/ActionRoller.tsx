@@ -120,7 +120,15 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges, c
   const [rolling, setRolling] = useState(false)
   const [pushed, setPushed] = useState(false)
   const [applied, setApplied] = useState<string[] | null>(null)
-  const [share, setShare] = useState(true)
+  const [share, setShareState] = useState(true)
+  // Remember this device's share preference between rolls.
+  useEffect(() => {
+    try { if (localStorage.getItem('roller.share') === '0') setShareState(false) } catch { /* storage unavailable */ }
+  }, [])
+  const setShare = (on: boolean) => {
+    setShareState(on)
+    try { localStorage.setItem('roller.share', on ? '1' : '0') } catch { /* storage unavailable */ }
+  }
   // Action rolls drive the story; mitigation rolls soften incoming Consequences.
   const resultRef = useRef<HTMLElement>(null)
   const [mode, setMode] = useState<'action' | 'mitigate' | 'blaze'>('action')
