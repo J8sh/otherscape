@@ -1,14 +1,24 @@
 'use client'
+import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Dices, X } from 'lucide-react'
 import { ActionRoller } from '@/components/roller/ActionRoller'
 import { api } from '@/lib/api'
-import type { ICharacter, IOptionalRules } from '@/types'
+import type { ICampaign, IChallenge, ICharacter, IOptionalRules } from '@/types'
 
 /** “Roll” from a character sheet: the roller in a dialog, full-screen on phones. */
 export function RollerDialog({ character, onApply, rules }: { character: ICharacter; onApply?: (c: ICharacter) => void; rules?: IOptionalRules }) {
+  const [challenges, setChallenges] = useState<IChallenge[]>([])
+  // Load the Challenges this player can see each time the roller opens.
+  function onOpenChange(open: boolean) {
+    if (!open || !onApply) return
+    api<ICampaign>(`/api/campaigns/${character.campaignId}`)
+      .then(c => setChallenges((c.challenges ?? []).filter(ch => ch.revealed || c.me?.canManage)))
+      .catch(() => setChallenges([]))
+  }
+
   return (
-    <Dialog.Root>
+    <Dialog.Root onOpenChange={onOpenChange}>
       <Dialog.Trigger asChild>
         <button type="button" className="btn btn-primary btn-sm"><Dices size={16} aria-hidden /> ROLL</button>
       </Dialog.Trigger>
@@ -29,6 +39,7 @@ export function RollerDialog({ character, onApply, rules }: { character: ICharac
             <ActionRoller
               character={character}
               rules={rules}
+              challenges={challenges}
               onApply={onApply}
               onShare={onApply ? roll => { api(`/api/campaigns/${character.campaignId}/rolls`, { method: 'POST', json: { characterId: character._id, ...roll } }).catch(() => {}) } : undefined}
             />
