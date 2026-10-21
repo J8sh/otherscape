@@ -110,6 +110,8 @@ export function LoadoutThemeCard({ loadout, onChange }: Props) {
           onBurn={() => updateTag(i, { isBurned: !tag.isBurned })}
           burnHelp={tag.isBurned ? 'Not packed. Un-burn to load it up (1 Loading Up Power, or use a wildcard mid-job).' : 'Packed for this job. Burn it if it’s used up, lost, or when you Load Off.'}
           onRemove={() => update({ tags: tags.filter((_, idx) => idx !== i) })}
+          note={tag.note}
+          onNote={note => updateTag(i, { note })}
           extra={
             <Tooltip content={tag.isFlaw ? 'This is a flaw (weakness) of your gear. Tap to make it a normal tag.' : 'Mark as a flaw — a weakness of a piece of gear.'}>
               <button type="button" className={`slot-btn edit-only ${tag.isFlaw ? 'is-on' : ''}`} style={tag.isFlaw ? { color: '#a01838' } : undefined} onClick={() => updateTag(i, { isFlaw: !tag.isFlaw })} aria-pressed={tag.isFlaw} aria-label="Flaw">
