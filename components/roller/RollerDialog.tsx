@@ -25,7 +25,7 @@ export function RollerDialog({ character, onApply, rules }: { character: ICharac
   // Burned crew tags and crew upgrade marks go to the shared crew card.
   // Only this roll's changes are applied on top of a fresh copy, so a
   // crewmate's edit since the roller opened isn't overwritten.
-  async function applyCrew(next: ICrewThemeCard) {
+  async function applyCrew(next: ICrewThemeCard): Promise<string[] | void> {
     const before = crew
     setCrew(next)
     if (!before) return
@@ -39,6 +39,11 @@ export function RollerDialog({ character, onApply, rules }: { character: ICharac
       }
       await api(`/api/campaigns/${character.campaignId}`, { method: 'PATCH', json: { crewTheme: merged } })
       setCrew(merged)
+      const added = merged.upgrade - (fresh.upgrade ?? 0)
+      return [
+        ...[...newlyBurned].map(t => `Burned crew tag “${t}”`),
+        ...(added > 0 ? [`Marked crew upgrade ×${added} (${merged.upgrade}/${UPGRADE_BOXES})`] : []),
+      ]
     } catch { /* the sheet update still landed; the crew card can be fixed by hand */ }
   }
 
