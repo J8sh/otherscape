@@ -57,11 +57,11 @@ export function route<A extends unknown[]>(
 const MAX_BODY_BYTES = 256 * 1024
 
 /** Parse a JSON body, answering 400/413 instead of throwing a 500 on bad or oversized input. */
-export async function readJson(req: Request): Promise<Record<string, unknown>> {
+export async function readJson(req: Request, maxBytes = MAX_BODY_BYTES): Promise<Record<string, unknown>> {
   const declared = Number(req.headers.get('content-length') ?? 0)
-  if (declared > MAX_BODY_BYTES) throw new HttpError(413, 'That’s too much data in one save.')
+  if (declared > maxBytes) throw new HttpError(413, 'That’s too much data in one save.')
   const text = await req.text()
-  if (text.length > MAX_BODY_BYTES) throw new HttpError(413, 'That’s too much data in one save.')
+  if (text.length > maxBytes) throw new HttpError(413, 'That’s too much data in one save.')
   let body: unknown = null
   try { body = JSON.parse(text) } catch { /* handled below */ }
   if (!body || typeof body !== 'object' || Array.isArray(body)) throw new HttpError(400, 'Expected a JSON object.')

@@ -25,7 +25,9 @@ export const GET = route(async (_: Request, { params }: Ctx) => {
     Character.find({ campaignId: campaign._id }).sort({ createdAt: 1 }),
     JournalEntry.find({ campaignId: campaign._id }).sort({ createdAt: 1 }).lean<{ title: string; body: string; kind: string; pinned: boolean; createdAt: Date }[]>(),
   ])
-  const c = campaign.toObject()
+  // Plain JSON first, so dates and ObjectIds become strings.
+  const plain = <T,>(v: T): T => JSON.parse(JSON.stringify(v))
+  const c = plain(campaign.toObject())
   const backup = {
     format: 'otherscape-campaign-backup',
     version: 1,
@@ -34,7 +36,7 @@ export const GET = route(async (_: Request, { params }: Ctx) => {
       name: c.name, megacity: c.megacity, description: c.description, seriesNotes: c.seriesNotes,
       crewTheme: c.crewTheme, challenges: c.challenges, optionalRules: c.optionalRules,
     },
-    characters: characters.map(d => exportCharacter(d.toObject() as ICharacter)),
+    characters: characters.map(d => exportCharacter(plain(d.toObject()) as ICharacter)),
     journal: journal.map(e => ({ title: e.title, body: e.body, kind: e.kind, pinned: e.pinned, createdAt: e.createdAt })),
   }
   const slug = (c.name || 'campaign').replace(/[^\w-]+/g, '-').toLowerCase()

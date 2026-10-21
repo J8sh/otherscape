@@ -699,7 +699,7 @@ export const GUIDE: GuideTopic[] = [
           <li><b>Getting started</b> panels: MCs get a “get your game ready” checklist; new players get a welcome with what to do first.</li>
           <li><b>Live change notices.</b> When the MC (or your other device) changes your open sheet, a notice says what changed — “wounded rose to 3”, “Burned: knife”.</li>
           <li><b>Spotlight tracker</b> in Table View for MCs: mark who has acted this round and see who’s next.</li>
-          <li><b>Campaign backup.</b> MCs can download the whole campaign — crew, Challenges, characters and journal — from Table Tools.</li>
+          <li><b>Campaign backup.</b> MCs can download the whole campaign — crew, Challenges, characters and journal — from Table Tools, and start a new campaign from that file with <b>New campaign → Restore from backup</b>.</li>
           <li><b>Challenge tags in the roller.</b> Revealed Challenges list their tags so you can count the ones working against you.</li>
           <li><b>Find a tag</b> in the roller: a search box filters long tag lists (try “crew”).</li>
           <li>The Theme Book marks theme types you already have, with a note on doubling up.</li>
