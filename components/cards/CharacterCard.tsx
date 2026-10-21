@@ -14,6 +14,15 @@ interface Props {
 
 const VETERAN_KEYS: (keyof IEvolution)[] = ['veteranSpecial1', 'veteranSpecial2', 'veteranSpecial3']
 
+/** Example relationship tags from the core book (p.177). */
+const RELATIONSHIP_IDEAS = [
+  'admiring', 'amused', 'angry', 'appreciative', 'bad blood', 'bossing them around', 'casual lover', 'communication failure',
+  'crushing', 'friendly', 'good vibes', 'hatred', 'have their back', 'in love', 'indebted', 'indifferent', 'jealous',
+  'leverage on them', 'look down on them', 'mentoring', 'mocking', 'need them for…', 'offended', 'painful to watch',
+  'party together', 'pining', 'protective', 'remind me of…', 'resentful', 'rival', 'soulmates', 'submissive', 'supportive',
+  'tandem', 'work well together',
+]
+
 /**
  * The character card, front and back, as on the printed sheet. Front: name,
  * player, the Essence hexagon and crew relationship tags. Back: Evolution
@@ -136,12 +145,14 @@ export function CharacterCard({ character, onChange }: Props) {
                 burned={rel.isBurned}
                 placeholder="relationship tag…"
                 onText={relationshipTag => updateRelationship(i, { relationshipTag })}
+                list="relationship-ideas"
                 onBurn={() => updateRelationship(i, { isBurned: !rel.isBurned })}
                 burnHelp="Crew relationship tags burn whenever you invoke them. They’re restored at the Credit Roll at the end of the session."
                 onRemove={() => update({ crewRelationships: character.crewRelationships.filter((_, idx) => idx !== i) })}
               />
             </div>
           ))}
+          <datalist id="relationship-ideas">{RELATIONSHIP_IDEAS.map(r => <option key={r} value={r} />)}</datalist>
           <div className="px-3 edit-only">
             <button type="button" className="w-full flex items-center justify-center gap-1 font-display tracking-widest text-sm rounded-lg" style={{ minHeight: 40, border: '2px dashed #a7b0bd', color: 'var(--card-ink-soft)' }}
               onClick={() => update({ crewRelationships: [...character.crewRelationships, { crewMember: '', relationshipTag: '', isBurned: false }] })}>
