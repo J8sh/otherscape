@@ -52,6 +52,8 @@ interface Props {
   initialWeaknessTags?: string[]
   onApply: (entry: ThemeBookEntry, kit: ThemeKit, tags: ITag[]) => void
   onClose: () => void
+  /** Theme types the character's other themes already use (for a gentle hint). */
+  otherTypes?: string[]
 }
 
 export function ThemeBookModal({
@@ -62,6 +64,7 @@ export function ThemeBookModal({
   initialWeaknessTags,
   onApply,
   onClose,
+  otherTypes = [],
 }: Props) {
   const initialEntry = initialType ? THEME_BOOK.find(e => e.type === initialType) : undefined
   const initialKit = initialEntry && initialKitName
@@ -286,7 +289,7 @@ export function ThemeBookModal({
                     cursor: 'pointer',
                   }}
                 >
-                  {book.type}
+                  {book.type}{otherTypes.includes(book.type) ? ' ✓' : ''}
                 </button>
               )
             })}
@@ -323,6 +326,11 @@ export function ThemeBookModal({
           <div className="mb-4" style={{ fontSize: 13, color: '#7a8099', fontFamily: 'Rajdhani, sans-serif', lineHeight: 1.5 }}>
             {activeBook.description}
           </div>
+          {otherTypes.includes(activeBook.type) && (
+            <p role="note" className="mb-4 rounded-md px-3 py-2" style={{ fontSize: 14, background: '#2a2010', border: '1px solid #6b5420', color: '#ffd9a0', fontFamily: 'Rajdhani, sans-serif' }}>
+              You already have {/^[AEIOU]/.test(activeBook.type) ? 'an' : 'a'} {activeBook.type} theme. That’s allowed, but the book suggests one theme per type unless the clash is the point (e.g. two Affiliations pulling you apart).
+            </p>
+          )}
           <div className="grid gap-4 items-start" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
             {activeBook.kits.map(kit => {
               const isSel = selection?.entry.type === activeBook.type && selection.kit.name === kit.name

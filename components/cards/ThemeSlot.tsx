@@ -15,6 +15,8 @@ interface Props {
   onEvolution?: (points: number) => void
   /** A theme was lost to Decay (for the character's history). */
   onReplaced?: (lost: IThemeCard, evolution: number) => void
+  /** Theme types used by the character's other theme slots. */
+  otherTypes?: string[]
 }
 
 /** Reset a slot back to the model's empty-theme defaults. */
@@ -32,7 +34,7 @@ function emptyTheme(nascent = false): IThemeCard {
   }
 }
 
-export function ThemeSlot({ theme, index, onChange, onEvolution, onReplaced }: Props) {
+export function ThemeSlot({ theme, index, onChange, onEvolution, onReplaced, otherTypes }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const isConfigured = theme.themeType !== ''
 
@@ -109,6 +111,7 @@ export function ThemeSlot({ theme, index, onChange, onEvolution, onReplaced }: P
           initialWeaknessTags={isConfigured ? currentWeakness : undefined}
           onApply={handleApply}
           onClose={() => setModalOpen(false)}
+          otherTypes={otherTypes}
         />
       )}
 

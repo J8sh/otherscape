@@ -209,6 +209,7 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
                 key={i}
                 theme={theme}
                 index={i}
+                otherTypes={character.themes.filter((t, j) => j !== i && t.themeType).map(t => t.themeType)}
                 onEvolution={gainEvolution}
                 onReplaced={(lost, evolution) => updateCharacter({
                   themeHistory: [
