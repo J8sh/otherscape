@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Users, Zap, ArrowLeft, Trash2, Pencil, Eye } from 'lucide-react'
+import { Plus, Users, Zap, ArrowLeft, Trash2, Pencil, Eye, NotebookPen } from 'lucide-react'
 import { CrewThemeCard } from '@/components/cards/CrewThemeCard'
 import { MembersPanel } from '@/components/campaign/MembersPanel'
 import { ChallengesPanel } from '@/components/campaign/ChallengesPanel'
@@ -177,6 +177,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
             {campaign.description && <p className="mt-2 max-w-2xl" style={{ color: 'var(--text-muted)' }}>{campaign.description}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link href={`/campaigns/${id}/journal`} className="btn btn-ghost btn-sm"><NotebookPen size={14} aria-hidden /> JOURNAL</Link>
             <Link href="/guide/effects" className="btn btn-ghost btn-sm"><Zap size={14} aria-hidden /> EFFECTS</Link>
             {me?.canManage && <button className="btn btn-ghost btn-sm" onClick={() => setEditingDetails(true)}><Pencil size={14} aria-hidden /> EDIT</button>}
           </div>

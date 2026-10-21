@@ -5,6 +5,7 @@ import { loadCampaignFor, pick } from '@/lib/auth/access'
 import { parseText } from '@/lib/auth/validate'
 import { serializeCampaign } from '@/lib/serialize'
 import { Character } from '@/lib/models/Character'
+import { JournalEntry } from '@/lib/models/JournalEntry'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -50,6 +51,7 @@ export const DELETE = route(async (_: Request, { params }: Ctx) => {
   const { campaign, access } = await loadCampaignFor(id, user)
   if (!access.isOwner && !access.isAdmin) throw new HttpError(403, 'Only the campaign owner can delete it.')
   await Character.deleteMany({ campaignId: campaign._id })
+  await JournalEntry.deleteMany({ campaignId: campaign._id })
   await campaign.deleteOne()
   return NextResponse.json({ success: true })
 })
