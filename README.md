@@ -11,16 +11,21 @@ at the table.
 - **Character sheets** modeled on the core book's cards: four themes (112 theme kits, or start from one
   of 33 character tropes), the character card with Essence and Evolution (Moments, Veteran Specials,
   lost themes), loadout with the Street Catalog and Loading Up / Off, story tags, statuses that stack,
-  reduce and cancel (polar) by the book, notes, and a setup checklist for new characters.
-- **Crew** — the shared crew theme (8 crew kits, crew Specials), relationship tags with suggestions, a
+  reduce and cancel (polar) by the book, notes, and a setup checklist for new characters. Custom themes
+  get each themebook's questions and motivation ideas; tags can carry a note on what they cover. Undo /
+  redo on every sheet, and deleted characters can be restored for 30 days.
+- **Crew** — the shared crew theme (8 crew kits or the crew questions, crew Specials, upgrade/decay
+  prompts), relationship tags with suggestions, a
   relationships overview, series notes, and a shared journal. Everything updates live.
 - **Dice roller** — tap the tags and statuses that apply, roll 2d6 + Power with Scale, burn for +3, or
-  roll with Self / Mythos / Noise; mitigation and Going Out in a Blaze modes. Apply results to your
-  sheet or to a revealed Challenge, and share rolls with the crew.
+  roll with Self / Mythos / Noise; mitigation and Going Out in a Blaze modes. Crew theme tags can be
+  invoked too. Apply results to your sheet, the crew card or a revealed Challenge, and share rolls with
+  the crew.
 - **Downtime helper** — mark an upgrade, or spend 3 Power recovering tags and healing statuses.
 - **MC tools** — Challenge profiles (templates, Limits, reveal controls), Table View with live statuses
   and one-tap Consequences, Credit Roll / Load Off, optional rules (PC Limit, Enhance cost, tag cap).
-- **Rules guide** — plain-language topics in our own words with core-book page numbers, a searchable
+- **Rules guide** — plain-language topics in our own words with core-book page numbers (including
+  Making a Character and Session Zero), a searchable
   index of the Action Database, the Effects cards, and a themebook/kit browser.
 - Print-friendly sheets, character export/import, installable on phones (Add to Home Screen).
 
@@ -40,7 +45,7 @@ accounts existed.
 ### Checks
 
 ```bash
-npm test               # rules, rolls, normalization, tropes (node:test)
+npm test               # rules, rolls, undo history, normalization, tropes, themebook data (node:test)
 npm run typecheck
 npm run build
 ```
