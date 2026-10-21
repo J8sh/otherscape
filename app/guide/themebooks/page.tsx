@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { THEME_BOOK } from '@/lib/themeBook'
+import { THEME_QUESTIONS } from '@/lib/themeQuestions'
 import { CATEGORY_META } from '@/lib/themeMeta'
 import type { ThemeCategory } from '@/types'
 
@@ -48,6 +49,19 @@ export default function ThemebooksPage() {
                       <p className="text-sm mt-1"><b style={{ color: 'var(--danger)' }}>−</b> {k.weaknessTags.join(' · ')}</p>
                     </div>
                   ))}
+                </div>
+              </details>
+              <details className="mt-2">
+                <summary className="cursor-pointer font-display tracking-widest" style={{ minHeight: 36, color: 'var(--accent-lime)' }}>QUESTIONS FOR A CUSTOM THEME</summary>
+                <div className="grid gap-3 sm:grid-cols-2 mt-2">
+                  <div className="rounded-lg p-3" style={{ background: 'var(--bg-inset)' }}>
+                    <div className="font-display tracking-widest text-sm" style={{ color: 'var(--accent-lime)' }}>POWER — FIRST ONE + ANY TWO</div>
+                    <ol className="list-[upper-alpha] pl-5 text-sm space-y-0.5 mt-1">{THEME_QUESTIONS[b.type].power.map((q, i) => <li key={i} style={{ fontWeight: i === 0 ? 700 : 400 }}>{q}</li>)}</ol>
+                  </div>
+                  <div className="rounded-lg p-3" style={{ background: 'var(--bg-inset)' }}>
+                    <div className="font-display tracking-widest text-sm" style={{ color: 'var(--danger)' }}>WEAKNESS — ANY ONE</div>
+                    <ol className="list-[upper-alpha] pl-5 text-sm space-y-0.5 mt-1">{THEME_QUESTIONS[b.type].weakness.map((q, i) => <li key={i}>{q}</li>)}</ol>
+                  </div>
                 </div>
               </details>
               <details className="mt-2">
