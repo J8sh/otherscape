@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useRef, useState, use } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Eye, Printer, Zap } from 'lucide-react'
+import { ArrowLeft, Download, Eye, Printer, Zap } from 'lucide-react'
 import { CharacterCard } from '@/components/cards/CharacterCard'
 import { ThemeSlot } from '@/components/cards/ThemeSlot'
 import { LoadoutThemeCard } from '@/components/cards/LoadoutThemeCard'
@@ -16,6 +16,7 @@ import { api } from '@/lib/api'
 import { useAutosave } from '@/lib/useAutosave'
 import { addEvolution } from '@/lib/rules'
 import { normalizeCharacter } from '@/lib/normalize'
+import { downloadCharacter } from '@/lib/characterFile'
 import { isNewer, usePolling } from '@/lib/usePolling'
 import type { ICharacter, IOptionalRules } from '@/types'
 
@@ -118,6 +119,7 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
         <div className="flex items-center gap-3">
           <SaveIndicator state={autosave.state} error={autosave.error} />
           <button type="button" className="btn btn-ghost btn-sm hidden md:inline-flex" onClick={() => window.print()} aria-label="Print this sheet"><Printer size={14} aria-hidden /> PRINT</button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => downloadCharacter(character)} aria-label="Export this character to a file"><Download size={14} aria-hidden /> <span className="hidden sm:inline">EXPORT</span></button>
           <Link href="/guide/effects" className="btn btn-ghost btn-sm"><Zap size={14} aria-hidden /> EFFECTS</Link>
           <RollerDialog character={character} rules={character.rules} onApply={character.canEdit ? c => updateCharacter(c) : undefined} />
         </div>

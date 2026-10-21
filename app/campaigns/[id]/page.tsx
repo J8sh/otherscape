@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Users, Zap, ArrowLeft, Trash2, Pencil, Eye, NotebookPen, MonitorPlay } from 'lucide-react'
+import { Plus, Users, Zap, ArrowLeft, Trash2, Pencil, Eye, NotebookPen, MonitorPlay, Upload } from 'lucide-react'
 import { CrewThemeCard } from '@/components/cards/CrewThemeCard'
 import { MembersPanel } from '@/components/campaign/MembersPanel'
 import { ChallengesPanel } from '@/components/campaign/ChallengesPanel'
@@ -16,6 +16,7 @@ import { useAutosave } from '@/lib/useAutosave'
 import { ROLE_HELP, ROLE_LABEL } from '@/lib/roles'
 import { CATEGORY_META } from '@/lib/themeMeta'
 import { normalizeCrew } from '@/lib/normalize'
+import { readCharacterFile } from '@/lib/characterFile'
 import { isNewer, usePolling } from '@/lib/usePolling'
 import type { ICampaign, ICharacter, IChallenge, ICrewThemeCard } from '@/types'
 
@@ -107,6 +108,22 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
       router.push(`/campaigns/${id}/character/${char._id}`)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to create character')
+    }
+  }
+
+  async function importCharacter(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const sheet = await readCharacterFile(file)
+      const char = await api<ICharacter>('/api/characters', {
+        method: 'POST',
+        json: { campaignId: id, sheet, ...(newFor ? { ownerId: newFor } : {}) },
+      })
+      router.push(`/campaigns/${id}/character/${char._id}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Import failed')
     }
   }
 
@@ -209,6 +226,10 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
                     ))}
                   </select>
                 )}
+                <label className="btn btn-ghost btn-sm cursor-pointer" title="Import a character exported from another campaign">
+                  <Upload size={15} aria-hidden /> IMPORT
+                  <input type="file" accept=".json,application/json" className="sr-only" onChange={importCharacter} />
+                </label>
                 <button onClick={addCharacter} className="btn btn-primary btn-sm"><Plus size={16} aria-hidden /> ADD CHARACTER</button>
               </div>
             )}

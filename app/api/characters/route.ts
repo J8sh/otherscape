@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
 import { HttpError, readJson, route } from '@/lib/apiHandler'
 import { requireUser } from '@/lib/auth/session'
-import { canEditCharacter, loadCampaignFor } from '@/lib/auth/access'
+import { canEditCharacter, loadCampaignFor, pick } from '@/lib/auth/access'
 import { parseText } from '@/lib/auth/validate'
-import { Character } from '@/lib/models/Character'
+import { Character, SHEET_FIELDS } from '@/lib/models/Character'
 
 /** Characters of one campaign, each flagged with whether the caller may edit it. */
 export const GET = route(async (req: Request) => {
@@ -38,11 +38,16 @@ export const POST = route(async (req: Request) => {
     ownerId = body.ownerId
   }
 
+  // `sheet` imports an exported character (only sheet fields; ids, owner and campaign are never taken from it).
+  const sheet = body.sheet && typeof body.sheet === 'object' && !Array.isArray(body.sheet)
+    ? pick(body.sheet as Record<string, unknown>, SHEET_FIELDS)
+    : {}
   const character = await Character.create({
+    ...sheet,
     campaignId,
     ownerId,
-    name: parseText(body.name, 'Name', { max: 60 }) || 'New Character',
-    player: parseText(body.player, 'Player', { max: 60 }),
+    name: parseText(body.name ?? (sheet as { name?: unknown }).name, 'Name', { max: 60 }) || 'New Character',
+    player: parseText(body.player ?? (sheet as { player?: unknown }).player, 'Player', { max: 60 }),
   })
   return NextResponse.json({ ...character.toObject(), canEdit: true }, { status: 201 })
 })
