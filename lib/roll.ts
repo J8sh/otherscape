@@ -7,6 +7,8 @@ export type TagRef =
   | { kind: 'story'; index: number }
   | { kind: 'loadout'; index: number }
   | { kind: 'relationship'; index: number }
+  /** A crew relationship tag invoked against you, as a weakness (marks a crew upgrade, p. 134). */
+  | { kind: 'relationshipWeak'; index: number }
   /** A tag on the shared crew theme card. */
   | { kind: 'crew'; index: number }
 
@@ -87,11 +89,13 @@ export function applyRoll(c: ICharacter, sel: RollSelection): ApplyResult {
  * What a roll does to the shared crew card: every crew power tag used is
  * burned (using one always burns it, pp. 70, 75 — and it can't be burned
  * for +3), and each invoked crew weakness marks the crew's upgrade track
- * (capped at 3). Returns null when the roll used no crew tags.
+ * (capped at 3) — so does a crew relationship tag invoked as a weakness
+ * (p. 134). Returns null when the roll used no crew tags.
  */
 export function applyCrewRoll(crew: ICrewThemeCard, sel: RollSelection): { crew: ICrewThemeCard; changes: string[] } | null {
   const used = sel.positive.filter(r => r.kind === 'crew')
-  const touchesCrew = used.length > 0 || sel.weaknesses.some(r => r.kind === 'crew')
+  const marksCrew = (r: TagRef) => r.kind === 'crew' || r.kind === 'relationshipWeak'
+  const touchesCrew = used.length > 0 || sel.weaknesses.some(marksCrew)
   if (!touchesCrew) return null
   const changes: string[] = []
   const tags = (crew.tags ?? []).map(t => ({ ...t }))
@@ -104,7 +108,7 @@ export function applyCrewRoll(crew: ICrewThemeCard, sel: RollSelection): { crew:
     }
   }
   for (const r of sel.weaknesses) {
-    if (r.kind === 'crew' && upgrade < UPGRADE_BOXES) {
+    if (marksCrew(r) && upgrade < UPGRADE_BOXES) {
       upgrade += 1
       changes.push(`Marked crew upgrade (${upgrade}/${UPGRADE_BOXES})`)
     }

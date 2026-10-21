@@ -687,7 +687,7 @@ export const GUIDE: GuideTopic[] = [
       <>
         <h2>October 2026</h2>
         <ul>
-          <li><b>Crew tags in the roller.</b> Invoke the crew theme’s tags when you roll. Using a crew power tag burns it; a crew weakness marks the crew’s upgrade.</li>
+          <li><b>Crew tags in the roller.</b> Invoke the crew theme’s tags when you roll. Using a crew power tag burns it; a crew weakness — or a relationship tag the MC invokes against you — marks the crew’s upgrade.</li>
           <li><b>Downtime for the crew.</b> Mark the crew theme’s upgrade, or spend Power recovering burned crew tags.</li>
           <li><b>Tag notes.</b> Record what a tag covers with the pen beside it — handy when agreeing on interpretations with your MC.</li>
           <li><b>Restore deleted characters</b> from the campaign page for 30 days.</li>

@@ -59,6 +59,11 @@ function sheetChips(c: ICharacter): Chip[] {
     if (!r.relationshipTag.trim() || r.isBurned) return
     chips.push({ ref: { kind: 'relationship', index: i }, text: r.relationshipTag, sign: 1, note: 'burns when used', burnable: false, group: 'Crew relationships' })
   })
+  // The MC can also invoke a relationship against you, like a weakness (p. 134).
+  c.crewRelationships.forEach((r, i) => {
+    if (!r.relationshipTag.trim()) return
+    chips.push({ ref: { kind: 'relationshipWeak', index: i }, text: r.relationshipTag, sign: -1, note: `with ${r.crewMember || 'a crewmate'} · marks a crew upgrade`, burnable: false, group: 'Relationships invoked against you' })
+  })
   return chips
 }
 
