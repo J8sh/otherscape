@@ -11,9 +11,13 @@ export type TagRef =
   | { kind: 'relationshipWeak'; index: number }
   /** A tag on the shared crew theme card. */
   | { kind: 'crew'; index: number }
+  /** A Challenge's tag working against you — counted in the roll, changes nothing on the sheet. */
+  | { kind: 'challengeTag'; challenge: number; tag: number }
 
 export const refKey = (r: TagRef) =>
-  r.kind === 'theme' ? `theme:${r.theme}:${r.tag}` : `${r.kind}:${r.index}`
+  r.kind === 'theme' ? `theme:${r.theme}:${r.tag}`
+    : r.kind === 'challengeTag' ? `challenge:${r.challenge}:${r.tag}`
+      : `${r.kind}:${r.index}`
 
 export interface RollSelection {
   /** Helpful tags invoked from the sheet. */
