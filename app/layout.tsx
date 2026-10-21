@@ -3,6 +3,7 @@ import './globals.css'
 import { SessionProvider } from '@/components/auth/SessionProvider'
 import { AppShell } from '@/components/layout/AppShell'
 import { TooltipProvider } from '@/components/ui/Tooltip'
+import { ToastProvider } from '@/components/ui/Toast'
 
 export const metadata: Metadata = {
   title: 'Metro :Otherscape',
@@ -22,7 +23,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col antialiased">
         <SessionProvider>
           <TooltipProvider>
-            <AppShell>{children}</AppShell>
+            <ToastProvider>
+              <AppShell>{children}</AppShell>
+            </ToastProvider>
           </TooltipProvider>
         </SessionProvider>
       </body>

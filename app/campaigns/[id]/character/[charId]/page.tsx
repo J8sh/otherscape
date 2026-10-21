@@ -13,6 +13,7 @@ import { SetupChecklist } from '@/components/sheet/SetupChecklist'
 import { DowntimeDialog } from '@/components/sheet/DowntimeDialog'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
+import { useToast } from '@/components/ui/Toast'
 import { api } from '@/lib/api'
 import { useAutosave } from '@/lib/useAutosave'
 import { addEvolution } from '@/lib/rules'
@@ -32,6 +33,7 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
   // Latest sheet, updated synchronously, so two edits fired in one click
   // (e.g. reset a theme's upgrade track + add an Evolution point) both land.
   const latest = useRef<CharacterView | null>(null)
+  const toast = useToast()
 
   // Server time of the newest version we hold, so polling only applies newer edits.
   const serverStamp = useRef<string | undefined>(undefined)
@@ -125,7 +127,7 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
     const { points: left, momentsEarned } = addEvolution(current.evolution.points ?? 0, points)
     updateCharacter({ evolution: { ...current.evolution, points: left } })
     if (momentsEarned > 0) {
-      alert(`Moment of Evolution! Check ${momentsEarned > 1 ? `${momentsEarned} Moments` : 'a Moment'} on your character card and talk it over with your MC.`)
+      toast({ kind: 'success', title: 'MOMENT OF EVOLUTION', message: `Check ${momentsEarned > 1 ? `${momentsEarned} Moments` : 'a Moment'} on your character card and talk it over with your MC.` })
     }
   }
 

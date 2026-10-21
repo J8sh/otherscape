@@ -6,6 +6,7 @@ import { TROPES, type CharacterTrope } from '@/lib/tropes'
 import { THEME_BOOK_BY_TYPE } from '@/lib/themeBook'
 import { CATEGORY_META } from '@/lib/themeMeta'
 import type { ICharacter, IThemeCard, ThemeType } from '@/types'
+import { useToast } from '@/components/ui/Toast'
 
 function kitTheme(type: ThemeType, kitName: string): IThemeCard | null {
   const entry = THEME_BOOK_BY_TYPE[type]
@@ -34,6 +35,7 @@ function kitTheme(type: ThemeType, kitName: string): IThemeCard | null {
  */
 export function TropePicker({ character, onApply }: { character: ICharacter; onApply: (patch: Partial<ICharacter>) => void }) {
   const [open, setOpen] = useState(false)
+  const toast = useToast()
   const [trope, setTrope] = useState<CharacterTrope | null>(null)
   const [fourth, setFourth] = useState(0)
   const [query, setQuery] = useState('')
@@ -42,7 +44,7 @@ export function TropePicker({ character, onApply }: { character: ICharacter; onA
     if (!trope) return
     const picks = [...trope.kits, trope.choose[fourth]]
     const themes = picks.map(p => kitTheme(p.type, p.kit)).filter((t): t is IThemeCard => !!t)
-    if (themes.length !== 4) { alert('Couldn’t find all four kits in the Theme Book.'); return }
+    if (themes.length !== 4) { toast({ kind: 'warning', message: 'Couldn’t find all four kits in the Theme Book.' }); return }
     if (character.themes.some(t => t.themeType) && !confirm('Replace this character’s current themes with the trope?')) return
     const hasLoadout = (character.loadoutTheme.tags ?? []).some(t => t.text.trim())
     onApply({
