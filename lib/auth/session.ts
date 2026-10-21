@@ -41,6 +41,13 @@ export async function createSession(userId: string) {
   })
 }
 
+/** Sign the user out everywhere, then start a fresh session for this browser. */
+export async function rotateSessions(userId: string) {
+  await connectDB()
+  await Session.deleteMany({ userId })
+  await createSession(userId)
+}
+
 export async function destroySession() {
   const cookieStore = await cookies()
   const token = cookieStore.get(SESSION_COOKIE)?.value

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
 import { HttpError, readJson, route } from '@/lib/apiHandler'
-import { getSessionUser, requireUser } from '@/lib/auth/session'
+import { getSessionUser, requireUser, rotateSessions } from '@/lib/auth/session'
 import { hashPassword, verifyPassword } from '@/lib/auth/password'
 import { parseDisplayName, parsePassword } from '@/lib/auth/validate'
 import { User } from '@/lib/models/User'
@@ -26,5 +26,7 @@ export const PATCH = route(async (req: Request) => {
     user.passwordHash = await hashPassword(parsePassword(body.newPassword))
   }
   await user.save()
+  // A new password signs out every other device.
+  if (body.newPassword !== undefined) await rotateSessions(me._id)
   return NextResponse.json({ _id: me._id, username: user.username, displayName: user.displayName, role: user.role })
 })
