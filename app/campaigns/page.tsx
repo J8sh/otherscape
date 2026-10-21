@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, ChevronRight, KeyRound } from 'lucide-react'
+import { Plus, ChevronRight, KeyRound, BookOpen, Dices } from 'lucide-react'
 import { api } from '@/lib/api'
 import { ROLE_LABEL } from '@/lib/roles'
 import type { ICampaign } from '@/types'
@@ -105,9 +105,20 @@ export default function CampaignsPage() {
       {loading ? (
         <p className="font-display text-2xl tracking-widest text-center py-16" style={{ color: 'var(--border-card)' }}>LOADING…</p>
       ) : campaigns.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="font-display text-3xl tracking-widest mb-3" style={{ color: 'var(--border-card)' }}>NO CAMPAIGNS YET</p>
-          <p style={{ color: 'var(--text-muted)' }}>Create one to run a game, or join your MC’s with an invite code.</p>
+        <div className="py-10">
+          <p className="font-display text-3xl tracking-widest mb-2 text-center" style={{ color: 'var(--border-card)' }}>NO CAMPAIGNS YET</p>
+          <div className="panel p-5 max-w-2xl mx-auto mt-4">
+            <h2 className="font-display text-2xl tracking-widest" style={{ color: 'var(--accent-lime)' }}>NEW TO THE MEGACITY?</h2>
+            <ol className="list-decimal pl-5 mt-2 space-y-1.5" style={{ color: 'var(--text-soft)' }}>
+              <li><b>Running the game?</b> Hit <b>NEW CAMPAIGN</b>. You’ll be its MC and get an invite link for your players.</li>
+              <li><b>Playing?</b> Paste the invite code or link your MC sent you into the box above.</li>
+              <li>Build your character from the Theme Book’s ready-made kits — every rule on the sheet has a ⓘ tip.</li>
+            </ol>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <Link href="/guide/how-to-play" className="btn btn-ghost btn-sm"><BookOpen size={15} aria-hidden /> HOW TO PLAY</Link>
+              <Link href="/roller" className="btn btn-ghost btn-sm"><Dices size={15} aria-hidden /> TRY THE DICE</Link>
+            </div>
+          </div>
         </div>
       ) : (
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">

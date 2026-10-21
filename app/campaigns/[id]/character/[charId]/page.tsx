@@ -8,6 +8,7 @@ import { LoadoutThemeCard } from '@/components/cards/LoadoutThemeCard'
 import { TrackingCards } from '@/components/cards/TrackingCard'
 import { StoryTagsCard } from '@/components/cards/StoryTagsCard'
 import { RollerDialog } from '@/components/roller/RollerDialog'
+import { CardStrip, LinedField, PaperCard } from '@/components/sheet/primitives'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
 import { api } from '@/lib/api'
@@ -103,7 +104,7 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
       )}
 
       <nav aria-label="Sheet sections" className="scroll-row sticky z-30 -mx-4 md:mx-0 px-4 md:px-0 py-2 mb-4 flex gap-2 overflow-x-auto" style={{ top: 'var(--nav-height)', background: 'rgba(8,12,24,0.92)' }}>
-        {[['#card', 'CHARACTER'], ['#themes', 'THEMES'], ['#gear', 'LOADOUT & STORY'], ['#statuses', 'STATUSES']].map(([href, label]) => (
+        {[['#card', 'CHARACTER'], ['#themes', 'THEMES'], ['#gear', 'LOADOUT & STORY'], ['#statuses', 'STATUSES'], ['#notes', 'NOTES']].map(([href, label]) => (
           <a key={href} href={href} className="chip shrink-0" style={{ minHeight: 36, padding: '0 14px', color: 'var(--text-soft)' }}>{label}</a>
         ))}
       </nav>
@@ -154,6 +155,22 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
             statuses={character.statuses}
             onChange={statuses => updateCharacter({ statuses })}
           />
+        </section>
+
+        <section id="notes" className="scroll-mt-32">
+          <PaperCard label="Notes">
+            <div className="paper-band"><span className="font-display tracking-[0.2em] text-lg">NOTES</span></div>
+            <CardStrip>BACKSTORY · CONTACTS · LEADS · LOOT</CardStrip>
+            <div className="px-3">
+              <LinedField
+                label="Character notes"
+                rows={6}
+                value={character.notes ?? ''}
+                onChange={notes => updateCharacter({ notes })}
+                placeholder="Anything worth remembering between sessions…"
+              />
+            </div>
+          </PaperCard>
         </section>
       </fieldset>
     </div>
