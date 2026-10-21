@@ -15,6 +15,7 @@ import { api } from '@/lib/api'
 import { useAutosave } from '@/lib/useAutosave'
 import { ROLE_HELP, ROLE_LABEL } from '@/lib/roles'
 import { CATEGORY_META } from '@/lib/themeMeta'
+import { essenceOf, type Category } from '@/lib/rules'
 import { normalizeCrew } from '@/lib/normalize'
 import { readCharacterFile } from '@/lib/characterFile'
 import { isNewer, usePolling } from '@/lib/usePolling'
@@ -247,6 +248,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
               {characters.map(char => {
                 const counts = (['self', 'mythos', 'noise'] as const).map(cat => ({ cat, n: char.themes?.filter(t => t.themeType && t.category === cat).length ?? 0 }))
                 const mine = char.ownerId === user?._id
+                const essence = essenceOf(char.themes?.filter(t => t.themeType).map(t => t.category as Category) ?? [], char.essence?.mythosSameSource)
                 return (
                   <li key={char._id} className="relative">
                     <Link
@@ -262,7 +264,8 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
                           {mine && <span className="chip" style={{ color: 'var(--accent-lime)', borderColor: '#3d4d10' }}>YOURS</span>}
                           {!char.canEdit && <span className="chip"><Eye size={11} aria-hidden /> VIEW ONLY</span>}
                         </div>
-                        <div className="flex flex-wrap gap-3 mt-3" aria-label="Theme balance">
+                        {essence && <div className="font-display tracking-widest text-sm mt-2" style={{ color: 'var(--accent-lime)' }}>{essence}</div>}
+                        <div className="flex flex-wrap gap-3 mt-1" aria-label="Theme balance">
                           {counts.map(({ cat, n }) => (
                             <div key={cat} className="flex items-center gap-1.5">
                               <span className="font-display tracking-wider text-xs" style={{ color: 'var(--text-muted)' }}>{CATEGORY_META[cat].label}</span>
