@@ -65,6 +65,19 @@ export default function AccountPage() {
         <button className="btn btn-primary">CHANGE PASSWORD</button>
       </form>
 
+      <section className="panel p-5 space-y-3" aria-labelledby="devices-heading">
+        <h2 id="devices-heading" className="font-display text-xl tracking-widest">DEVICES</h2>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Signed in on a shared or lost device? End every other session — you stay signed in here.</p>
+        <button type="button" className="btn btn-ghost" onClick={async () => {
+          setMsg(null)
+          try {
+            await api('/api/auth/sign-out-others', { method: 'POST' })
+            setMsg({ ok: true, text: 'Signed out everywhere else.' })
+          } catch (e) {
+            setMsg({ ok: false, text: e instanceof Error ? e.message : 'Something went wrong.' })
+          }
+        }}>SIGN OUT OTHER DEVICES</button>
+      </section>
       <button className="btn btn-danger w-full" onClick={signOut}>SIGN OUT</button>
     </div>
   )
