@@ -6,6 +6,7 @@ import { parseText } from '@/lib/auth/validate'
 import { serializeCampaign } from '@/lib/serialize'
 import { Character } from '@/lib/models/Character'
 import { JournalEntry } from '@/lib/models/JournalEntry'
+import { Roll } from '@/lib/models/Roll'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -54,6 +55,7 @@ export const DELETE = route(async (_: Request, { params }: Ctx) => {
   if (!access.isOwner && !access.isAdmin) throw new HttpError(403, 'Only the campaign owner can delete it.')
   await Character.deleteMany({ campaignId: campaign._id })
   await JournalEntry.deleteMany({ campaignId: campaign._id })
+  await Roll.deleteMany({ campaignId: campaign._id })
   await campaign.deleteOne()
   return NextResponse.json({ success: true })
 })
