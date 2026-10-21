@@ -728,7 +728,7 @@ export const GUIDE: GuideTopic[] = [
         <h2>Handy shortcuts</h2>
         <ul>
           <li><b>Your characters</b> on the Campaigns page jump straight to your sheets.</li>
-          <li>The <b>ROLL</b> button on a sheet opens the dice roller with your tags, the crew’s tags and your statuses ready to tap. On a phone, Power and the roll button stay pinned at the bottom.</li>
+          <li>The <b>ROLL</b> button on a sheet opens the dice roller with your tags, the crew’s tags and your statuses ready to tap. On a phone, Power and the roll button stay pinned at the bottom; on a computer, press <b>R</b> to open it.</li>
           <li>The pen beside a tag records what it covers; the roller shows that note under the tag.</li>
           <li><b>Export</b> saves a sheet to a file you can import into another campaign; <b>Print</b> (on a computer) gives a paper copy.</li>
         </ul>
