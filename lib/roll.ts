@@ -85,12 +85,12 @@ export function applyRoll(c: ICharacter, sel: RollSelection): ApplyResult {
 
 /**
  * What a roll does to the shared crew card: every crew power tag used is
- * burned (using one always burns it, p. 70 — burning it for +3 included),
- * and each invoked crew weakness marks the crew's upgrade track (capped at
- * 3). Returns null when the roll used no crew tags.
+ * burned (using one always burns it, pp. 70, 75 — and it can't be burned
+ * for +3), and each invoked crew weakness marks the crew's upgrade track
+ * (capped at 3). Returns null when the roll used no crew tags.
  */
 export function applyCrewRoll(crew: ICrewThemeCard, sel: RollSelection): { crew: ICrewThemeCard; changes: string[] } | null {
-  const used = [...sel.positive, ...(sel.burnedForPower ? [sel.burnedForPower] : [])].filter(r => r.kind === 'crew')
+  const used = sel.positive.filter(r => r.kind === 'crew')
   const touchesCrew = used.length > 0 || sel.weaknesses.some(r => r.kind === 'crew')
   if (!touchesCrew) return null
   const changes: string[] = []

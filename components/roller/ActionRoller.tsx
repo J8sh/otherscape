@@ -61,14 +61,14 @@ function sheetChips(c: ICharacter): Chip[] {
   return chips
 }
 
-/** Crew theme tags anyone in the crew can invoke (p. 74). */
+/** Crew theme tags anyone in the crew can invoke (p. 75): using one burns it, and it can't be burned for +3. */
 function crewChips(crew: ICrewThemeCard): Chip[] {
   const group = crew.name ? `Crew: ${crew.name}` : 'Crew theme'
   const chips: Chip[] = []
   ;(crew.tags ?? []).forEach((tag, i) => {
     if (!tag.text.trim()) return
     if (tag.isWeakness) chips.push({ ref: { kind: 'crew', index: i }, text: tag.text, sign: -1, note: 'marks a crew upgrade', burnable: false, group, covers: tag.note?.trim() || undefined })
-    else if (!tag.isBurned) chips.push({ ref: { kind: 'crew', index: i }, text: tag.text, sign: 1, note: 'burns when used', burnable: true, group, covers: tag.note?.trim() || undefined })
+    else if (!tag.isBurned) chips.push({ ref: { kind: 'crew', index: i }, text: tag.text, sign: 1, note: 'burns when used', burnable: false, group, covers: tag.note?.trim() || undefined })
   })
   return chips
 }
