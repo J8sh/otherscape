@@ -7,6 +7,7 @@ import { CrewThemeCard } from '@/components/cards/CrewThemeCard'
 import { MembersPanel } from '@/components/campaign/MembersPanel'
 import { ChallengesPanel } from '@/components/campaign/ChallengesPanel'
 import { TableTools } from '@/components/campaign/TableTools'
+import { RollLog } from '@/components/campaign/RollLog'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
 import { useSession } from '@/components/auth/SessionProvider'
 import { api } from '@/lib/api'
@@ -293,6 +294,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
             </div>
             <CrewThemeCard crew={campaign.crewTheme} onChange={updateCrew} readOnly={!me?.canEditCrew} />
           </section>
+          <RollLog campaignId={id} />
           {me?.canManage && <TableTools campaignId={id} onDone={load} />}
           {user && <MembersPanel campaign={campaign} currentUserId={user._id} onChanged={load} onLeft={() => router.push('/campaigns')} />}
         </aside>

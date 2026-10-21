@@ -2,6 +2,7 @@
 import * as Dialog from '@radix-ui/react-dialog'
 import { Dices, X } from 'lucide-react'
 import { ActionRoller } from '@/components/roller/ActionRoller'
+import { api } from '@/lib/api'
 import type { ICharacter } from '@/types'
 
 /** “Roll” from a character sheet: the roller in a dialog, full-screen on phones. */
@@ -25,7 +26,11 @@ export function RollerDialog({ character, onApply }: { character: ICharacter; on
           </div>
           <Dialog.Description className="sr-only">Pick the tags and statuses that apply, then roll two dice plus Power.</Dialog.Description>
           <div className="p-4 md:p-6" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}>
-            <ActionRoller character={character} onApply={onApply} />
+            <ActionRoller
+              character={character}
+              onApply={onApply}
+              onShare={onApply ? roll => { api(`/api/campaigns/${character.campaignId}/rolls`, { method: 'POST', json: { characterId: character._id, ...roll } }).catch(() => {}) } : undefined}
+            />
           </div>
         </Dialog.Content>
       </Dialog.Portal>

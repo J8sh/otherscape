@@ -12,6 +12,8 @@ interface Props {
   character?: ICharacter
   /** Save sheet changes caused by the roll (burns, upgrade marks). */
   onApply?: (character: ICharacter) => void
+  /** Share a finished roll with the campaign (shown as a toggle when provided). */
+  onShare?: (roll: { dice: [number, number]; power: number; tags: string[] }) => void
 }
 
 interface Chip { ref: TagRef; text: string; sign: 1 | -1; note?: string; burnable: boolean; group: string; color?: string }
@@ -80,7 +82,7 @@ function TierPicker({ label, value, onChange, help }: { label: string; value: nu
   )
 }
 
-export function ActionRoller({ character, onApply }: Props) {
+export function ActionRoller({ character, onApply, onShare }: Props) {
   const chips = useMemo(() => (character ? sheetChips(character) : []), [character])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [burnKey, setBurnKey] = useState<string | null>(null)
@@ -96,6 +98,7 @@ export function ActionRoller({ character, onApply }: Props) {
   const [rolling, setRolling] = useState(false)
   const [pushed, setPushed] = useState(false)
   const [applied, setApplied] = useState<string[] | null>(null)
+  const [share, setShare] = useState(true)
 
   // A fresh sheet (after applying) invalidates selections by index.
   useEffect(() => { setSelected(new Set()); setBurnKey(null); setStatusPicks(new Set()) }, [character])
@@ -128,13 +131,19 @@ export function ActionRoller({ character, onApply }: Props) {
     setApplied(null)
     setPushed(false)
     setRolledPower(power)
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduce) { setDice([rollD6(), rollD6()]); return }
+    // The real result is decided up front; the tumbling frames are just for show.
+    const final: [number, number] = [rollD6(), rollD6()]
+    const usedTags = chosen.map(c => (burned && refKey(c.ref) === burnKey ? `${c.text} (burned)` : c.text))
+    const finish = () => {
+      setDice(final)
+      setRolling(false)
+      if (onShare && share) onShare({ dice: final, power, tags: usedTags })
+    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return }
     setRolling(true)
     let n = 0
     const timer = setInterval(() => {
-      setDice([rollD6(), rollD6()])
-      if (++n >= 8) { clearInterval(timer); setRolling(false) }
+      if (++n >= 8) { clearInterval(timer); finish() } else setDice([rollD6(), rollD6()])
     }, 60)
   }
 
@@ -245,7 +254,13 @@ export function ActionRoller({ character, onApply }: Props) {
           {positive} helpful{burned ? ' (one burned: +3)' : ''} · {negative} hindering{best ? ` · +${best} status` : ''}{worst ? ` · −${worst} status` : ''}
         </p>
 
-        <button type="button" className="btn btn-primary w-full mt-4" style={{ minHeight: 56, fontSize: 22 }} onClick={roll} disabled={rolling}>
+        {onShare && (
+          <label className="flex items-center gap-2 text-sm mt-3" style={{ minHeight: 36, color: 'var(--text-soft)' }}>
+            <input type="checkbox" className="w-4 h-4" checked={share} onChange={e => setShare(e.target.checked)} />
+            Share this roll with the crew
+          </label>
+        )}
+        <button type="button" className="btn btn-primary w-full mt-3" style={{ minHeight: 56, fontSize: 22 }} onClick={roll} disabled={rolling}>
           <Dices size={22} aria-hidden /> {dice ? 'ROLL AGAIN' : 'ROLL 2D6'}
         </button>
 

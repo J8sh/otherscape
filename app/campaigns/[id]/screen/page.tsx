@@ -8,6 +8,7 @@ import { CATEGORY_META } from '@/lib/themeMeta'
 import { ESSENCE_INFO } from '@/lib/essence'
 import { DECAY_BOXES, PC_STATUS_LIMIT, TIER_NAMES, UPGRADE_BOXES, essenceOf, type Category } from '@/lib/rules'
 import { STATUS_TYPES } from '@/components/cards/TrackingCard'
+import { RollLog } from '@/components/campaign/RollLog'
 import type { ICampaign, ICharacter } from '@/types'
 
 /**
@@ -51,6 +52,8 @@ export default function ScreenPage({ params }: { params: Promise<{ id: string }>
           </div>
         </section>
       )}
+
+      <div className="mb-4"><RollLog campaignId={id} limit={5} /></div>
 
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {chars.map(c => {
