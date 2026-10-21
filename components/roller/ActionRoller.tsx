@@ -6,7 +6,8 @@ import { InfoTip } from '@/components/ui/Tooltip'
 import { actionPower, rollOutcome, spendablePower, type Outcome } from '@/lib/rules'
 import { applyRoll, refKey, rollD6, type TagRef } from '@/lib/roll'
 import { CATEGORY_META } from '@/lib/themeMeta'
-import type { ICharacter, IOptionalRules, IStatus } from '@/types'
+import type { IChallenge, ICharacter, IOptionalRules, IStatus } from '@/types'
+import { ApplyToChallenge } from '@/components/roller/ApplyToChallenge'
 
 interface Props {
   character?: ICharacter
@@ -16,6 +17,8 @@ interface Props {
   onShare?: (roll: { dice: [number, number]; power: number; tags: string[]; note: string }) => void
   /** The campaign's optional rules (power tag cap, Enhance cost). */
   rules?: IOptionalRules
+  /** Revealed Challenges this roll can affect. */
+  challenges?: IChallenge[]
 }
 
 interface Chip { ref: TagRef; text: string; sign: 1 | -1; note?: string; burnable: boolean; group: string; color?: string }
@@ -84,7 +87,7 @@ function TierPicker({ label, value, onChange, help }: { label: string; value: nu
   )
 }
 
-export function ActionRoller({ character, onApply, onShare, rules }: Props) {
+export function ActionRoller({ character, onApply, onShare, rules, challenges }: Props) {
   const chips = useMemo(() => (character ? sheetChips(character) : []), [character])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [burnKey, setBurnKey] = useState<string | null>(null)
@@ -314,6 +317,9 @@ export function ActionRoller({ character, onApply, onShare, rules }: Props) {
                       {rules?.enhanceCost === 2 && ' In this campaign, Enhance costs 2 Power per tier.'}
                     </p>
                   </div>
+                )}
+                {mode === 'action' && result.outcome !== 'miss' && character && challenges && challenges.length > 0 && (
+                  <ApplyToChallenge campaignId={character.campaignId} challenges={challenges} power={spendablePower(rolledPower, result.outcome, pushed)} />
                 )}
                 {character && onApply && hasSheetChanges && !applied && (
                   <button type="button" className="btn btn-ghost w-full mt-3" onClick={apply}>
