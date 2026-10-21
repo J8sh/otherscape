@@ -56,12 +56,12 @@ test('d6 stays in range', () => {
   }
 })
 
-test('crew tags: burn for power, weaknesses mark the crew upgrade, sheet untouched', () => {
+test('crew tags: using one burns it, weaknesses mark the crew upgrade, sheet untouched', () => {
   const crew = { name: 'Crew', motivation: '', upgrade: 2, decay: 0, specials: [], tags: [
     { text: 'safehouse', isPower: true, isWeakness: false, isBurned: false },
     { text: 'wanted', isPower: false, isWeakness: true, isBurned: false },
   ] } as unknown as Parameters<typeof applyCrewRoll>[0]
-  const sel = { positive: [{ kind: 'crew' as const, index: 0 }], weaknesses: [{ kind: 'crew' as const, index: 1 }, { kind: 'crew' as const, index: 1 }], burnedForPower: { kind: 'crew' as const, index: 0 } }
+  const sel = { positive: [{ kind: 'crew' as const, index: 0 }], weaknesses: [{ kind: 'crew' as const, index: 1 }, { kind: 'crew' as const, index: 1 }], burnedForPower: null }
   const out = applyCrewRoll(crew, sel)!
   assert.equal(out.crew.tags[0].isBurned, true)
   assert.equal(out.crew.upgrade, 3, 'capped at 3')
