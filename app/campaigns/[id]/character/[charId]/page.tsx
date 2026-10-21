@@ -11,6 +11,7 @@ import { RollerDialog } from '@/components/roller/RollerDialog'
 import { CardStrip, LinedField, PaperCard } from '@/components/sheet/primitives'
 import { SetupChecklist } from '@/components/sheet/SetupChecklist'
 import { DowntimeDialog } from '@/components/sheet/DowntimeDialog'
+import { QuickRules } from '@/components/sheet/QuickRules'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
 import { useToast } from '@/components/ui/Toast'
@@ -177,6 +178,7 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
           )}
           <span className="hidden md:inline-flex"><button type="button" className="btn btn-ghost btn-sm" onClick={() => window.print()} aria-label="Print this sheet"><Printer size={14} aria-hidden /> PRINT</button></span>
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => downloadCharacter(character)} aria-label="Export this character to a file"><Download size={14} aria-hidden /> <span className="hidden sm:inline">EXPORT</span></button>
+          <QuickRules />
           <Link href="/guide/effects" className="btn btn-ghost btn-sm"><Zap size={14} aria-hidden /> <span className="hidden sm:inline">EFFECTS</span><span className="sr-only sm:hidden">Effects</span></Link>
           {character.canEdit && <DowntimeDialog character={character} onApply={c => updateCharacter(c)} />}
           <RollerDialog character={character} rules={character.rules} onApply={character.canEdit ? c => updateCharacter(c) : undefined} />

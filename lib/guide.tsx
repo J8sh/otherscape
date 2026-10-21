@@ -695,6 +695,7 @@ export const GUIDE: GuideTopic[] = [
           <li><b>Write your own tags.</b> Theme and crew cards list their themebook’s questions, plus Identity / Ritual / Itch ideas from the kits.</li>
           <li><b>Your characters</b> quick links on the Campaigns page.</li>
           <li><b>Phone roller bar</b> keeps Power and the roll button in reach.</li>
+          <li><b>Quick rules</b> on every sheet: rolling, tags and status tiers in one pop-up, without leaving your character. The Credit Roll also leaves a session wrap in the Journal, and the Journal is searchable.</li>
           <li><b>Getting started</b> panels: MCs get a “get your game ready” checklist; new players get a welcome with what to do first.</li>
           <li><b>Live change notices.</b> When the MC (or your other device) changes your open sheet, a notice says what changed — “wounded rose to 3”, “Burned: knife”.</li>
           <li><b>Spotlight tracker</b> in Table View for MCs: mark who has acted this round and see who’s next.</li>
