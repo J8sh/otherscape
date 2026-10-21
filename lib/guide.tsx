@@ -322,6 +322,41 @@ export const GUIDE: GuideTopic[] = [
     ),
   },
   {
+    slug: 'scale',
+    title: 'Scale',
+    summary: 'Fighting a gang, warding a house, summoning a giant: how size and numbers change Power.',
+    pages: 'pp. 118–120',
+    group: 'play',
+    body: (
+      <>
+        <p>
+          <b>Scale</b> measures how big something is, in size or numbers. PCs are always Scale 0; the crew together is Scale 1.
+          The difference between two sides is the <b>Scale gap</b>.
+        </p>
+        <table>
+          <thead><tr><th>Scale</th><th>Size or area</th><th>Number</th></tr></thead>
+          <tbody>
+            <tr><td>0</td><td>A person</td><td>One</td></tr>
+            <tr><td>1</td><td>A room</td><td>A few</td></tr>
+            <tr><td>2</td><td>A house</td><td>Up to a dozen or so</td></tr>
+            <tr><td>3</td><td>A skyscraper</td><td>Several dozen</td></tr>
+            <tr><td>4</td><td>A city block</td><td>A host — army, swarm, horde</td></tr>
+          </tbody>
+        </table>
+        <h2>Against bigger Challenges</h2>
+        <p>For each step a Challenge is bigger than you, you lose 1 Power acting against it — and its Consequences hit one tier harder.</p>
+        <h2>Scaling your own action</h2>
+        <p>
+          To affect more than one person-sized target — a fireball over a room, buffing the whole crew, summoning a giant — set the
+          target Scale before counting Power and subtract the gap. Big allies or tools (a drone swarm, a cruise missile) can close
+          or even flip the gap in your favor. Tags shared by most of the targets (everyone <i>diving for cover</i>) count on the roll.
+        </p>
+        <Example>A lone enforcer (0) attacking a small gang (1) loses 1 Power. Firing a personal cruise missile (2) at that gang gains 1 instead.</Example>
+        <OnTheSite>The dice roller has a <b>Scale gap</b> stepper: minus when the target is bigger, plus when you are.</OnTheSite>
+      </>
+    ),
+  },
+  {
     slug: 'power-options',
     title: 'Power Options',
     summary: 'Burning for Power, rolling with Self/Mythos/Noise, and Going Out in a Blaze.',

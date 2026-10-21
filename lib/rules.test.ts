@@ -43,6 +43,7 @@ test('rolls: thresholds, snake eyes and boxcars', () => {
 test('power counts tags, burn bonus and the best/worst status', () => {
   assert.equal(actionPower({ positive: 3, negative: 1, bestStatus: 2, worstStatus: 4 }), 0)
   assert.equal(actionPower({ positive: 3, negative: 0, burned: true }), 5)
+  assert.equal(actionPower({ positive: 2, negative: 0, scaleGap: -1 }), 1) // lone enforcer vs a small gang
   assert.equal(spendablePower(-2, 'mixed'), 1)
   assert.equal(spendablePower(3, 'strong', true), 4)
   assert.equal(spendablePower(3, 'miss'), 0)

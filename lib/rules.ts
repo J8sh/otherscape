@@ -71,9 +71,10 @@ export type Outcome = 'miss' | 'mixed' | 'strong'
  * Power = positive tags − negative tags + best helpful status − worst
  * hindering status. A burned-for-Power tag counts as 3 instead of 1.
  */
-export function actionPower(opts: { positive: number; negative: number; burned?: boolean; bestStatus?: number; worstStatus?: number }) {
+export function actionPower(opts: { positive: number; negative: number; burned?: boolean; bestStatus?: number; worstStatus?: number; scaleGap?: number }) {
   const burnBonus = opts.burned ? 2 : 0
-  return opts.positive + burnBonus - opts.negative + (opts.bestStatus ?? 0) - (opts.worstStatus ?? 0)
+  // scaleGap: + when your side is bigger, − when the target or effect is bigger (p.118).
+  return opts.positive + burnBonus - opts.negative + (opts.bestStatus ?? 0) - (opts.worstStatus ?? 0) + (opts.scaleGap ?? 0)
 }
 
 /** 2d6 + Power: 6− miss, 7–9 mixed, 10+ strong. Snake eyes always miss; boxcars always hit strong. */
