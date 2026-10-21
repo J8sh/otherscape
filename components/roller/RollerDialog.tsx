@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Dices, X } from 'lucide-react'
 import { ActionRoller } from '@/components/roller/ActionRoller'
@@ -12,8 +12,10 @@ export function RollerDialog({ character, onApply, rules }: { character: ICharac
   const [challenges, setChallenges] = useState<IChallenge[]>([])
   const [crew, setCrew] = useState<ICrewThemeCard | null>(null)
   // Load the Challenges this player can see, and the crew card, each time the roller opens.
-  function onOpenChange(open: boolean) {
-    if (!open || !onApply) return
+  const [open, setOpen] = useState(false)
+  function onOpenChange(next: boolean) {
+    setOpen(next)
+    if (!next || !onApply) return
     api<ICampaign>(`/api/campaigns/${character.campaignId}`)
       .then(c => {
         setChallenges((c.challenges ?? []).filter(ch => ch.revealed || c.me?.canManage))
@@ -47,10 +49,23 @@ export function RollerDialog({ character, onApply, rules }: { character: ICharac
     } catch { /* the sheet update still landed; the crew card can be fixed by hand */ }
   }
 
+  // Press R on the sheet (outside text fields) to open the roller.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key.toLowerCase() !== 'r' || e.metaKey || e.ctrlKey || e.altKey || open) return
+      const el = e.target as HTMLElement | null
+      if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) || el.closest('[role=dialog]'))) return
+      e.preventDefault()
+      onOpenChange(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
+
   return (
-    <Dialog.Root onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Trigger asChild>
-        <button type="button" className="btn btn-primary btn-sm"><Dices size={16} aria-hidden /> ROLL</button>
+        <button type="button" className="btn btn-primary btn-sm" title="Open the dice roller (R)" aria-keyshortcuts="R"><Dices size={16} aria-hidden /> ROLL</button>
       </Dialog.Trigger>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50" style={{ background: 'rgba(3,6,14,0.8)' }} />
