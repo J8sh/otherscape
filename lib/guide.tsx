@@ -689,7 +689,8 @@ export const GUIDE: GuideTopic[] = [
         <ul>
           <li><b>Crew tags in the roller.</b> Invoke the crew theme’s tags when you roll. Using a crew power tag burns it; a crew weakness — or a relationship tag the MC invokes against you — marks the crew’s upgrade.</li>
           <li><b>Downtime for the crew.</b> Mark the crew theme’s upgrade, or spend Power recovering burned crew tags.</li>
-          <li><b>Tag notes.</b> Record what a tag covers with the pen beside it — handy when agreeing on interpretations with your MC.</li>
+          <li><b>Tag notes.</b> Record what a tag covers with the pen beside it — on theme, crew and loadout tags — handy when agreeing on interpretations with your MC.</li>
+          <li><b>Sign out other devices</b> from your Account page, and your own characters now come first on the campaign page.</li>
           <li><b>Restore deleted characters</b> from the campaign page for 30 days.</li>
           <li><b>Undo / redo</b> on every character sheet (⌘Z / Ctrl+Z) and on the crew card.</li>
           <li><b>Write your own tags.</b> Theme and crew cards list their themebook’s questions, plus Identity / Ritual / Itch ideas from the kits.</li>
