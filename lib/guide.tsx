@@ -691,7 +691,7 @@ export const GUIDE: GuideTopic[] = [
           <li><b>Downtime for the crew.</b> Mark the crew theme’s upgrade, or spend Power recovering burned crew tags.</li>
           <li><b>Tag notes.</b> Record what a tag covers with the pen beside it — handy when agreeing on interpretations with your MC.</li>
           <li><b>Restore deleted characters</b> from the campaign page for 30 days.</li>
-          <li><b>Undo / redo</b> on every character sheet (⌘Z / Ctrl+Z).</li>
+          <li><b>Undo / redo</b> on every character sheet (⌘Z / Ctrl+Z) and on the crew card.</li>
           <li><b>Write your own tags.</b> Theme and crew cards list their themebook’s questions, plus Identity / Ritual / Itch ideas from the kits.</li>
           <li><b>Your characters</b> quick links on the Campaigns page.</li>
           <li><b>Phone roller bar</b> keeps Power and the roll button in reach.</li>

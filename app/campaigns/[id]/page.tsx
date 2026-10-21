@@ -1,8 +1,8 @@
 'use client'
-import { useCallback, useEffect, useState, use } from 'react'
+import { useCallback, useEffect, useRef, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Users, Zap, ArrowLeft, Trash2, Pencil, Eye, NotebookPen, MonitorPlay, Upload } from 'lucide-react'
+import { Plus, Users, Zap, ArrowLeft, Trash2, Pencil, Eye, NotebookPen, MonitorPlay, Upload, Undo2, Redo2 } from 'lucide-react'
 import { CrewThemeCard } from '@/components/cards/CrewThemeCard'
 import { MembersPanel } from '@/components/campaign/MembersPanel'
 import { ChallengesPanel } from '@/components/campaign/ChallengesPanel'
@@ -22,6 +22,7 @@ import { essenceOf, type Category } from '@/lib/rules'
 import { normalizeCrew } from '@/lib/normalize'
 import { readCharacterFile } from '@/lib/characterFile'
 import { isNewer, usePolling } from '@/lib/usePolling'
+import { emptyHistory, record, redo, undo, type History } from '@/lib/history'
 import type { ICampaign, ICharacter, IChallenge, ICrewThemeCard } from '@/types'
 
 type CharacterRow = ICharacter & { canEdit: boolean }
@@ -38,6 +39,12 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
   const [editingDetails, setEditingDetails] = useState(false)
   const [details, setDetails] = useState({ name: '', megacity: '', description: '' })
   const [newFor, setNewFor] = useState('')
+
+  // Undo/redo for the shared crew card; cleared when someone else changes it.
+  const crewHistory = useRef<History<ICrewThemeCard>>(emptyHistory())
+  const crewNow = useRef<ICrewThemeCard | null>(null)
+  const [, setCrewHistoryVersion] = useState(0)
+  const setCrewHistory = (h: History<ICrewThemeCard>) => { crewHistory.current = h; setCrewHistoryVersion(v => v + 1) }
 
   const crewSave = useAutosave((crewTheme: ICrewThemeCard) =>
     api(`/api/campaigns/${id}`, { method: 'PATCH', json: { crewTheme } }))
@@ -69,6 +76,10 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
       api<CharacterRow[]>(`/api/characters?campaignId=${id}`),
     ])
     setCharacters(chars)
+    if (!crewSave.isBusy() && crewNow.current && JSON.stringify(c.crewTheme) !== JSON.stringify(crewNow.current)) {
+      crewNow.current = c.crewTheme
+      if (crewHistory.current.past.length || crewHistory.current.future.length) setCrewHistory(emptyHistory())
+    }
     setCampaign(prev => {
       if (!prev || !isNewer(c.updatedAt, prev.updatedAt)) return prev ? { ...prev, members: c.members, me: c.me } : prev
       return {
@@ -89,8 +100,20 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
 
   function updateCrew(crewTheme: ICrewThemeCard) {
     if (!campaign) return
+    setCrewHistory(record(crewHistory.current, campaign.crewTheme, Date.now()))
+    crewNow.current = crewTheme
     setCampaign({ ...campaign, crewTheme })
     crewSave.schedule(crewTheme)
+  }
+
+  function stepCrew(direction: 'undo' | 'redo') {
+    if (!campaign) return
+    const result = direction === 'undo' ? undo(crewHistory.current, campaign.crewTheme) : redo(crewHistory.current, campaign.crewTheme)
+    if (!result) return
+    setCrewHistory(result.history)
+    crewNow.current = result.value
+    setCampaign({ ...campaign, crewTheme: result.value })
+    crewSave.schedule(result.value)
   }
 
   async function saveDetails(e: React.FormEvent) {
@@ -323,7 +346,15 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
               <h2 id="crew-heading" className="flex items-center gap-2 font-display text-2xl tracking-widest" style={{ color: 'var(--accent-cyan)' }}>
                 <Users size={18} aria-hidden /> CREW
               </h2>
-              <SaveIndicator state={crewSave.state} error={crewSave.error} />
+              <span className="flex items-center gap-1">
+                <SaveIndicator state={crewSave.state} error={crewSave.error} />
+                {me?.canEditCrew && (
+                  <>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => stepCrew('undo')} disabled={crewHistory.current.past.length === 0} aria-label="Undo last crew card change" title="Undo"><Undo2 size={14} aria-hidden /></button>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => stepCrew('redo')} disabled={crewHistory.current.future.length === 0} aria-label="Redo crew card change" title="Redo"><Redo2 size={14} aria-hidden /></button>
+                  </>
+                )}
+              </span>
             </div>
             <CrewThemeCard crew={campaign.crewTheme} onChange={updateCrew} readOnly={!me?.canEditCrew} />
           </section>
