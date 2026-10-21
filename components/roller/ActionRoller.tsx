@@ -221,7 +221,11 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges, c
     }
   }
 
-  const groups = [...new Set(chips.map(c => c.group))]
+  // Filter long tag lists; picked tags always stay visible.
+  const [tagQuery, setTagQuery] = useState('')
+  const q = tagQuery.trim().toLowerCase()
+  const shown = q ? chips.filter(c => selected.has(refKey(c.ref)) || `${c.text} ${c.covers ?? ''} ${c.group}`.toLowerCase().includes(q)) : chips
+  const groups = [...new Set(shown.map(c => c.group))]
   const hasSheetChanges = burned || chosen.some(c => c.sign < 0 && c.ref.kind !== 'story') || chosen.some(c => c.ref.kind === 'relationship' || c.ref.kind === 'crew')
 
   return (
@@ -255,12 +259,17 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges, c
             <h2 id="roll-tags" className="font-display text-xl tracking-widest mb-1">YOUR TAGS</h2>
             <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>Tap every tag that’s <b>directly</b> relevant. Burned and unpacked tags aren’t listed.</p>
             {chips.length === 0 && <p style={{ color: 'var(--text-muted)' }}>No tags on this sheet yet.</p>}
+            {chips.length > 8 && (
+              <input type="search" className="input mb-3" value={tagQuery} onChange={e => setTagQuery(e.target.value)}
+                placeholder="Find a tag…" aria-label="Filter tags" autoComplete="off" />
+            )}
+            {q && shown.length === 0 && <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>No tags match “{tagQuery}”.</p>}
             <div className="space-y-3">
               {groups.map(g => (
                 <div key={g}>
                   <div className="font-display tracking-widest text-sm mb-1" style={{ color: chips.find(c => c.group === g)?.color ?? 'var(--text-muted)' }}>{g.toUpperCase()}</div>
                   <div className="flex flex-wrap gap-1.5">
-                    {chips.filter(c => c.group === g).map(c => {
+                    {shown.filter(c => c.group === g).map(c => {
                       const k = refKey(c.ref)
                       const on = selected.has(k)
                       return (
