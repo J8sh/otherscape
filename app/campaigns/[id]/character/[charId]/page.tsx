@@ -21,6 +21,7 @@ import { normalizeCharacter } from '@/lib/normalize'
 import { downloadCharacter } from '@/lib/characterFile'
 import { isNewer, usePolling } from '@/lib/usePolling'
 import { emptyHistory, record, redo, undo, type History } from '@/lib/history'
+import { describeSheetChanges } from '@/lib/sheetDiff'
 import type { ICharacter, IOptionalRules } from '@/types'
 
 type CharacterView = ICharacter & { canEdit: boolean; campaignName?: string; rules?: IOptionalRules }
@@ -78,6 +79,14 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
     if (!isNewer(remote.updatedAt, serverStamp.current)) return
     if (autosave.isBusy()) return // an edit started while we were fetching
     const next = normalizeCharacter(remote)
+    // Tell the viewer what someone else (usually the MC) just changed.
+    if (latest.current) {
+      const changes = describeSheetChanges(latest.current, next)
+      toast({
+        title: 'SHEET UPDATED',
+        message: changes.slice(0, 4).join(' · ') + (changes.length > 4 ? ` · +${changes.length - 4} more` : ''),
+      })
+    }
     serverStamp.current = remote.updatedAt
     latest.current = next
     setCharacter(next)
