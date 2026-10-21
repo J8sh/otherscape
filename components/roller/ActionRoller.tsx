@@ -13,7 +13,7 @@ interface Props {
   /** Save sheet changes caused by the roll (burns, upgrade marks). */
   onApply?: (character: ICharacter) => void
   /** Share a finished roll with the campaign (shown as a toggle when provided). */
-  onShare?: (roll: { dice: [number, number]; power: number; tags: string[] }) => void
+  onShare?: (roll: { dice: [number, number]; power: number; tags: string[]; note: string }) => void
 }
 
 interface Chip { ref: TagRef; text: string; sign: 1 | -1; note?: string; burnable: boolean; group: string; color?: string }
@@ -99,6 +99,8 @@ export function ActionRoller({ character, onApply, onShare }: Props) {
   const [pushed, setPushed] = useState(false)
   const [applied, setApplied] = useState<string[] | null>(null)
   const [share, setShare] = useState(true)
+  // Action rolls drive the story; mitigation rolls soften incoming Consequences.
+  const [mode, setMode] = useState<'action' | 'mitigate'>('action')
 
   // A fresh sheet (after applying) invalidates selections by index.
   useEffect(() => { setSelected(new Set()); setBurnKey(null); setStatusPicks(new Set()) }, [character])
@@ -137,7 +139,7 @@ export function ActionRoller({ character, onApply, onShare }: Props) {
     const finish = () => {
       setDice(final)
       setRolling(false)
-      if (onShare && share) onShare({ dice: final, power, tags: usedTags })
+      if (onShare && share) onShare({ dice: final, power, tags: usedTags, note: mode === 'mitigate' ? 'mitigation' : '' })
     }
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return }
     setRolling(true)
@@ -246,7 +248,18 @@ export function ActionRoller({ character, onApply, onShare }: Props) {
 
       {/* Result column: sticks in view on desktop */}
       <aside className="panel p-4 lg:sticky" style={{ top: 'calc(var(--nav-height) + 16px)' }} aria-labelledby="roll-result">
-        <h2 id="roll-result" className="font-display text-xl tracking-widest">POWER</h2>
+        <div className="flex rounded-lg overflow-hidden mb-3" role="group" aria-label="Roll type" style={{ border: '1px solid var(--border-card)' }}>
+          {(['action', 'mitigate'] as const).map(m => (
+            <button key={m} type="button" aria-pressed={mode === m} onClick={() => { setMode(m); setDice(null) }} className="flex-1 font-display tracking-widest"
+              style={{ minHeight: 40, background: mode === m ? 'var(--accent-lime)' : 'transparent', color: mode === m ? 'var(--bg-dark)' : 'var(--text-muted)' }}>
+              {m === 'action' ? 'ACTION' : 'MITIGATE'}
+            </button>
+          ))}
+        </div>
+        <h2 id="roll-result" className="font-display text-xl tracking-widest flex items-center gap-2">
+          POWER
+          {mode === 'mitigate' && <InfoTip label="mitigating">Roll to soften Consequences the MC just dealt you. Count tags that help you resist. On a hit, each point of Power blocks 1 incoming status tier, or 2 Power blocks a tag you’d gain or lose. A strong hit adds +1. You can’t reuse tags or statuses that were part of the action that caused the Consequences.</InfoTip>}
+        </h2>
         <div className="font-display leading-none my-1" style={{ fontSize: 64, color: power > 0 ? 'var(--accent-lime)' : power < 0 ? 'var(--danger)' : 'var(--text-soft)' }} aria-live="polite">
           {power > 0 ? `+${power}` : power}
         </div>
@@ -276,8 +289,14 @@ export function ActionRoller({ character, onApply, onShare }: Props) {
                 <div className="text-center font-display text-3xl tracking-widest mt-2" style={{ color: OUTCOME_TEXT[result.outcome].color }}>{OUTCOME_TEXT[result.outcome].label}</div>
                 {dice[0] === 1 && dice[1] === 1 && <p className="text-center text-sm">Snake eyes always miss.</p>}
                 {dice[0] === 6 && dice[1] === 6 && <p className="text-center text-sm">Boxcars always hit strong.</p>}
-                <p className="text-[15px] mt-1" style={{ color: 'var(--text-soft)' }}>{OUTCOME_TEXT[result.outcome].text}</p>
-                {result.outcome !== 'miss' && (
+                <p className="text-[15px] mt-1" style={{ color: 'var(--text-soft)' }}>
+                  {mode === 'mitigate'
+                    ? result.outcome === 'miss'
+                      ? 'You take the Consequences as dealt.'
+                      : `You may spend ${Math.max(rolledPower, 1) + (result.outcome === 'strong' ? 1 : 0)} Power to block them: 1 per status tier, 2 per tag.`
+                    : OUTCOME_TEXT[result.outcome].text}
+                </p>
+                {mode === 'action' && result.outcome !== 'miss' && (
                   <div className="mt-3 rounded-lg p-3" style={{ background: 'var(--bg-inset)' }}>
                     <div className="font-display tracking-widest">POWER FOR EFFECTS: {spendablePower(rolledPower, result.outcome, pushed)}</div>
                     {result.outcome === 'strong' && (
