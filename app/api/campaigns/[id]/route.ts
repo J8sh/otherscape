@@ -28,12 +28,17 @@ export const PATCH = route(async (req: Request, { params }: Ctx) => {
   const wantsDetails = ['name', 'description', 'megacity'].some(k => k in body)
   if (wantsDetails && !access.canManage) throw new HttpError(403, 'Only the MC can edit campaign details.')
   if ('crewTheme' in body && !access.canEditCrew) throw new HttpError(403, 'Spectators can’t edit the crew.')
+  if ('challenges' in body && !access.canManage) throw new HttpError(403, 'Only the MC can edit Challenges.')
 
-  const update = pick(body, ['name', 'description', 'megacity', 'crewTheme'] as const)
+  const update = pick(body, ['name', 'description', 'megacity', 'crewTheme', 'challenges'] as const)
   if ('name' in update) campaign.name = parseText(update.name, 'Campaign name', { required: true, max: 80 })
   if ('description' in update) campaign.description = parseText(update.description, 'Description', { max: 500 })
   if ('megacity' in update) campaign.megacity = parseText(update.megacity, 'Megacity', { max: 80 })
   if ('crewTheme' in update) campaign.set('crewTheme', update.crewTheme)
+  if ('challenges' in update) {
+    if (!Array.isArray(update.challenges) || update.challenges.length > 100) throw new HttpError(400, 'Challenges must be a list (max 100).')
+    campaign.set('challenges', update.challenges)
+  }
   await campaign.save()
   return NextResponse.json(await serializeCampaign(campaign, access))
 })

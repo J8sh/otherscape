@@ -34,6 +34,37 @@ const MemberSchema = new Schema(
   { _id: false }
 )
 
+const ChallengeStatusSchema = new Schema({
+  name: { type: String, default: '' },
+  tier: { type: Number, min: 1, max: 6, default: 1 },
+  marks: { type: [Number], default: undefined },
+  type: { type: String, enum: ['helpful', 'harmful', 'hindering', 'compelling', 'progress'], default: 'harmful' },
+  limit: { type: String, default: '' },
+})
+
+/** An MC's Challenge profile (core book pp. 294–300): Limits, base tags, Specials, Threats → Consequences. */
+const ChallengeSchema = new Schema({
+  name: { type: String, default: '', maxlength: 120 },
+  role: { type: String, enum: ['attacker', 'barrier', 'countdown', 'mystery', 'pursuer', 'target', 'watcher', 'temptation', 'asset', 'other'], default: 'attacker' },
+  description: { type: String, default: '', maxlength: 2000 },
+  limits: {
+    type: [new Schema({
+      name: { type: String, default: '' },
+      max: { type: Number, min: 1, max: 6, default: 3 },
+      progress: { type: Boolean, default: false },
+      onMax: { type: String, default: '' },
+    })],
+    default: () => [],
+  },
+  statuses: { type: [ChallengeStatusSchema], default: () => [] },
+  tags: { type: [new Schema({ text: { type: String, default: '' }, isBurned: { type: Boolean, default: false } })], default: () => [] },
+  specials: { type: [new Schema({ name: { type: String, default: '' }, text: { type: String, default: '' } })], default: () => [] },
+  threats: { type: [new Schema({ threat: { type: String, default: '' }, consequence: { type: String, default: '' } })], default: () => [] },
+  revealed: { type: Boolean, default: false },
+  limitsRevealed: { type: Boolean, default: false },
+  notes: { type: String, default: '', maxlength: 2000 },
+})
+
 const CampaignSchema = new Schema(
   {
     name: { type: String, required: true },
@@ -43,6 +74,7 @@ const CampaignSchema = new Schema(
     ownerId: { type: Schema.Types.ObjectId, ref: 'User', index: true },
     members: { type: [MemberSchema], default: () => [] },
     inviteCode: { type: String, index: { unique: true, sparse: true } },
+    challenges: { type: [ChallengeSchema], default: () => [] },
   },
   { timestamps: true }
 )

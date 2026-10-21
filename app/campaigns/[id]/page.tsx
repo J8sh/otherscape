@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Plus, Users, Zap, ArrowLeft, Trash2, Pencil, Eye } from 'lucide-react'
 import { CrewThemeCard } from '@/components/cards/CrewThemeCard'
 import { MembersPanel } from '@/components/campaign/MembersPanel'
+import { ChallengesPanel } from '@/components/campaign/ChallengesPanel'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
 import { useSession } from '@/components/auth/SessionProvider'
 import { api } from '@/lib/api'
@@ -12,7 +13,7 @@ import { useAutosave } from '@/lib/useAutosave'
 import { ROLE_HELP, ROLE_LABEL } from '@/lib/roles'
 import { CATEGORY_META } from '@/lib/themeMeta'
 import { normalizeCrew } from '@/lib/normalize'
-import type { ICampaign, ICharacter, ICrewThemeCard } from '@/types'
+import type { ICampaign, ICharacter, IChallenge, ICrewThemeCard } from '@/types'
 
 type CharacterRow = ICharacter & { canEdit: boolean }
 
@@ -49,6 +50,14 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
   }, [id])
 
   useEffect(() => { load() }, [load])
+
+  const challengeSave = useAutosave((challenges: IChallenge[]) =>
+    api(`/api/campaigns/${id}`, { method: 'PATCH', json: { challenges } }))
+
+  function updateChallenges(challenges: IChallenge[]) {
+    setCampaign(c => (c ? { ...c, challenges } : c))
+    challengeSave.schedule(challenges)
+  }
 
   function updateCrew(crewTheme: ICrewThemeCard) {
     if (!campaign) return
@@ -247,6 +256,8 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
               })}
             </ul>
           )}
+          <ChallengesPanel challenges={campaign.challenges ?? []} canManage={!!me?.canManage} onChange={updateChallenges} />
+          {me?.canManage && <div className="mt-2 flex justify-end"><SaveIndicator state={challengeSave.state} error={challengeSave.error} /></div>}
         </section>
 
         {/* Crew + members */}

@@ -158,6 +158,42 @@ export interface ICampaignPermissions {
   canCreateCharacter: boolean
 }
 
+export type ChallengeRole =
+  | 'attacker' | 'barrier' | 'countdown' | 'mystery' | 'pursuer' | 'target' | 'watcher' | 'temptation' | 'asset' | 'other'
+
+export interface IChallengeLimit {
+  _id?: string
+  name: string
+  /** Tier that overcomes the Challenge (2–6); null = immune ("–"). */
+  max: number | null
+  /** A progress Limit: something happens when it maxes out. */
+  progress?: boolean
+  onMax?: string
+}
+
+export interface IChallengeStatus extends IStatus {
+  /** Which Limit this status counts toward (by limit name), if any. */
+  limit?: string
+}
+
+export interface IChallenge {
+  _id?: string
+  name: string
+  role: ChallengeRole
+  description: string
+  limits: IChallengeLimit[]
+  statuses: IChallengeStatus[]
+  tags: { _id?: string; text: string; isBurned?: boolean }[]
+  specials: { _id?: string; name: string; text: string }[]
+  threats: { _id?: string; threat: string; consequence: string }[]
+  /** Players can see it (name, description, tags, statuses). */
+  revealed: boolean
+  /** Players can also see its Limits. */
+  limitsRevealed?: boolean
+  /** MC-only notes. */
+  notes?: string
+}
+
 export interface ICampaign {
   _id: string
   name: string
@@ -167,6 +203,7 @@ export interface ICampaign {
   ownerId?: string
   inviteCode?: string // only sent to members who can manage the campaign
   members?: ICampaignMember[]
+  challenges?: IChallenge[]
   me?: ICampaignPermissions
   createdAt: string
   updatedAt: string

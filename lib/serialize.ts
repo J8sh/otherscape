@@ -27,6 +27,18 @@ export async function serializeCampaign(doc: { toObject?: () => unknown } | Reco
     canEditCrew: access.canEditCrew,
     canCreateCharacter: access.canCreateCharacter,
   }
-  if (!access.canManage) delete out.inviteCode
+  if (!access.canManage) {
+    delete out.inviteCode
+    // Players see only what the MC has revealed — and never her notes, Threats or Specials.
+    out.challenges = (out.challenges ?? [])
+      .filter(c => c.revealed)
+      .map(c => ({
+        ...c,
+        notes: undefined,
+        threats: [],
+        specials: [],
+        limits: c.limitsRevealed ? c.limits : [],
+      }))
+  }
   return out
 }

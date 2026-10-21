@@ -101,3 +101,18 @@ export function addEvolution(points: number, gained: number) {
   const total = points + gained
   return { points: total % EVOLUTION_TRACK, momentsEarned: Math.floor(total / EVOLUTION_TRACK) }
 }
+
+// ── Challenges ────────────────────────────────────────────────────────────
+export type LimitState = 'immune' | 'open' | 'maxed' | 'exceeded'
+
+/**
+ * How close a Challenge is to a Limit: the highest tier among statuses
+ * counting toward it. Reaching the Limit overcomes the Challenge (or, for a
+ * progress Limit, triggers what it was building to); going past it makes
+ * the outcome permanent.
+ */
+export function limitProgress(max: number | null, statuses: { tier: number; limit?: string }[], limitName: string) {
+  const current = statuses.filter(s => s.limit === limitName).reduce((m, s) => Math.max(m, s.tier), 0)
+  const state: LimitState = max == null ? 'immune' : current > max ? 'exceeded' : current === max ? 'maxed' : 'open'
+  return { current, state }
+}

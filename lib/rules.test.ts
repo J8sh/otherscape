@@ -2,7 +2,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  addEvolution, actionPower, essenceOf, evolutionForReplacedTheme,
+  addEvolution, actionPower, essenceOf, evolutionForReplacedTheme, limitProgress,
   reduceStatus, rollOutcome, spendablePower, stackStatus, statusTier,
 } from './rules.ts'
 
@@ -51,4 +51,12 @@ test('power counts tags, burn bonus and the best/worst status', () => {
 test('evolution points', () => {
   assert.equal(evolutionForReplacedTheme({ powerTags: 4, weaknessTags: 2, specials: 0 }), 3) // Unagi's example
   assert.deepEqual(addEvolution(3, 3), { points: 1, momentsEarned: 1 })
+})
+
+test('challenge limit progress', () => {
+  const st = [{ tier: 2, limit: 'hurt' }, { tier: 3, limit: 'hurt' }, { tier: 4, limit: 'convince' }]
+  assert.deepEqual(limitProgress(3, st, 'hurt'), { current: 3, state: 'maxed' })
+  assert.deepEqual(limitProgress(3, st, 'convince'), { current: 4, state: 'exceeded' })
+  assert.deepEqual(limitProgress(4, st, 'banish'), { current: 0, state: 'open' })
+  assert.equal(limitProgress(null, st, 'hurt').state, 'immune')
 })

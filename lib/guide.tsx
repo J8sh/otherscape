@@ -417,6 +417,36 @@ export const GUIDE: GuideTopic[] = [
     ),
   },
   {
+    slug: 'challenges',
+    title: 'Challenges (for MCs)',
+    summary: 'Building and tracking enemies, obstacles and countdowns with Limits, tags, Threats and Specials.',
+    pages: 'pp. 78, 96–97, 106–109, 294–300',
+    group: 'play',
+    body: (
+      <>
+        <p>
+          A <b>Challenge</b> is anything in the crew’s way: a gang enforcer, a vault door, a collapsing tunnel, a rival’s offer.
+          Simple ones are just a quick roll. Important ones get a <b>profile</b> so you can track them blow by blow.
+        </p>
+        <h2>Parts of a profile</h2>
+        <ul>
+          <li><b>Role</b> — what it’s for in the scene: attacker, barrier, countdown, mystery, pursuer, target, watcher, temptation, or an asset to protect.</li>
+          <li><b>Limits</b> — the ways it can be overcome and how hard each is: <i>hurt-or-subdue:3</i>, <i>convince:4</i>, <i>banish:5</i>. 2 is easy, 6 incredibly hard; “–” means immune. A <b>progress Limit</b> counts toward something happening instead (<i>alarm:3</i>, <i>ritual:5</i>).</li>
+          <li><b>Base tags & statuses</b> — what it brings to the fight (<i>body armor</i>, <i>firewalled-2</i>). They make the crew’s rolls harder; the crew can strip them with Weaken.</li>
+          <li><b>Specials</b> — its own rules: “when this happens, do that.”</li>
+          <li><b>Threats → Consequences</b> — what it’s visibly about to do, and what happens if nobody stops it.</li>
+        </ul>
+        <h2>Overcoming a Challenge</h2>
+        <p>
+          When the crew’s Effects give it a status that counts toward a Limit, track the tier. Reaching the Limit overcomes it —
+          it stops being a problem this scene. Going past it makes the outcome permanent (destroyed, dead, converted for good).
+        </p>
+        <Tip>Players don’t automatically know Limits — they discover them by studying the Challenge or by trial and error.</Tip>
+        <OnTheSite>MCs build Challenges on the campaign page (start from a template), link statuses to Limits, and watch them fill. The eye button reveals a Challenge to players; the gauge button also reveals its Limits. Threats, Specials and notes stay MC-only.</OnTheSite>
+      </>
+    ),
+  },
+  {
     slug: 'glossary',
     title: 'Glossary',
     summary: 'Quick definitions for the game’s jargon.',
