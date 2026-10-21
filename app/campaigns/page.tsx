@@ -7,6 +7,15 @@ import { api } from '@/lib/api'
 import { ROLE_LABEL } from '@/lib/roles'
 import type { ICampaign } from '@/types'
 
+function timeAgo(iso: string) {
+  const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
+  if (s < 60) return 'just now'
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`
+  if (s < 86400 * 30) return `${Math.floor(s / 86400)}d ago`
+  return new Date(iso).toLocaleDateString()
+}
+
 export default function CampaignsPage() {
   const router = useRouter()
   const [campaigns, setCampaigns] = useState<ICampaign[]>([])
@@ -142,6 +151,7 @@ export default function CampaignsPage() {
                   <div className="flex flex-wrap gap-2 mt-3">
                     {c.me && <span className="chip" style={{ color: 'var(--accent-lime)', borderColor: '#3d4d10' }}>YOU: {ROLE_LABEL[c.me.role]}</span>}
                     <span className="chip">{c.members?.length ?? 0} MEMBER{c.members?.length === 1 ? '' : 'S'}</span>
+                    <span className="chip" title={new Date(c.updatedAt).toLocaleString()}>UPDATED {timeAgo(c.updatedAt).toUpperCase()}</span>
                   </div>
                 </div>
               </Link>
