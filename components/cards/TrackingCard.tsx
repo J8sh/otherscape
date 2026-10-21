@@ -2,7 +2,7 @@
 import { useId, useState } from 'react'
 import { Plus, Minus, X, Shield, Crosshair, Ban, Magnet, Hourglass } from 'lucide-react'
 import { Tooltip, InfoTip } from '@/components/ui/Tooltip'
-import { PC_STATUS_LIMIT, TIER_NAMES, reduceStatus, stackStatus, statusTier } from '@/lib/rules'
+import { PC_STATUS_LIMIT, TIER_NAMES, polarOpposite, reduceStatus, resolvePolar, stackStatus, statusTier } from '@/lib/rules'
 import type { IStatus, StatusType } from '@/types'
 
 /** Common statuses (core book pp. 103–109 and the Action Database), offered as you type. */
@@ -136,6 +136,17 @@ export function TrackingCards({ statuses, onChange, limit = PC_STATUS_LIMIT }: P
     e.preventDefault()
     const n = name.trim()
     if (!n) return
+    // An opposite status (friendly vs hostile…) cancels tier for tier instead of coexisting.
+    const opposite = polarOpposite(n)
+    const polarIdx = opposite ? statuses.findIndex(s => s.name.trim().toLowerCase() === opposite) : -1
+    if (polarIdx >= 0) {
+      const survivor = resolvePolar(statuses[polarIdx], { name: n, tier })
+      onChange(survivor
+        ? statuses.map((x, i) => i === polarIdx ? { ...x, name: survivor.name, tier: survivor.tier, marks: [survivor.tier] } : x)
+        : statuses.filter((_, i) => i !== polarIdx))
+      setName('')
+      return
+    }
     const existing = statuses.findIndex(s => s.name.trim().toLowerCase() === n.toLowerCase())
     if (existing >= 0) {
       const s = statuses[existing]
