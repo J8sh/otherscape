@@ -462,6 +462,57 @@ export const GUIDE: GuideTopic[] = [
     ),
   },
   {
+    slug: 'running-the-game',
+    title: 'Running the Game (for MCs)',
+    summary: 'Framing scenes, making Threats, pacing tension, hard choices, and turning up the difficulty.',
+    pages: 'pp. 78–83, 126, 136–137, 272–279',
+    group: 'play',
+    body: (
+      <>
+        <h2>Frame every scene</h2>
+        <ul>
+          <li><b>What’s here</b> — the place, who’s present, what’s already happening.</li>
+          <li><b>The stakes</b> — what the crew wants here, or must prevent.</li>
+          <li><b>Challenges</b> — what stands in the way: guards, locks, a mystery, a clock.</li>
+          <li><b>Threats</b> — what those Challenges are visibly about to do. End with “What do you do?”</li>
+        </ul>
+        <h2>Threats make the game tick</h2>
+        <p>
+          Challenges don’t take turns — they act through Threats and, if ignored, Consequences. Make Threats specific and on-screen
+          (“the drone swings its turret toward you”, not “it prepares to attack”). Consequences should follow a Threat or a missed
+          roll; out of nowhere they feel unfair. If a Threat from an earlier scene went unanswered, you may open the next scene with
+          its Consequence (a hard open).
+        </p>
+        <h2>Control the pace</h2>
+        <p>
+          Fewer Threats per beat means a calm, exploratory scene; several at once forces the crew to choose what to deal with and what
+          to absorb. Rotate the spotlight so nobody acts twice before everyone has acted once.
+        </p>
+        <h2>Quick or tracked?</h2>
+        <p>
+          Resolve a conflict in one roll when it isn’t the focus; track it with Effects and Limits when you want to watch it blow by
+          blow. Either works for any conflict — choose based on what deserves screen time.
+        </p>
+        <h2>Offer hard choices</h2>
+        <p>
+          Characters grow when two things they care about collide: a Ritual against an Identity, an Itch against the job. Pick one
+          character’s motivation to pressure each session; the player decides whether it’s worth marking Decay.
+        </p>
+        <h2>If it’s too easy</h2>
+        <ul>
+          <li>Be stricter about which tags are directly relevant.</li>
+          <li>Add Threats, bigger Scale, Challenges with defensive tags, or several Challenges at once.</li>
+          <li>Hit harder on mixed hits; deal higher statuses and burn tags more often.</li>
+          <li>Turn on optional rules: a lower PC Limit, Enhance at 2 Power per tier, or a power tag cap.</li>
+        </ul>
+        <OnTheSite>
+          Build Challenges with Threats on the campaign page, keep <b>Table View</b> open to watch statuses and deal Consequences,
+          run <b>Credit Roll</b> at the end of each session, and set optional rules under <b>Optional Rules</b>.
+        </OnTheSite>
+      </>
+    ),
+  },
+  {
     slug: 'challenges',
     title: 'Challenges (for MCs)',
     summary: 'Building and tracking enemies, obstacles and countdowns with Limits, tags, Threats and Specials.',
