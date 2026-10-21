@@ -1,236 +1,305 @@
 'use client'
-import { useEffect, useState, use } from 'react'
+import { useCallback, useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Users, Zap, ArrowLeft, Trash2 } from 'lucide-react'
+import { Plus, Users, Zap, ArrowLeft, Trash2, Pencil, Eye, NotebookPen, MonitorPlay } from 'lucide-react'
 import { CrewThemeCard } from '@/components/cards/CrewThemeCard'
-import type { ICampaign, ICharacter } from '@/types'
+import { MembersPanel } from '@/components/campaign/MembersPanel'
+import { ChallengesPanel } from '@/components/campaign/ChallengesPanel'
+import { TableTools } from '@/components/campaign/TableTools'
+import { RollLog } from '@/components/campaign/RollLog'
+import { OptionalRules } from '@/components/campaign/OptionalRules'
+import { SaveIndicator } from '@/components/ui/SaveIndicator'
+import { useSession } from '@/components/auth/SessionProvider'
+import { api } from '@/lib/api'
+import { useAutosave } from '@/lib/useAutosave'
+import { ROLE_HELP, ROLE_LABEL } from '@/lib/roles'
+import { CATEGORY_META } from '@/lib/themeMeta'
+import { normalizeCrew } from '@/lib/normalize'
+import { isNewer, usePolling } from '@/lib/usePolling'
+import type { ICampaign, ICharacter, IChallenge, ICrewThemeCard } from '@/types'
 
-const SAVE_DELAY = 800
+type CharacterRow = ICharacter & { canEdit: boolean }
 
 export default function CampaignPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const { user } = useSession()
   const [campaign, setCampaign] = useState<ICampaign | null>(null)
-  const [characters, setCharacters] = useState<ICharacter[]>([])
+  const [characters, setCharacters] = useState<CharacterRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [saveTimer, setSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const [editingDetails, setEditingDetails] = useState(false)
+  const [details, setDetails] = useState({ name: '', megacity: '', description: '' })
+  const [newFor, setNewFor] = useState('')
 
-  async function errorFrom(res: Response, fallback: string) {
-    const body = await res.json().catch(() => null)
-    return body?.error ?? `${fallback} (${res.status})`
-  }
+  const crewSave = useAutosave((crewTheme: ICrewThemeCard) =>
+    api(`/api/campaigns/${id}`, { method: 'PATCH', json: { crewTheme } }))
 
-  async function load() {
+  const load = useCallback(async () => {
     setError(null)
-    let firstError: string | null = null
-    const [cRes, chRes] = await Promise.all([
-      fetch(`/api/campaigns/${id}`),
-      fetch(`/api/characters?campaignId=${id}`),
+    try {
+      const [c, chars] = await Promise.all([
+        api<ICampaign>(`/api/campaigns/${id}`),
+        api<CharacterRow[]>(`/api/characters?campaignId=${id}`),
+      ])
+      setCampaign({ ...c, crewTheme: normalizeCrew(c.crewTheme) })
+      setCharacters(chars)
+      setDetails({ name: c.name, megacity: c.megacity, description: c.description })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load campaign')
+    } finally {
+      setLoading(false)
+    }
+  }, [id])
+
+  useEffect(() => { load() }, [load])
+
+  // Keep the crew page live: characters (statuses, names), members, the crew
+  // card and Challenges — skipping parts with an unsaved local edit.
+  usePolling(async () => {
+    const [c, chars] = await Promise.all([
+      api<ICampaign>(`/api/campaigns/${id}`),
+      api<CharacterRow[]>(`/api/characters?campaignId=${id}`),
     ])
-    if (cRes.ok) {
-      setCampaign(await cRes.json())
-    } else {
-      firstError = await errorFrom(cRes, 'Failed to load campaign')
-    }
-    if (chRes.ok) {
-      setCharacters(await chRes.json())
-    } else if (!firstError) {
-      firstError = await errorFrom(chRes, 'Failed to load characters')
-    }
-    if (firstError) setError(firstError)
-    setLoading(false)
+    setCharacters(chars)
+    setCampaign(prev => {
+      if (!prev || !isNewer(c.updatedAt, prev.updatedAt)) return prev ? { ...prev, members: c.members, me: c.me } : prev
+      return {
+        ...c,
+        crewTheme: crewSave.isBusy() ? prev.crewTheme : c.crewTheme, // normalized only on first load, so a just-added blank row survives
+        challenges: challengeSave.isBusy() ? prev.challenges : c.challenges,
+      }
+    })
+  }, 8000, !!campaign && !editingDetails)
+
+  const challengeSave = useAutosave((challenges: IChallenge[]) =>
+    api(`/api/campaigns/${id}`, { method: 'PATCH', json: { challenges } }))
+
+  function updateChallenges(challenges: IChallenge[]) {
+    setCampaign(c => (c ? { ...c, challenges } : c))
+    challengeSave.schedule(challenges)
   }
 
-  useEffect(() => { load() }, [id])
+  function updateCrew(crewTheme: ICrewThemeCard) {
+    if (!campaign) return
+    setCampaign({ ...campaign, crewTheme })
+    crewSave.schedule(crewTheme)
+  }
 
-  function updateCampaign(updated: ICampaign) {
-    setCampaign(updated)
-    if (saveTimer) clearTimeout(saveTimer)
-    const t = setTimeout(() => {
-      fetch(`/api/campaigns/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated),
-      })
-    }, SAVE_DELAY)
-    setSaveTimer(t)
+  async function saveDetails(e: React.FormEvent) {
+    e.preventDefault()
+    try {
+      const c = await api<ICampaign>(`/api/campaigns/${id}`, { method: 'PATCH', json: details })
+      setCampaign(c)
+      setEditingDetails(false)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not save')
+    }
   }
 
   async function addCharacter() {
-    const res = await fetch('/api/characters', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ campaignId: id, name: 'New Character' }),
-    })
-    if (!res.ok) {
-      setError(await errorFrom(res, 'Failed to create character'))
-      return
+    try {
+      const char = await api<ICharacter>('/api/characters', {
+        method: 'POST',
+        json: { campaignId: id, name: 'New Character', ...(newFor ? { ownerId: newFor } : {}) },
+      })
+      router.push(`/campaigns/${id}/character/${char._id}`)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to create character')
     }
-    const char = await res.json()
-    router.push(`/campaigns/${id}/character/${char._id}`)
   }
 
-  async function deleteCharacter(charId: string, e: React.MouseEvent) {
-    e.preventDefault()
-    if (!confirm('Delete this character?')) return
-    await fetch(`/api/characters/${charId}`, { method: 'DELETE' })
-    setCharacters(prev => prev.filter(c => c._id !== charId))
+  async function deleteCharacter(charId: string, name: string) {
+    if (!confirm(`Delete ${name || 'this character'}? This can’t be undone.`)) return
+    try {
+      await api(`/api/characters/${charId}`, { method: 'DELETE' })
+      setCharacters(prev => prev.filter(c => c._id !== charId))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete')
+    }
   }
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: '#080c18' }}>
-      <div className="font-display text-3xl tracking-widest" style={{ color: '#2a3352' }}>LOADING...</div>
-    </div>
-  )
+  async function deleteCampaign() {
+    if (!campaign || !confirm(`Delete “${campaign.name}” and all its characters? This can’t be undone.`)) return
+    try {
+      await api(`/api/campaigns/${id}`, { method: 'DELETE' })
+      router.push('/campaigns')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete')
+    }
+  }
+
+  if (loading) return <p className="font-display text-3xl tracking-widest text-center py-24" style={{ color: 'var(--border-card)' }}>LOADING…</p>
 
   if (!campaign) return (
-    <div className="min-h-screen flex items-center justify-center px-8" style={{ background: '#080c18' }}>
-      <div className="rounded-xl p-6 max-w-md w-full text-center" style={{ background: '#1f1420', border: '1px solid #ff3b5c' }}>
-        <div className="font-display text-sm tracking-widest mb-2" style={{ color: '#ff3b5c' }}>CONNECTION ERROR</div>
-        <div className="text-sm mb-4" style={{ color: '#e8eaf0' }}>{error ?? 'Failed to load campaign.'}</div>
-        <button onClick={load} className="px-4 py-2 rounded font-display tracking-widest text-sm transition-all hover:opacity-80" style={{ background: '#ff3b5c', color: '#080c18' }}>
-          RETRY
-        </button>
+    <div className="max-w-md mx-auto px-4 py-16">
+      <div role="alert" className="alert-error text-center">
+        <div className="font-display tracking-widest mb-2" style={{ color: 'var(--danger)' }}>COULDN’T LOAD CAMPAIGN</div>
+        <p className="mb-4">{error ?? 'Failed to load campaign.'}</p>
+        <div className="flex gap-2 justify-center">
+          <button onClick={load} className="btn btn-danger btn-sm">RETRY</button>
+          <Link href="/campaigns" className="btn btn-ghost btn-sm">ALL CAMPAIGNS</Link>
+        </div>
       </div>
     </div>
   )
 
+  const me = campaign.me
+  const ownerName = (ownerId?: string) => campaign.members?.find(m => m.userId === ownerId)?.displayName
+
   return (
-    <div className="min-h-screen" style={{ background: '#080c18' }}>
-      {/* Nav */}
-      <div className="px-8 py-4" style={{ borderBottom: '1px solid #2a3352' }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/campaigns" className="flex items-center gap-1.5 text-sm transition-colors hover:text-white" style={{ color: '#7a8099', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.15em' }}>
-              <ArrowLeft size={14} /> CAMPAIGNS
-            </Link>
-            <span style={{ color: '#2a3352' }}>/</span>
-            <span className="font-display text-lg tracking-wide" style={{ color: '#e8eaf0' }}>{campaign.name}</span>
-            {campaign.megacity && <span className="font-display text-sm tracking-widest" style={{ color: '#00d4ff' }}>{campaign.megacity}</span>}
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+      <Link href="/campaigns" className="inline-flex items-center gap-1.5 font-display tracking-widest text-sm mb-3 hover:text-white" style={{ color: 'var(--text-muted)', minHeight: 32 }}>
+        <ArrowLeft size={14} aria-hidden /> ALL CAMPAIGNS
+      </Link>
+
+      {/* Header */}
+      {editingDetails ? (
+        <form onSubmit={saveDetails} className="panel p-4 mb-6 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div><label className="field-label" htmlFor="d-name">NAME</label><input id="d-name" className="input" required maxLength={80} value={details.name} onChange={e => setDetails(d => ({ ...d, name: e.target.value }))} /></div>
+          <div><label className="field-label" htmlFor="d-city">MEGACITY</label><input id="d-city" className="input" maxLength={80} value={details.megacity} onChange={e => setDetails(d => ({ ...d, megacity: e.target.value }))} /></div>
+          <div><label className="field-label" htmlFor="d-desc">DESCRIPTION</label><input id="d-desc" className="input" maxLength={500} value={details.description} onChange={e => setDetails(d => ({ ...d, description: e.target.value }))} /></div>
+          <div className="md:col-span-3 flex flex-wrap gap-2">
+            <button className="btn btn-primary btn-sm">SAVE</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditingDetails(false)}>CANCEL</button>
+            {(me?.isOwner || user?.role === 'admin') && (
+              <button type="button" className="btn btn-danger btn-sm ml-auto" onClick={deleteCampaign}><Trash2 size={14} aria-hidden /> DELETE CAMPAIGN</button>
+            )}
           </div>
-          <Link
-            href={`/campaigns/${id}/effects`}
-            className="flex items-center gap-2 px-3 py-1.5 rounded text-sm font-display tracking-widest transition-all hover:opacity-80"
-            style={{ background: '#1a2a1a', color: '#c8ff00', border: '1px solid #2a4a2a' }}
-          >
-            <Zap size={13} /> EFFECTS REF
-          </Link>
+        </form>
+      ) : (
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+          <div className="min-w-0">
+            <h1 className="font-display text-4xl md:text-5xl tracking-wide break-words">{campaign.name}</h1>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              {campaign.megacity && <span className="font-display tracking-widest" style={{ color: 'var(--accent-cyan)' }}>{campaign.megacity}</span>}
+              {me && <span className="chip" title={ROLE_HELP[me.role]} style={{ color: 'var(--accent-lime)', borderColor: '#3d4d10' }}>YOU: {ROLE_LABEL[me.role]}</span>}
+            </div>
+            {campaign.description && <p className="mt-2 max-w-2xl" style={{ color: 'var(--text-muted)' }}>{campaign.description}</p>}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/campaigns/${id}/screen`} className="btn btn-ghost btn-sm"><MonitorPlay size={14} aria-hidden /> TABLE VIEW</Link>
+            <Link href={`/campaigns/${id}/journal`} className="btn btn-ghost btn-sm"><NotebookPen size={14} aria-hidden /> JOURNAL</Link>
+            <Link href="/guide/effects" className="btn btn-ghost btn-sm"><Zap size={14} aria-hidden /> EFFECTS</Link>
+            {me?.canManage && <button className="btn btn-ghost btn-sm" onClick={() => setEditingDetails(true)}><Pencil size={14} aria-hidden /> EDIT</button>}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="max-w-6xl mx-auto px-8 py-8">
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* Left: Crew Theme */}
-          <div className="xl:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <Users size={16} style={{ color: '#00d4ff' }} />
-              <span className="font-display text-xl tracking-widest" style={{ color: '#00d4ff' }}>CREW</span>
-            </div>
-            <CrewThemeCard
-              crew={campaign.crewTheme}
-              onChange={crew => updateCampaign({ ...campaign, crewTheme: crew })}
-            />
-          </div>
+      {error && (
+        <div role="alert" className="alert-error mb-4 flex items-center justify-between gap-3">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="btn btn-danger btn-sm">DISMISS</button>
+        </div>
+      )}
 
-          {/* Right: Characters */}
-          <div className="xl:col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <span className="font-display text-xl tracking-widest" style={{ color: '#e8eaf0' }}>CHARACTERS</span>
-              <button
-                onClick={addCharacter}
-                className="flex items-center gap-2 px-3 py-1.5 rounded font-display tracking-widest text-sm transition-all hover:opacity-80"
-                style={{ background: '#c8ff00', color: '#080c18' }}
-              >
-                <Plus size={14} /> ADD CHARACTER
-              </button>
-            </div>
-
-            {error && (
-              <div className="rounded-xl p-4 mb-4 flex items-center justify-between" style={{ background: '#1f1420', border: '1px solid #ff3b5c' }}>
-                <div>
-                  <div className="font-display text-xs tracking-widest" style={{ color: '#ff3b5c' }}>CONNECTION ERROR</div>
-                  <div className="text-sm mt-1" style={{ color: '#e8eaf0' }}>{error}</div>
-                </div>
-                <button onClick={load} className="px-3 py-1.5 rounded font-display tracking-widest text-xs transition-all hover:opacity-80" style={{ background: '#ff3b5c', color: '#080c18' }}>
-                  RETRY
-                </button>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8">
+        {/* Characters */}
+        <section className="xl:col-span-2 order-1" aria-labelledby="chars-heading">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 id="chars-heading" className="font-display text-2xl tracking-widest">CHARACTERS</h2>
+            {me?.canCreateCharacter && (
+              <div className="flex gap-2">
+                {me.canManage && (campaign.members?.length ?? 0) > 1 && (
+                  <select className="input text-sm" style={{ width: 'auto', minHeight: 36 }} value={newFor} onChange={e => setNewFor(e.target.value)} aria-label="Create character for">
+                    <option value="">For me</option>
+                    {campaign.members?.filter(m => m.userId !== user?._id && m.role !== 'spectator').map(m => (
+                      <option key={m.userId} value={m.userId}>For {m.displayName}</option>
+                    ))}
+                  </select>
+                )}
+                <button onClick={addCharacter} className="btn btn-primary btn-sm"><Plus size={16} aria-hidden /> ADD CHARACTER</button>
               </div>
             )}
+          </div>
 
-            {characters.length === 0 ? (
-              <div className="rounded-xl p-12 text-center" style={{ background: '#141929', border: '1px dashed #2a3352' }}>
-                <div className="font-display text-2xl tracking-widest mb-2" style={{ color: '#2a3352' }}>NO CHARACTERS YET</div>
-                <div className="text-sm mb-4" style={{ color: '#7a8099' }}>Add your first character to the crew.</div>
-                <button onClick={addCharacter} className="px-4 py-2 rounded font-display tracking-widest text-sm" style={{ background: '#c8ff00', color: '#080c18' }}>
-                  ADD CHARACTER
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {characters.map(char => {
-                  const selfCount = char.themes?.filter(t => t.category === 'self').length ?? 0
-                  const mythosCount = char.themes?.filter(t => t.category === 'mythos').length ?? 0
-                  const noiseCount = char.themes?.filter(t => t.category === 'noise').length ?? 0
-                  return (
+          {characters.length === 0 ? (
+            <div className="rounded-xl p-10 text-center" style={{ background: 'var(--bg-card)', border: '1px dashed var(--border-card)' }}>
+              <p className="font-display text-2xl tracking-widest mb-2" style={{ color: 'var(--border-card)' }}>NO CHARACTERS YET</p>
+              <p style={{ color: 'var(--text-muted)' }}>
+                {me?.canCreateCharacter ? 'Add your character to the crew.' : 'Players haven’t created characters yet.'}
+              </p>
+            </div>
+          ) : (
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {characters.map(char => {
+                const counts = (['self', 'mythos', 'noise'] as const).map(cat => ({ cat, n: char.themes?.filter(t => t.themeType && t.category === cat).length ?? 0 }))
+                const mine = char.ownerId === user?._id
+                return (
+                  <li key={char._id} className="relative">
                     <Link
-                      key={char._id}
                       href={`/campaigns/${id}/character/${char._id}`}
-                      className="block rounded-xl card-chamfer overflow-hidden transition-all hover:scale-[1.02] hover:border-[#c8ff00]"
-                      style={{ background: '#141929', border: '1px solid #2a3352' }}
+                      className="block rounded-xl card-chamfer overflow-hidden transition-colors hover:border-[#c8ff00]"
+                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-card)' }}
                     >
-                      <div style={{ height: 3, background: '#c8ff00' }} />
-                      <div className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="font-display text-xl tracking-wide" style={{ color: '#e8eaf0' }}>{char.name}</div>
-                            {char.player && <div className="text-xs" style={{ color: '#7a8099' }}>Player: {char.player}</div>}
-                          </div>
-                          <button
-                            onClick={e => deleteCharacter(char._id, e)}
-                            className="p-1.5 rounded transition-colors hover:text-red-400"
-                            style={{ color: '#3a4462' }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                      <div style={{ height: 3, background: mine ? 'var(--accent-lime)' : 'var(--border-card)' }} />
+                      <div className="p-4 pr-14">
+                        <div className="font-display text-2xl tracking-wide truncate">{char.name || 'Unnamed'}</div>
+                        <div className="text-sm flex items-center gap-2" style={{ color: 'var(--text-muted)' }}>
+                          {ownerName(char.ownerId) ?? char.player ?? 'Unassigned'}
+                          {mine && <span className="chip" style={{ color: 'var(--accent-lime)', borderColor: '#3d4d10' }}>YOURS</span>}
+                          {!char.canEdit && <span className="chip"><Eye size={11} aria-hidden /> VIEW ONLY</span>}
                         </div>
-                        {/* Theme pips */}
-                        <div className="flex gap-3 mt-3">
-                          {[
-                            { label: 'SELF', count: selfCount, color: '#00d4ff' },
-                            { label: 'MYTHOS', count: mythosCount, color: '#9b4dff' },
-                            { label: 'NOISE', count: noiseCount, color: '#c8ff00' },
-                          ].map(({ label, count, color }) => (
-                            <div key={label} className="flex items-center gap-1.5">
-                              <span style={{ color: '#7a8099', fontSize: 9, fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.12em' }}>{label}</span>
-                              <div className="flex gap-0.5">
+                        <div className="flex flex-wrap gap-3 mt-3" aria-label="Theme balance">
+                          {counts.map(({ cat, n }) => (
+                            <div key={cat} className="flex items-center gap-1.5">
+                              <span className="font-display tracking-wider text-xs" style={{ color: 'var(--text-muted)' }}>{CATEGORY_META[cat].label}</span>
+                              <div className="flex gap-0.5" aria-label={`${n} ${CATEGORY_META[cat].label} themes`}>
                                 {[1, 2, 3, 4].map(i => (
-                                  <div key={i} style={{ width: 8, height: 8, borderRadius: 2, background: i <= count ? color : '#1e2840' }} />
+                                  <div key={i} style={{ width: 9, height: 9, borderRadius: 2, background: i <= n ? CATEGORY_META[cat].color : '#1e2840' }} />
                                 ))}
                               </div>
                             </div>
                           ))}
                         </div>
-                        {/* Active statuses */}
-                        {char.statuses && char.statuses.length > 0 && (
+                        {char.statuses?.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-2">
                             {char.statuses.slice(0, 4).map((s, i) => (
-                              <span key={i} className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#3a1a1a', color: '#ee9090', border: '1px solid #6a3a3a' }}>
+                              <span key={i} className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#2a1630', color: '#f0a8d0', border: '1px solid #5a2a5a' }}>
                                 {s.name}-{s.tier}
                               </span>
                             ))}
-                            {char.statuses.length > 4 && <span className="text-xs" style={{ color: '#7a8099' }}>+{char.statuses.length - 4} more</span>}
+                            {char.statuses.length > 4 && <span className="text-xs" style={{ color: 'var(--text-muted)' }}>+{char.statuses.length - 4} more</span>}
                           </div>
                         )}
                       </div>
                     </Link>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        </div>
+                    {char.canEdit && (
+                      <button
+                        onClick={() => deleteCharacter(char._id, char.name)}
+                        className="absolute top-3 right-2 btn-icon flex items-center justify-center rounded-lg hover:text-red-400"
+                        style={{ color: '#4a5570' }}
+                        aria-label={`Delete ${char.name}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          <ChallengesPanel challenges={campaign.challenges ?? []} canManage={!!me?.canManage} onChange={updateChallenges} />
+          {me?.canManage && <div className="mt-2 flex justify-end"><SaveIndicator state={challengeSave.state} error={challengeSave.error} /></div>}
+        </section>
+
+        {/* Crew + members */}
+        <aside className="xl:col-span-1 order-2 space-y-6">
+          <section aria-labelledby="crew-heading">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h2 id="crew-heading" className="flex items-center gap-2 font-display text-2xl tracking-widest" style={{ color: 'var(--accent-cyan)' }}>
+                <Users size={18} aria-hidden /> CREW
+              </h2>
+              <SaveIndicator state={crewSave.state} error={crewSave.error} />
+            </div>
+            <CrewThemeCard crew={campaign.crewTheme} onChange={updateCrew} readOnly={!me?.canEditCrew} />
+          </section>
+          <RollLog campaignId={id} />
+          {me?.canManage && <TableTools campaignId={id} onDone={load} />}
+          <OptionalRules campaignId={id} rules={campaign.optionalRules} canManage={!!me?.canManage} onSaved={optionalRules => setCampaign(c => (c ? { ...c, optionalRules } : c))} />
+          {user && <MembersPanel campaign={campaign} currentUserId={user._id} onChanged={load} onLeft={() => router.push('/campaigns')} />}
+        </aside>
       </div>
     </div>
   )

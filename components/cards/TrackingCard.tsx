@@ -1,161 +1,199 @@
 'use client'
-import { useState } from 'react'
-import { Tooltip } from '@/components/ui/Tooltip'
-import { X, Plus, Shield, Crosshair, Zap } from 'lucide-react'
-import type { IStatus } from '@/types'
+import { useId, useState } from 'react'
+import { Plus, Minus, X, Shield, Crosshair, Ban, Magnet, Hourglass } from 'lucide-react'
+import { Tooltip, InfoTip } from '@/components/ui/Tooltip'
+import { PC_STATUS_LIMIT, TIER_NAMES, reduceStatus, stackStatus, statusTier } from '@/lib/rules'
+import type { IStatus, StatusType } from '@/types'
 
-const TIER_COLORS = [
-  '#6b21a8', // 1 - purple
-  '#7e22ce', // 2
-  '#a21caf', // 3 - fuchsia
-  '#be185d', // 4 - pink
-  '#e11d48', // 5 - rose
-  '#ff2d7a', // 6 - hot pink
-]
+// Tier boxes shade from purple (1) to hot pink (6), like the printed tracking cards.
+const TIER_COLORS = ['#7c4dff', '#9446f0', '#ad3fdc', '#c938c2', '#e1329e', '#f72d78']
 
-const TYPE_META: Record<IStatus['type'], { label: string; icon: React.ReactNode; color: string }> = {
-  helpful: { label: 'Helpful', icon: <Shield size={12} />, color: '#c8ff00' },
-  harmful: { label: 'Harmful', icon: <Crosshair size={12} />, color: '#ff2d7a' },
-  hindering: { label: 'Hindering', icon: <Zap size={12} />, color: '#9b4dff' },
-  compelling: { label: 'Compelling', icon: <Zap size={12} />, color: '#00d4ff' },
+export const STATUS_TYPES: Record<StatusType, { label: string; icon: React.ReactNode; color: string; help: string }> = {
+  harmful: { label: 'Harmful', icon: <Crosshair size={14} />, color: '#ff4f8b', help: 'Harm or damage (wounded, shamed, cursed). Counts against you; at your Limit (5) you’re overcome.' },
+  hindering: { label: 'Hindering', icon: <Ban size={14} />, color: '#a66bff', help: 'Something in your way (blinded, restrained, jammed). Subtracts from actions it hinders.' },
+  compelling: { label: 'Compelling', icon: <Magnet size={14} />, color: '#29c8f2', help: 'A directive you’re pushed to follow (charmed, enraged, hacked). Hinders every action against it; at 5 you can’t even try.' },
+  helpful: { label: 'Helpful', icon: <Shield size={14} />, color: '#c8ff00', help: 'A boost (alert, shielded, aiming). Your best helpful status adds its tier to a relevant action.' },
+  progress: { label: 'Progress', icon: <Hourglass size={14} />, color: '#ffb347', help: 'Tracks a process — a ritual, a chase, a countdown. Something happens when it reaches its Limit.' },
 }
 
-interface Props {
-  statuses: IStatus[]
-  onChange: (statuses: IStatus[]) => void
+function marksOf(s: IStatus) {
+  return s.marks?.length ? s.marks : s.tier > 0 ? [s.tier] : []
 }
 
-function StatusTracker({ status, onTierChange, onRemove }: {
+function withMarks(s: IStatus, marks: number[]): IStatus | null {
+  const tier = statusTier(marks)
+  return tier > 0 ? { ...s, marks, tier } : null
+}
+
+function StatusCard({ status, onChange, onRemove, limit }: {
   status: IStatus
-  onTierChange: (tier: number) => void
+  onChange: (s: IStatus | null) => void
   onRemove: () => void
+  limit: number
 }) {
-  const meta = TYPE_META[status.type]
+  const meta = STATUS_TYPES[status.type] ?? STATUS_TYPES.harmful
+  const marks = marksOf(status)
+  const tier = statusTier(marks)
+  const [incoming, setIncoming] = useState(1)
+  const incomingId = useId()
+
+  function toggleBox(t: number) {
+    const next = marks.includes(t) ? marks.filter(m => m !== t) : [...marks, t].sort((a, b) => a - b)
+    onChange(withMarks(status, next))
+  }
+
+  const limitNote = status.type === 'progress' || status.type === 'helpful'
+    ? null
+    : tier > limit ? 'Permanent — beyond your Limit' : tier === limit ? `Overcome — at your Limit (${limit})` : null
+
   return (
-    <div
-      className="rounded-lg overflow-hidden card-chamfer"
-      style={{ background: '#141929', border: '1px solid #2a3352', minWidth: 110 }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-2 py-1" style={{ background: '#1a2035', borderBottom: '1px solid #2a3352' }}>
-        <Tooltip content={`${meta.label} status — tier defines intensity`}>
-          <span className="flex items-center gap-1 cursor-help" style={{ color: meta.color, fontSize: 11 }}>
-            {meta.icon}
-            <span className="font-display tracking-wide">{meta.label}</span>
-          </span>
+    <div className="tracking-card" style={{ ['--status-color' as string]: meta.color }}>
+      <div className="tracking-card-head">
+        <Tooltip content={meta.help}>
+          <span className="flex items-center gap-1.5 font-display tracking-widest cursor-help">{meta.icon}{meta.label.toUpperCase()}</span>
         </Tooltip>
-        <button onClick={onRemove} className="hover:text-red-400 transition-colors" style={{ color: '#7a8099' }}>
-          <X size={12} />
+        <button type="button" onClick={onRemove} className="slot-btn remove edit-only" style={{ color: '#203040', width: 32, height: 32 }} aria-label={`Remove ${status.name}`}>
+          <X size={15} />
         </button>
       </div>
-      {/* Name */}
-      <div className="px-2 pt-1 pb-0.5">
-        <span className="font-display tracking-wide text-sm" style={{ color: '#e8eaf0' }}>{status.name}</span>
+      <div className="tracking-card-body">
+        <div className="tracking-card-name">
+          <input
+            value={status.name}
+            onChange={e => onChange({ ...status, name: e.target.value })}
+            aria-label="Status name"
+            className="w-full bg-transparent outline-none font-display tracking-wide"
+            style={{ fontSize: 22, color: '#1a2400' }}
+          />
+          <div className="text-sm font-semibold" style={{ color: '#3d4d10' }}>
+            {status.name || 'status'}-{tier} · {TIER_NAMES[tier]}
+          </div>
+          {limitNote && <div className="text-xs font-display tracking-widest mt-0.5" style={{ color: '#a01838' }}>{limitNote}</div>}
+        </div>
+        <div className="tracking-tiers" role="group" aria-label={`${status.name} tier boxes`}>
+          {[1, 2, 3, 4, 5, 6].map(t => {
+            const on = marks.includes(t)
+            return (
+              <Tooltip key={t} content={`Tier ${t} — ${TIER_NAMES[t]}. Tap to ${on ? 'clear' : 'mark'} this box.`}>
+                <button
+                  type="button"
+                  onClick={() => toggleBox(t)}
+                  aria-pressed={on}
+                  aria-label={`Tier ${t}${on ? ', marked' : ''}`}
+                  className={`tier-box ${on ? 'is-on' : ''} ${t === tier ? 'is-top' : ''}`}
+                  style={{ ['--tier-color' as string]: TIER_COLORS[t - 1] }}
+                >
+                  <span className="font-display">{t}</span>
+                  {on && <span className="tier-x" aria-hidden>×</span>}
+                </button>
+              </Tooltip>
+            )
+          })}
+        </div>
       </div>
-      {/* Tier track 1–6 */}
-      <div className="flex gap-0.5 px-2 pb-2 pt-1">
-        {[1, 2, 3, 4, 5, 6].map(t => (
-          <Tooltip key={t} content={`Tier ${t} — ${t <= 2 ? 'Minor' : t <= 4 ? 'Moderate' : 'Severe'}`}>
-            <button
-              onClick={() => onTierChange(status.tier === t ? 0 : t)}
-              className="tier-btn flex-1"
-              style={{
-                height: 28,
-                background: t <= status.tier ? TIER_COLORS[t - 1] : '#0a0e18',
-                border: `1px solid ${t <= status.tier ? TIER_COLORS[t - 1] : '#2a3352'}`,
-                color: t <= status.tier ? '#fff' : '#3a4462',
-                fontSize: 12,
-                fontFamily: 'Bebas Neue, sans-serif',
-              }}
-            >
-              {t}
-            </button>
-          </Tooltip>
-        ))}
+      <div className="tracking-card-actions edit-only">
+        <label className="sr-only" htmlFor={incomingId}>Tiers to stack or reduce</label>
+        <select id={incomingId} value={incoming} onChange={e => setIncoming(Number(e.target.value))} className="tracking-select">
+          {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n}</option>)}
+        </select>
+        <Tooltip content="Take this status again at the chosen tier: it stacks — marking that box, or the next free box above it.">
+          <button type="button" className="tracking-btn" onClick={() => onChange(withMarks(status, stackStatus(marks, incoming)))}>
+            <Plus size={14} aria-hidden /> STACK
+          </button>
+        </Tooltip>
+        <Tooltip content="Reduce by the chosen number of tiers (Restore, Weaken or Set Back): every mark shifts down; marks below 1 disappear.">
+          <button type="button" className="tracking-btn" onClick={() => onChange(withMarks(status, reduceStatus(marks, incoming)))}>
+            <Minus size={14} aria-hidden /> REDUCE
+          </button>
+        </Tooltip>
       </div>
     </div>
   )
 }
 
-export function TrackingCards({ statuses, onChange }: Props) {
-  const [newName, setNewName] = useState('')
-  const [newType, setNewType] = useState<IStatus['type']>('harmful')
+interface Props {
+  statuses: IStatus[]
+  onChange: (statuses: IStatus[]) => void
+  /** This campaign's PC status Limit (book default 5). */
+  limit?: number
+}
 
-  function addStatus() {
-    if (!newName.trim()) return
-    const s: IStatus = { name: newName.trim(), tier: 1, type: newType }
-    onChange([...statuses, s])
-    setNewName('')
+export function TrackingCards({ statuses, onChange, limit = PC_STATUS_LIMIT }: Props) {
+  const [name, setName] = useState('')
+  const [type, setType] = useState<StatusType>('harmful')
+  const [tier, setTier] = useState(1)
+
+  // Taking a status you already have (same name) stacks onto it.
+  function addStatus(e: React.FormEvent) {
+    e.preventDefault()
+    const n = name.trim()
+    if (!n) return
+    const existing = statuses.findIndex(s => s.name.trim().toLowerCase() === n.toLowerCase())
+    if (existing >= 0) {
+      const s = statuses[existing]
+      const next = withMarks(s, stackStatus(marksOf(s), tier))!
+      onChange(statuses.map((x, i) => i === existing ? next : x))
+    } else {
+      onChange([...statuses, { name: n, type, tier, marks: [tier] }])
+    }
+    setName('')
   }
 
-  function updateTier(idx: number, tier: number) {
-    const updated = statuses.map((s, i) => i === idx ? { ...s, tier } : s)
-    onChange(tier === 0 ? statuses.filter((_, i) => i !== idx) : updated)
-  }
+  const worst = statuses.filter(s => s.type !== 'helpful' && s.type !== 'progress').reduce((m, s) => Math.max(m, s.tier), 0)
+  const best = statuses.filter(s => s.type === 'helpful').reduce((m, s) => Math.max(m, s.tier), 0)
 
   return (
     <div>
-      {/* Section header */}
-      <div className="flex items-center gap-2 mb-3">
-        <Tooltip content="Tracking cards record active statuses. Each status has a tier (1–6) showing its intensity. Click a tier to set it; click the active tier again to remove the status.">
-          <h3 className="font-display text-xl tracking-widest cursor-help" style={{ color: '#c8ff00' }}>
-            TRACKING CARDS
-          </h3>
-        </Tooltip>
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3">
+        <h2 className="font-display text-2xl tracking-widest flex items-center gap-2">
+          STATUSES
+          <InfoTip label="statuses">
+            Statuses are temporary conditions with a tier from 1 (mild) to 6 (lethal or permanent). On a roll, add your best relevant helpful status and subtract your worst relevant negative one. At your Limit ({limit} in this campaign) you’re overcome by it; beyond it is permanent.
+          </InfoTip>
+        </h2>
+        {(best > 0 || worst > 0) && (
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            {best > 0 && <>Best helpful <b style={{ color: 'var(--accent-lime)' }}>+{best}</b>{worst > 0 ? ' · ' : ''}</>}
+            {worst > 0 && <>worst negative <b style={{ color: '#ff4f8b' }}>−{worst}</b></>} (when relevant to the action)
+          </span>
+        )}
       </div>
 
-      {/* Active statuses */}
       {statuses.length > 0 ? (
-        <div className="flex flex-wrap gap-3 mb-4">
+        <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))' }}>
           {statuses.map((s, i) => (
-            <StatusTracker
-              key={i}
+            <StatusCard
+              key={s._id ?? `${s.name}-${i}`}
               status={s}
-              onTierChange={tier => updateTier(i, tier)}
+              onChange={next => onChange(next ? statuses.map((x, idx) => idx === i ? next : x) : statuses.filter((_, idx) => idx !== i))}
               onRemove={() => onChange(statuses.filter((_, idx) => idx !== i))}
+              limit={limit}
             />
           ))}
         </div>
       ) : (
-        <p className="text-sm mb-4" style={{ color: '#7a8099' }}>No active statuses.</p>
+        <p className="mb-2" style={{ color: 'var(--text-muted)' }}>No statuses right now.</p>
       )}
 
-      {/* Add new status */}
-      <div className="flex gap-2 items-center">
-        <input
-          className="editable-field"
-          style={{ maxWidth: 180 }}
-          placeholder="Status name..."
-          value={newName}
-          onChange={e => setNewName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && addStatus()}
-        />
-        <select
-          value={newType}
-          onChange={e => setNewType(e.target.value as IStatus['type'])}
-          style={{
-            background: '#141929',
-            border: '1px solid #2a3352',
-            color: '#e8eaf0',
-            borderRadius: 4,
-            padding: '2px 6px',
-            fontFamily: 'Rajdhani, sans-serif',
-            fontSize: 13,
-          }}
-        >
-          <option value="harmful">Harmful</option>
-          <option value="helpful">Helpful</option>
-          <option value="hindering">Hindering</option>
-          <option value="compelling">Compelling</option>
-        </select>
-        <button
-          onClick={addStatus}
-          className="flex items-center gap-1 px-3 py-1 rounded text-sm font-semibold transition-colors"
-          style={{ background: '#c8ff00', color: '#080c18', fontFamily: 'Bebas Neue, sans-serif', letterSpacing: '0.1em' }}
-        >
-          <Plus size={14} /> ADD
-        </button>
-      </div>
+      <form onSubmit={addStatus} className="edit-only mt-4 flex flex-wrap gap-2 items-end">
+        <div className="flex-1 min-w-[180px]">
+          <label htmlFor="new-status" className="field-label">NEW STATUS</label>
+          <input id="new-status" className="input" placeholder="e.g. wounded, alert, hacked" value={name} onChange={e => setName(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="new-status-type" className="field-label">TYPE</label>
+          <select id="new-status-type" className="input" style={{ width: 'auto' }} value={type} onChange={e => setType(e.target.value as StatusType)}>
+            {(Object.keys(STATUS_TYPES) as StatusType[]).map(t => <option key={t} value={t}>{STATUS_TYPES[t].label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="new-status-tier" className="field-label">TIER</label>
+          <select id="new-status-tier" className="input" style={{ width: 'auto' }} value={tier} onChange={e => setTier(Number(e.target.value))}>
+            {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} · {TIER_NAMES[n]}</option>)}
+          </select>
+        </div>
+        <button type="submit" className="btn btn-primary" disabled={!name.trim()}><Plus size={16} aria-hidden /> ADD</button>
+      </form>
     </div>
   )
 }

@@ -1,27 +1,45 @@
 import { NextResponse } from 'next/server'
-import { connectDB } from '@/lib/mongodb'
-import { route } from '@/lib/apiHandler'
-import { Character } from '@/lib/models/Character'
+import { HttpError, readJson, route } from '@/lib/apiHandler'
+import { requireUser } from '@/lib/auth/session'
+import { loadCharacterFor, pick } from '@/lib/auth/access'
 
-export const GET = route(async (_: Request, { params }: { params: Promise<{ id: string }> }) => {
-  await connectDB()
+type Ctx = { params: Promise<{ id: string }> }
+
+// Sheet fields a player may write. campaignId and ownerId are never taken from the body.
+const EDITABLE = [
+  'name', 'player', 'themes', 'loadoutTheme', 'evolution', 'specials',
+  'crewRelationships', 'statuses', 'storyTags', 'essence', 'notes',
+] as const
+
+export const GET = route(async (_: Request, { params }: Ctx) => {
+  const user = await requireUser()
   const { id } = await params
-  const character = await Character.findById(id).lean()
-  if (!character) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  return NextResponse.json(character)
+  const { character, campaign, access, canEdit } = await loadCharacterFor(id, user)
+  return NextResponse.json({
+    ...character.toObject(),
+    canEdit,
+    campaignName: campaign.name,
+    myRole: access.role,
+    rules: campaign.optionalRules,
+  })
 })
 
-export const PATCH = route(async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
-  await connectDB()
+export const PATCH = route(async (req: Request, { params }: Ctx) => {
+  const user = await requireUser()
   const { id } = await params
-  const body = await req.json()
-  const character = await Character.findByIdAndUpdate(id, body, { new: true, runValidators: true }).lean()
-  return NextResponse.json(character)
+  const { character, canEdit } = await loadCharacterFor(id, user)
+  if (!canEdit) throw new HttpError(403, 'You can only edit your own characters.')
+  const body = await readJson(req)
+  character.set(pick(body, EDITABLE))
+  await character.save()
+  return NextResponse.json({ ...character.toObject(), canEdit })
 })
 
-export const DELETE = route(async (_: Request, { params }: { params: Promise<{ id: string }> }) => {
-  await connectDB()
+export const DELETE = route(async (_: Request, { params }: Ctx) => {
+  const user = await requireUser()
   const { id } = await params
-  await Character.findByIdAndDelete(id)
+  const { character, canEdit } = await loadCharacterFor(id, user)
+  if (!canEdit) throw new HttpError(403, 'You can only delete your own characters.')
+  await character.deleteOne()
   return NextResponse.json({ success: true })
 })
