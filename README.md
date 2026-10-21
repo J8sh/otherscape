@@ -22,12 +22,16 @@ at the table.
   invoked too. Apply results to your sheet, the crew card or a revealed Challenge, and share rolls with
   the crew.
 - **Downtime helper** — mark an upgrade, or spend 3 Power recovering tags and healing statuses.
-- **MC tools** — Challenge profiles (templates, Limits, reveal controls), Table View with live statuses
-  and one-tap Consequences, Credit Roll / Load Off, optional rules (PC Limit, Enhance cost, tag cap).
+- **MC tools** — Challenge profiles (templates, Limits, reveal controls), Table View with live statuses,
+  one-tap Consequences and a spotlight tracker, Credit Roll (which leaves a session wrap in the journal) /
+  Load Off, optional rules (PC Limit, Enhance cost, tag cap), a getting-started checklist, reassigning who
+  plays a character, and a whole-campaign **backup / restore** file.
 - **Rules guide** — plain-language topics in our own words with core-book page numbers (including
   Making a Character and Session Zero), a searchable
   index of the Action Database, the Effects cards, and a themebook/kit browser.
-- Print-friendly sheets, character export/import, installable on phones (Add to Home Screen).
+- Live updates everywhere, with a notice saying what changed when someone else edits your open sheet.
+- Print-friendly sheets, character export/import, a quick-rules pop-up, keyboard shortcuts (R to roll,
+  ⌘Z to undo), installable on phones (Add to Home Screen).
 
 ## Running it
 
