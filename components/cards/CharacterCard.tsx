@@ -220,6 +220,23 @@ export function CharacterCard({ character, onChange }: Props) {
           )}
         </div>
 
+        {(character.themeHistory?.length ?? 0) > 0 && (
+          <>
+            <CardStrip>
+              LOST THEMES{' '}
+              <InfoTip label="lost themes">Themes replaced after their Decay track filled — your character’s ghost memories. Talk with your MC about the fallout.</InfoTip>
+            </CardStrip>
+            <ul className="px-3 space-y-1">
+              {character.themeHistory!.map((h, i) => (
+                <li key={i} className="text-[15px] flex justify-between gap-2" style={{ color: 'var(--card-ink-soft)' }}>
+                  <span><b style={{ color: 'var(--card-ink)' }}>{h.name || h.themeType}</b> · {h.themeType}</span>
+                  <span className="shrink-0">+{h.evolution} Evolution · {new Date(h.replacedAt).toLocaleDateString()}</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
         <CardStrip>
           SPECIALS{' '}
           <InfoTip label="specials">

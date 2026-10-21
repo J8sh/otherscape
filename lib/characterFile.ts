@@ -3,7 +3,7 @@ import type { ICharacter } from '@/types'
 /** Portable character file: just the sheet, no ids, owner or campaign. */
 export const FILE_FORMAT = 'otherscape-character'
 
-const FIELDS = ['name', 'player', 'themes', 'loadoutTheme', 'evolution', 'specials', 'crewRelationships', 'statuses', 'storyTags', 'essence', 'notes'] as const
+const FIELDS = ['name', 'player', 'themes', 'loadoutTheme', 'evolution', 'specials', 'crewRelationships', 'statuses', 'storyTags', 'essence', 'notes', 'themeHistory'] as const
 
 /** Drop database ids so an imported sheet gets fresh ones. */
 function stripIds(value: unknown): unknown {

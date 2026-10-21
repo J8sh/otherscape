@@ -163,6 +163,12 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
                 theme={theme}
                 index={i}
                 onEvolution={gainEvolution}
+                onReplaced={(lost, evolution) => updateCharacter({
+                  themeHistory: [
+                    ...((latest.current ?? character).themeHistory ?? []),
+                    { name: lost.name, themeType: lost.themeType, category: lost.category, evolution, replacedAt: new Date().toISOString() },
+                  ],
+                })}
                 onChange={updated => updateCharacter({
                   themes: (latest.current ?? character).themes.map((t, idx) => idx === i ? updated : t),
                 })}

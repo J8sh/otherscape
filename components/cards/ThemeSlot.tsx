@@ -13,6 +13,8 @@ interface Props {
   onChange: (theme: IThemeCard) => void
   /** Evolution points earned (replacing a theme, or spending an upgrade on Evolution). */
   onEvolution?: (points: number) => void
+  /** A theme was lost to Decay (for the character's history). */
+  onReplaced?: (lost: IThemeCard, evolution: number) => void
 }
 
 /** Reset a slot back to the model's empty-theme defaults. */
@@ -30,7 +32,7 @@ function emptyTheme(nascent = false): IThemeCard {
   }
 }
 
-export function ThemeSlot({ theme, index, onChange, onEvolution }: Props) {
+export function ThemeSlot({ theme, index, onChange, onEvolution, onReplaced }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const isConfigured = theme.themeType !== ''
 
@@ -90,7 +92,9 @@ export function ThemeSlot({ theme, index, onChange, onEvolution }: Props) {
     const weaknessTags = theme.tags.filter(t => t.isWeakness && t.text.trim()).length
     const points = evolutionForReplacedTheme({ powerTags, weaknessTags, specials: theme.specials.filter(Boolean).length })
     if (!confirm(`Replace “${theme.name || theme.themeType}”? You lose this theme and gain ${points} Evolution point${points === 1 ? '' : 's'}. Then pick a new theme — it starts nascent (title tag + 1 weakness).`)) return
+    const lost = theme
     onChange(emptyTheme(true))
+    onReplaced?.(lost, points)
     onEvolution?.(points)
   }
 

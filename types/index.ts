@@ -113,6 +113,8 @@ export interface ICharacter {
   crewRelationships: ICrewRelationship[]
   statuses: IStatus[]
   storyTags?: IStoryTag[]
+  /** Themes lost to Decay — the character's "ghost memories". */
+  themeHistory?: { name: string; themeType: string; category: string; evolution: number; replacedAt: string }[]
   essence?: IEssence
   notes?: string
   createdAt: string
