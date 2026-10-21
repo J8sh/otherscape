@@ -20,6 +20,8 @@ export interface ITag {
   isWeakness: boolean
   isBurned: boolean
   isTitle?: boolean // the theme's main power tag (title tag); implies isPower
+  /** What the tag covers, as agreed with the MC (core book p. 192). */
+  note?: string
 }
 
 export interface ILoadoutTag {

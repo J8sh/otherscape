@@ -113,7 +113,8 @@ export const GUIDE: GuideTopic[] = [
         </ol>
         <Tip>
           A good power tag names something <b>useful</b> — ask “what actions would this help?” If the answer is “none” or “it only hurts me”,
-          it isn’t a power tag. Agree with the MC on what each tag covers before play.
+          it isn’t a power tag. Agree with the MC on what each tag covers before play — the note button (pen) beside any theme tag
+          records what you agreed, and the dice roller shows it.
         </Tip>
         <OnTheSite>
           Pick any kit for the theme type, then rewrite its tags. Each theme card has a <b>WRITE YOUR OWN TAGS</b> panel listing that

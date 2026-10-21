@@ -390,3 +390,14 @@ fieldset:disabled .tag-slot-input::placeholder, fieldset:disabled .lined-field::
   .slot-btn:not(.is-on), .tracking-card-actions, .challenge-icon { display: none !important; }
   a { text-decoration: none !important; }
 }
+
+/* Tag interpretation notes (what a tag covers), under a tag slot */
+.tag-slot-note {
+  margin: -4px 10px 8px 25px; font-size: 14px; line-height: 1.3; color: var(--card-ink-soft);
+}
+.tag-slot-note::before { content: '↳ '; opacity: 0.6; }
+.tag-slot-note-input {
+  display: block; width: calc(100% - 35px); margin: -4px 10px 8px 25px; min-height: 36px; padding: 4px 8px;
+  font-size: 15px; border-radius: 6px; background: #fff; border: 1px solid #c3cad6; color: var(--card-ink);
+}
+.slot-btn.is-on:not(.flame):not(.star) { color: var(--card-ink); }

@@ -220,6 +220,8 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete, onReplace,
               onTitle={() => toggleTitle(i)}
               onBurn={() => updateTag(i, { isBurned: !tag.isBurned })}
               onRemove={() => removeTag(i)}
+              note={tag.note}
+              onNote={note => updateTag(i, { note })}
             />
           ))}
           {weaknessRows.map(({ tag, i }) => (
@@ -232,6 +234,8 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete, onReplace,
               onFocus={() => focusIndex !== null && setFocusIndex(null)}
               onText={text => updateTag(i, { text })}
               onRemove={() => removeTag(i)}
+              note={tag.note}
+              onNote={note => updateTag(i, { note })}
             />
           ))}
 
