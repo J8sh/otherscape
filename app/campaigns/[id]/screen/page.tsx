@@ -1,7 +1,7 @@
 'use client'
 import { use, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Flame, AlertTriangle, Backpack } from 'lucide-react'
+import { ArrowLeft, Flame, AlertTriangle, Backpack, Spotlight, RotateCcw } from 'lucide-react'
 import { api } from '@/lib/api'
 import { usePolling } from '@/lib/usePolling'
 import { CATEGORY_META } from '@/lib/themeMeta'
@@ -32,6 +32,28 @@ export default function ScreenPage({ params }: { params: Promise<{ id: string }>
   usePolling(load, 6000)
 
   const crewBurned = campaign?.crewTheme.tags.filter(t => t.isBurned && t.text) ?? []
+
+  // Spotlight tracker (the rule of thumb from pp. 76–83: nobody acts twice before everyone
+  // has acted once). Kept on this device only — it's the MC's scratchpad.
+  const spotKey = `spotlight:${id}`
+  const [acted, setActed] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    try { setActed(new Set(JSON.parse(localStorage.getItem(spotKey) ?? '[]'))) } catch { /* storage unavailable */ }
+  }, [spotKey])
+  function updateActed(change: (prev: Set<string>) => Set<string>) {
+    setActed(prev => {
+      const next = change(prev)
+      try { localStorage.setItem(spotKey, JSON.stringify([...next])) } catch { /* storage unavailable */ }
+      return next
+    })
+  }
+  const toggleActed = (charId: string) => updateActed(prev => {
+    const next = new Set(prev)
+    if (next.has(charId)) next.delete(charId)
+    else next.add(charId)
+    return next
+  })
+  const actedCount = chars.filter(c => acted.has(c._id)).length
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
@@ -82,6 +104,22 @@ export default function ScreenPage({ params }: { params: Promise<{ id: string }>
         </section>
       )}
 
+      {chars.length > 0 && (
+        <section className="panel px-4 py-3 mb-4 flex flex-wrap items-center gap-3" aria-labelledby="tv-spotlight">
+          <h2 id="tv-spotlight" className="font-display tracking-widest text-lg flex items-center gap-2" style={{ color: 'var(--accent-lime)' }}>
+            <Spotlight size={18} aria-hidden /> SPOTLIGHT
+          </h2>
+          <span className="text-sm flex-1" style={{ color: 'var(--text-soft)' }} aria-live="polite">
+            {actedCount === chars.length
+              ? 'Everyone has had a turn — start a new round.'
+              : `${actedCount} of ${chars.length} acted this round · next: ${chars.filter(c => !acted.has(c._id)).map(c => c.name || 'Unnamed').join(', ')}`}
+          </span>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => updateActed(() => new Set())} disabled={actedCount === 0}>
+            <RotateCcw size={14} aria-hidden /> NEW ROUND
+          </button>
+        </section>
+      )}
+
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {chars.map(c => {
           const cats = c.themes.filter(t => t.themeType).map(t => t.category as Category)
@@ -92,8 +130,15 @@ export default function ScreenPage({ params }: { params: Promise<{ id: string }>
           const limit = campaign?.optionalRules?.pcLimit ?? PC_STATUS_LIMIT
           const worst = c.statuses.filter(s => s.type !== 'helpful' && s.type !== 'progress').reduce((m, s) => Math.max(m, s.tier), 0)
           return (
-            <li key={c._id} className="panel p-4" style={{ borderColor: worst >= limit ? 'var(--danger)' : undefined }}>
-              <Link href={`/campaigns/${id}/character/${c._id}`} className="font-display text-2xl tracking-wide hover:underline">{c.name || 'Unnamed'}</Link>
+            <li key={c._id} className="panel p-4" style={{ borderColor: worst >= limit ? 'var(--danger)' : undefined, opacity: acted.has(c._id) ? 0.7 : 1 }}>
+              <div className="flex items-start justify-between gap-2">
+                <Link href={`/campaigns/${id}/character/${c._id}`} className="font-display text-2xl tracking-wide hover:underline">{c.name || 'Unnamed'}</Link>
+                <button type="button" className="chip shrink-0" aria-pressed={acted.has(c._id)} onClick={() => toggleActed(c._id)}
+                  style={{ minHeight: 36, color: acted.has(c._id) ? 'var(--accent-lime)' : 'var(--text-muted)', borderColor: acted.has(c._id) ? 'var(--accent-lime)' : undefined }}
+                  aria-label={`${c.name || 'Unnamed'} ${acted.has(c._id) ? 'has acted this round' : 'has not acted yet'}`}>
+                  {acted.has(c._id) ? '✓ ACTED' : 'MARK ACTED'}
+                </button>
+              </div>
               <div className="flex flex-wrap items-center gap-2 text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {essence && <span title={ESSENCE_INFO[essence].special}>{essence}</span>}
                 {(['self', 'mythos', 'noise'] as const).map(cat => {
