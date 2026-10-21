@@ -22,6 +22,7 @@ export default function JournalPage({ params }: { params: Promise<{ id: string }
   const [campaign, setCampaign] = useState<ICampaign | null>(null)
   const [entries, setEntries] = useState<Entry[]>([])
   const [filter, setFilter] = useState<Kind | 'all'>('all')
+  const [query, setQuery] = useState('')
   const [draft, setDraft] = useState({ title: '', body: '', kind: 'recap' as Kind })
   const [editing, setEditing] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState({ title: '', body: '' })
@@ -61,7 +62,8 @@ export default function JournalPage({ params }: { params: Promise<{ id: string }
   }
 
   const canWrite = !!campaign?.me?.canCreateCharacter
-  const shown = entries.filter(e => filter === 'all' || e.kind === filter)
+  const q = query.trim().toLowerCase()
+  const shown = entries.filter(e => (filter === 'all' || e.kind === filter) && (!q || `${e.title} ${e.body} ${e.authorName}`.toLowerCase().includes(q)))
 
   return (
     <div className="max-w-3xl mx-auto px-4 md:px-8 py-6">
@@ -97,6 +99,11 @@ export default function JournalPage({ params }: { params: Promise<{ id: string }
           </button>
         ))}
       </div>
+      {entries.length > 3 && (
+        <input type="search" className="input mt-3" value={query} onChange={e => setQuery(e.target.value)}
+          placeholder="Search the journal — names, places, leads…" aria-label="Search the journal" autoComplete="off" />
+      )}
+      {q && <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }} aria-live="polite">{shown.length} entr{shown.length === 1 ? 'y' : 'ies'} match “{query}”.</p>}
 
       <ul className="mt-4 space-y-3">
         {shown.length === 0 && <li style={{ color: 'var(--text-muted)' }}>No entries yet.</li>}
