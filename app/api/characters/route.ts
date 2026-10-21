@@ -4,7 +4,7 @@ import { HttpError, readJson, route } from '@/lib/apiHandler'
 import { requireUser } from '@/lib/auth/session'
 import { canEditCharacter, loadCampaignFor, pick } from '@/lib/auth/access'
 import { parseText } from '@/lib/auth/validate'
-import { Character, SHEET_FIELDS } from '@/lib/models/Character'
+import { Character, RESTORE_DAYS, SHEET_FIELDS } from '@/lib/models/Character'
 import { Campaign } from '@/lib/models/Campaign'
 
 /**
@@ -34,6 +34,14 @@ export const GET = route(async (req: Request) => {
   if (!campaignId) throw new HttpError(400, 'campaignId is required.')
   const { access } = await loadCampaignFor(campaignId, user)
   await connectDB()
+  if (params.get('deleted') === '1') {
+    // Recently deleted characters the caller could restore.
+    const gone = await Character.find({ campaignId, deletedAt: { $ne: null } }, { name: 1, ownerId: 1, deletedAt: 1 }).sort({ deletedAt: -1 }).lean<{ _id: unknown; name: string; ownerId?: unknown; deletedAt: Date }[]>()
+    return NextResponse.json(gone.filter(c => canEditCharacter(access, c, user)).map(c => ({
+      _id: String(c._id), name: c.name, deletedAt: c.deletedAt,
+      purgeAt: new Date(c.deletedAt.getTime() + RESTORE_DAYS * 24 * 3600 * 1000),
+    })))
+  }
   const characters = await Character.find({ campaignId }).sort({ createdAt: 1 }).lean<{ ownerId?: unknown }[]>()
   return NextResponse.json(
     characters.map(c => ({ ...c, canEdit: canEditCharacter(access, c, user) }))

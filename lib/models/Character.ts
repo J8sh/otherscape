@@ -95,9 +95,20 @@ const CharacterSchema = new Schema(
     },
     essence: { mythosSameSource: { type: Boolean, default: false } },
     notes: { type: String, default: '', maxlength: 5000 },
+    /** Set when deleted: the character can be restored for 30 days, then MongoDB purges it. */
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 )
+
+/** Deleted characters are purged 30 days after deletion (TTL index; null never expires). */
+export const RESTORE_DAYS = 30
+CharacterSchema.index({ deletedAt: 1 }, { expireAfterSeconds: RESTORE_DAYS * 24 * 3600 })
+
+// Reads skip deleted characters unless a query opts in with { withDeleted: true }.
+CharacterSchema.pre(['find', 'findOne', 'countDocuments'], function () {
+  if (!this.getOptions().withDeleted && this.getFilter().deletedAt === undefined) this.where({ deletedAt: null })
+})
 
 export const Character = registerModel('Character', CharacterSchema)
 

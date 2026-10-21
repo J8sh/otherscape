@@ -11,6 +11,7 @@ import { RollLog } from '@/components/campaign/RollLog'
 import { OptionalRules } from '@/components/campaign/OptionalRules'
 import { RelationshipWeb } from '@/components/campaign/RelationshipWeb'
 import { SeriesNotes } from '@/components/campaign/SeriesNotes'
+import { RecentlyDeleted } from '@/components/campaign/RecentlyDeleted'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
 import { useSession } from '@/components/auth/SessionProvider'
 import { api } from '@/lib/api'
@@ -31,6 +32,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
   const { user } = useSession()
   const [campaign, setCampaign] = useState<ICampaign | null>(null)
   const [characters, setCharacters] = useState<CharacterRow[]>([])
+  const [deletedVersion, setDeletedVersion] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [editingDetails, setEditingDetails] = useState(false)
@@ -131,10 +133,11 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
   }
 
   async function deleteCharacter(charId: string, name: string) {
-    if (!confirm(`Delete ${name || 'this character'}? This can’t be undone.`)) return
+    if (!confirm(`Delete ${name || 'this character'}? You can restore it from “Recently deleted” for 30 days.`)) return
     try {
       await api(`/api/characters/${charId}`, { method: 'DELETE' })
       setCharacters(prev => prev.filter(c => c._id !== charId))
+      setDeletedVersion(v => v + 1)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not delete')
     }
@@ -306,6 +309,9 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
               })}
             </ul>
           )}
+          <RecentlyDeleted campaignId={id} refreshKey={deletedVersion} onRestored={() => {
+            api<CharacterRow[]>(`/api/characters?campaignId=${id}`).then(setCharacters).catch(() => {})
+          }} />
           <ChallengesPanel challenges={campaign.challenges ?? []} canManage={!!me?.canManage} onChange={updateChallenges} />
           {me?.canManage && <div className="mt-2 flex justify-end"><SaveIndicator state={challengeSave.state} error={challengeSave.error} /></div>}
         </section>

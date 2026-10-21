@@ -36,6 +36,8 @@ export const DELETE = route(async (_: Request, { params }: Ctx) => {
   const { id } = await params
   const { character, canEdit } = await loadCharacterFor(id, user)
   if (!canEdit) throw new HttpError(403, 'You can only delete your own characters.')
-  await character.deleteOne()
+  // Soft delete: restorable from the campaign page until the TTL index purges it.
+  character.set({ deletedAt: new Date() })
+  await character.save()
   return NextResponse.json({ success: true })
 })
