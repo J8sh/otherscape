@@ -2,10 +2,13 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, ChevronRight, KeyRound, BookOpen, Dices } from 'lucide-react'
+import { Plus, ChevronRight, KeyRound, BookOpen, Dices, UserRound } from 'lucide-react'
 import { api } from '@/lib/api'
 import { ROLE_LABEL } from '@/lib/roles'
-import type { ICampaign } from '@/types'
+import { CATEGORY_META } from '@/lib/themeMeta'
+import type { ICampaign, ThemeCategory } from '@/types'
+
+interface MyCharacter { _id: string; name: string; campaignId: string; campaignName: string; categories: ThemeCategory[] }
 
 function timeAgo(iso: string) {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
@@ -24,11 +27,17 @@ export default function CampaignsPage() {
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState({ name: '', description: '', megacity: '' })
   const [code, setCode] = useState('')
+  const [mine, setMine] = useState<MyCharacter[]>([])
 
   async function load() {
     setError(null)
     try {
-      setCampaigns(await api<ICampaign[]>('/api/campaigns'))
+      const [list, chars] = await Promise.all([
+        api<ICampaign[]>('/api/campaigns'),
+        api<MyCharacter[]>('/api/characters?mine=1').catch(() => []),
+      ])
+      setCampaigns(list)
+      setMine(chars)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load campaigns')
     } finally {
@@ -130,6 +139,30 @@ export default function CampaignsPage() {
           </div>
         </div>
       ) : (
+        <>
+        {mine.length > 0 && (
+          <section aria-labelledby="my-chars" className="mb-6">
+            <h2 id="my-chars" className="font-display text-xl tracking-widest mb-2" style={{ color: 'var(--accent-lime)' }}>YOUR CHARACTERS</h2>
+            <ul className="scroll-row flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0">
+              {mine.map(ch => (
+                <li key={ch._id} className="shrink-0">
+                  <Link href={`/campaigns/${ch.campaignId}/character/${ch._id}`} className="panel flex items-center gap-3 px-4 py-3 hover:border-[#c8ff00] transition-colors" style={{ minWidth: 220, minHeight: 64 }}>
+                    <UserRound size={22} aria-hidden style={{ color: 'var(--accent-cyan)' }} />
+                    <span className="min-w-0">
+                      <span className="block font-display text-lg tracking-wide truncate" style={{ maxWidth: 220 }}>{ch.name || 'Unnamed character'}</span>
+                      <span className="block text-xs font-display tracking-widest truncate" style={{ color: 'var(--text-muted)', maxWidth: 220 }}>{ch.campaignName.toUpperCase()}</span>
+                      {ch.categories.length > 0 && (
+                        <span className="flex gap-1 mt-1" aria-label={`Themes: ${ch.categories.map(c => CATEGORY_META[c]?.label ?? c).join(', ')}`}>
+                          {ch.categories.map((c, i) => <span key={i} className="rounded-full" style={{ width: 18, height: 4, background: CATEGORY_META[c]?.color ?? 'var(--border-card)' }} />)}
+                        </span>
+                      )}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {campaigns.map(c => (
             <li key={c._id}>
@@ -158,6 +191,7 @@ export default function CampaignsPage() {
             </li>
           ))}
         </ul>
+        </>
       )}
     </div>
   )

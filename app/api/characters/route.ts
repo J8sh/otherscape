@@ -5,11 +5,32 @@ import { requireUser } from '@/lib/auth/session'
 import { canEditCharacter, loadCampaignFor, pick } from '@/lib/auth/access'
 import { parseText } from '@/lib/auth/validate'
 import { Character, SHEET_FIELDS } from '@/lib/models/Character'
+import { Campaign } from '@/lib/models/Campaign'
 
-/** Characters of one campaign, each flagged with whether the caller may edit it. */
+/**
+ * Characters of one campaign, each flagged with whether the caller may edit
+ * it — or, with `?mine=1`, a short list of the caller's own characters in
+ * campaigns they still belong to (for quick links).
+ */
 export const GET = route(async (req: Request) => {
   const user = await requireUser()
-  const campaignId = new URL(req.url).searchParams.get('campaignId')
+  const params = new URL(req.url).searchParams
+  if (params.get('mine') === '1') {
+    await connectDB()
+    const campaigns = await Campaign.find({ 'members.userId': user._id }, { name: 1 }).lean<{ _id: unknown; name: string }[]>()
+    const names = new Map(campaigns.map(c => [String(c._id), c.name]))
+    const mine = await Character.find({ ownerId: user._id, campaignId: { $in: [...names.keys()] } }, { name: 1, campaignId: 1, themes: 1, updatedAt: 1 })
+      .sort({ updatedAt: -1 }).limit(50).lean<{ _id: unknown; name: string; campaignId: unknown; themes?: { themeType?: string; category?: string }[]; updatedAt: Date }[]>()
+    return NextResponse.json(mine.map(c => ({
+      _id: String(c._id),
+      name: c.name,
+      campaignId: String(c.campaignId),
+      campaignName: names.get(String(c.campaignId)) ?? '',
+      categories: (c.themes ?? []).filter(t => t.themeType).map(t => t.category),
+      updatedAt: c.updatedAt,
+    })))
+  }
+  const campaignId = params.get('campaignId')
   if (!campaignId) throw new HttpError(400, 'campaignId is required.')
   const { access } = await loadCampaignFor(campaignId, user)
   await connectDB()
