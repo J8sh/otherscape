@@ -17,7 +17,7 @@ export function TableTools({ campaignId, onDone }: { campaignId: string; onDone:
       const r = await api<{ crewTagsRecovered?: number; relationshipsRestored?: number; characters?: number }>(
         `/api/campaigns/${campaignId}/session`, { method: 'POST', json: { action } })
       setMsg(action === 'credit-roll'
-        ? `Credit Roll done: ${r.crewTagsRecovered} crew tag${r.crewTagsRecovered === 1 ? '' : 's'} recovered, ${r.relationshipsRestored} relationship tag${r.relationshipsRestored === 1 ? '' : 's'} restored. Talk through the session, and let players rewrite relationships that changed.`
+        ? `Credit Roll done: ${r.crewTagsRecovered} crew tag${r.crewTagsRecovered === 1 ? '' : 's'} recovered, ${r.relationshipsRestored} relationship tag${r.relationshipsRestored === 1 ? '' : 's'} restored. A “Session wrap” recap is waiting in the Journal. Talk through the session, and let players rewrite relationships that changed.`
         : `Loaded off: every loadout tag on ${r.characters} sheet${r.characters === 1 ? '' : 's'} is burnt again.`)
       onDone()
     } catch (e) {
