@@ -67,6 +67,8 @@ test('crew tags: burn for power, weaknesses mark the crew upgrade, sheet untouch
   assert.equal(out.crew.upgrade, 3, 'capped at 3')
   assert.equal(crew.tags[0].isBurned, false, 'input not mutated')
   assert.equal(applyCrewRoll(crew, { positive: [], weaknesses: [] }), null)
+  const justUsed = applyCrewRoll(crew, { positive: [{ kind: 'crew', index: 0 }], weaknesses: [] })!
+  assert.equal(justUsed.crew.tags[0].isBurned, true, 'using a crew power tag burns it even without burning for +3')
   const sheetOnly = applyRoll(sheet(), sel)
   assert.deepEqual(sheetOnly.changes, [], 'crew refs never touch the character sheet')
 })

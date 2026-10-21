@@ -84,20 +84,24 @@ export function applyRoll(c: ICharacter, sel: RollSelection): ApplyResult {
 }
 
 /**
- * What a roll does to the shared crew card: a crew tag burned for Power is
- * burned, and each invoked crew weakness marks the crew's upgrade track
- * (capped at 3). Returns null when the roll used no crew tags.
+ * What a roll does to the shared crew card: every crew power tag used is
+ * burned (using one always burns it, p. 70 — burning it for +3 included),
+ * and each invoked crew weakness marks the crew's upgrade track (capped at
+ * 3). Returns null when the roll used no crew tags.
  */
 export function applyCrewRoll(crew: ICrewThemeCard, sel: RollSelection): { crew: ICrewThemeCard; changes: string[] } | null {
-  const touchesCrew = sel.burnedForPower?.kind === 'crew' || sel.weaknesses.some(r => r.kind === 'crew')
+  const used = [...sel.positive, ...(sel.burnedForPower ? [sel.burnedForPower] : [])].filter(r => r.kind === 'crew')
+  const touchesCrew = used.length > 0 || sel.weaknesses.some(r => r.kind === 'crew')
   if (!touchesCrew) return null
   const changes: string[] = []
   const tags = (crew.tags ?? []).map(t => ({ ...t }))
   let upgrade = crew.upgrade ?? 0
-  const burn = sel.burnedForPower
-  if (burn?.kind === 'crew' && tags[burn.index]) {
-    tags[burn.index].isBurned = true
-    changes.push(`Burned crew tag “${tags[burn.index].text}”`)
+  for (const r of used) {
+    const tag = tags[r.index]
+    if (tag && !tag.isBurned) {
+      tag.isBurned = true
+      changes.push(`Burned crew tag “${tag.text}”`)
+    }
   }
   for (const r of sel.weaknesses) {
     if (r.kind === 'crew' && upgrade < UPGRADE_BOXES) {
