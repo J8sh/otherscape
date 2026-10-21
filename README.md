@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Metro :Otherscape Tracker
 
-## Getting Started
+A web companion for the **Metro :Otherscape** tabletop RPG: shared campaigns, character sheets that
+look like the printed cards, tools for the MC, and a rules guide — built for laptops, tablets and phones
+at the table.
 
-First, run the development server:
+## Features
+
+- **Accounts & campaigns** — username/password sign-in. Each campaign has an **MC**, **players** and
+  **spectators**; players join with an invite link or code. The first account becomes the site admin.
+- **Character sheets** modeled on the core book's cards: four themes (from the 112 theme kits or 33
+  character tropes), the character card with Essence and Evolution, loadout (with the Street Catalog and
+  Loading Up / Off), story tags, statuses that stack by the book, notes. Rules tips (ⓘ) everywhere.
+- **Crew** — the shared crew theme (from the 8 crew kits), relationship tags, live updates for everyone.
+- **Dice roller** — tap the tags and statuses that apply, roll 2d6 + Power, apply the results to your
+  sheet or to a Challenge, and share the roll with the crew. Action and mitigation modes.
+- **MC tools** — Challenge profiles with Limits and reveal controls, Table View of every character,
+  Credit Roll / Load Off, optional rules, a shared journal.
+- **Rules guide** — plain-language reference (our own wording, with core-book page numbers) and an index
+  of the Action Database. The book itself is needed for full rules text.
+- Print-friendly sheets, export/import characters, installable on phones (Add to Home Screen).
+
+## Running it
+
+Requirements: Node 22+, MongoDB.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+echo "MONGODB_URI=mongodb://127.0.0.1:27017/otherscape" > .env.local
+npm run dev            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The first account you register becomes the admin and adopts any campaigns/characters created before
+accounts existed.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm test               # rules, rolls, normalization, tropes (node:test)
+npm run typecheck
+npm run build
+```
 
-## Learn More
+### Deploying
 
-To learn more about Next.js, take a look at the following resources:
+- Set `MONGODB_URI`. Session cookies are `Secure` in production; set `COOKIE_SECURE=false` only if you
+  serve a production build over plain HTTP on a private network.
+- Sign-in rate limiting is in-memory (per server process).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project layout
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/            pages (campaigns, characters, guide, roller, admin) and API routes (app/api)
+components/     cards (sheet), campaign (MC tools), roller, guide, layout, ui
+lib/            rules (pure, tested), auth & access control, models (Mongoose), book data
+proxy.ts        redirects signed-out visitors to /login (Next 16 "proxy", formerly middleware)
+```
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Game content (theme kits, tropes, crew kits, catalog tags) is game data from *Metro :Otherscape*
+© Son of Oak Game Studio; rules text on the site is summarized in our own words.
