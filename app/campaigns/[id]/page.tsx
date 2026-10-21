@@ -64,7 +64,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
       if (!prev || !isNewer(c.updatedAt, prev.updatedAt)) return prev ? { ...prev, members: c.members, me: c.me } : prev
       return {
         ...c,
-        crewTheme: crewSave.isBusy() ? prev.crewTheme : normalizeCrew(c.crewTheme),
+        crewTheme: crewSave.isBusy() ? prev.crewTheme : c.crewTheme, // normalized only on first load, so a just-added blank row survives
         challenges: challengeSave.isBusy() ? prev.challenges : c.challenges,
       }
     })

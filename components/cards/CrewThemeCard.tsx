@@ -1,8 +1,10 @@
 'use client'
-import { Plus } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { InfoTip } from '@/components/ui/Tooltip'
 import { BoxTrack, CardStrip, LegendChip, LinedField, PaperCard, TagSlot } from '@/components/sheet/primitives'
 import { DECAY_BOXES, UPGRADE_BOXES } from '@/lib/rules'
+import { CREW_SPECIALS } from '@/lib/crewBook'
+import { CrewKitPicker } from '@/components/cards/CrewKitPicker'
 import type { ICrewThemeCard, ITag } from '@/types'
 
 interface Props {
@@ -42,6 +44,12 @@ export function CrewThemeCard({ crew, onChange, readOnly = false }: Props) {
           />
         </div>
 
+        {!readOnly && (
+          <div className="px-3 pt-3 flex items-center gap-2 flex-wrap">
+            <CrewKitPicker crew={crew} onApply={onChange} />
+            <span className="text-sm" style={{ color: 'var(--card-ink-soft)' }}>Start from one of the book’s 8 crew kits.</span>
+          </div>
+        )}
         <CardStrip right={<><LegendChip>POWER</LegendChip><LegendChip>WEAKNESS</LegendChip><LegendChip>BURN</LegendChip></>}>TAGS</CardStrip>
         {power.map(({ tag, i }, n) => (
           <TagSlot
@@ -83,21 +91,38 @@ export function CrewThemeCard({ crew, onChange, readOnly = false }: Props) {
         </div>
 
         <CardStrip>CREW THEME SPECIALS</CardStrip>
-        {crew.specials.map((s, i) => (
-          <TagSlot
-            key={i}
-            kind="power"
-            text={s}
-            placeholder="crew special…"
-            onText={text => update({ specials: crew.specials.map((x, idx) => idx === i ? text : x) })}
-            onRemove={() => update({ specials: crew.specials.filter((_, idx) => idx !== i) })}
-          />
-        ))}
-        <div className="px-3 edit-only">
-          <button type="button" className="w-full flex items-center justify-center gap-1 font-display tracking-widest text-sm rounded-lg" style={{ minHeight: 40, border: '2px dashed #a7b0bd', color: 'var(--card-ink-soft)' }}
-            onClick={() => update({ specials: [...crew.specials, ''] })}>
-            <Plus size={14} aria-hidden /> SPECIAL
-          </button>
+        <div className="px-3 space-y-1.5">
+          {crew.specials.map((name, i) => {
+            const book = CREW_SPECIALS.find(sp => sp.name === name)
+            return book ? (
+              <div key={i} className="rounded-lg px-3 py-2 flex items-start justify-between gap-2" style={{ background: 'var(--card-slot)', borderLeft: '5px solid #29c8f2' }}>
+                <div>
+                  <div className="font-display tracking-wide text-lg leading-tight">{book.name}</div>
+                  <p className="text-[15px] leading-snug" style={{ color: 'var(--card-ink-soft)' }}>{book.summary}</p>
+                </div>
+                <button type="button" className="slot-btn remove edit-only shrink-0" onClick={() => update({ specials: crew.specials.filter((_, idx) => idx !== i) })} aria-label={`Remove ${name}`}><X size={14} /></button>
+              </div>
+            ) : (
+              <div key={i} className="-mx-3">
+                <TagSlot kind="power" text={name} placeholder="custom crew special…"
+                  onText={text => update({ specials: crew.specials.map((x, idx) => idx === i ? text : x) })}
+                  onRemove={() => update({ specials: crew.specials.filter((_, idx) => idx !== i) })} />
+              </div>
+            )
+          })}
+          <div className="edit-only flex gap-2">
+            <select
+              className="flex-1 rounded-lg px-2 font-semibold"
+              style={{ minHeight: 40, border: '2px dashed #a7b0bd', background: 'transparent', color: 'var(--card-ink-soft)' }}
+              value=""
+              onChange={e => { if (e.target.value) update({ specials: [...crew.specials, e.target.value === '__custom' ? '' : e.target.value] }) }}
+              aria-label="Add a crew special"
+            >
+              <option value="">+ Add a crew special (with a crew upgrade)…</option>
+              {CREW_SPECIALS.filter(sp => !crew.specials.includes(sp.name)).map(sp => <option key={sp.name} value={sp.name}>{sp.name}</option>)}
+              <option value="__custom">Custom…</option>
+            </select>
+          </div>
         </div>
 
         <div className="px-3 mt-3 flex justify-end">
