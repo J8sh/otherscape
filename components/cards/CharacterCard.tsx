@@ -6,6 +6,7 @@ import { EssenceWeb } from '@/components/cards/EssenceWeb'
 import { ESSENCE_INFO, MOMENTS, VETERAN_SPECIALS } from '@/lib/essence'
 import { EVOLUTION_TRACK, essenceOf, type Category } from '@/lib/rules'
 import type { ICharacter, ICrewRelationship, IEvolution } from '@/types'
+import { useToast } from '@/components/ui/Toast'
 
 interface Props {
   character: ICharacter
@@ -39,6 +40,7 @@ export function CharacterCard({ character, onChange }: Props) {
   const veterans = evo.veteranSpecials ?? []
   const veteranSlots = VETERAN_KEYS.filter(k => evo[k]).length
 
+  const toast = useToast()
   const update = (patch: Partial<ICharacter>) => onChange({ ...character, ...patch })
   const updateEvolution = (patch: Partial<IEvolution>) => update({ evolution: { ...evo, ...patch } })
 
@@ -48,7 +50,7 @@ export function CharacterCard({ character, onChange }: Props) {
 
   function setPoints(v: number) {
     if (v >= EVOLUTION_TRACK) {
-      alert('Moment of Evolution! Your Evolution track resets — check one Moment below and work out what it means with your MC.')
+      toast({ kind: 'success', title: 'MOMENT OF EVOLUTION', message: 'Your Evolution track resets — check one Moment below and work out what it means with your MC.' })
       updateEvolution({ points: 0 })
     } else {
       updateEvolution({ points: v })
@@ -58,7 +60,7 @@ export function CharacterCard({ character, onChange }: Props) {
   function toggleVeteran(name: string) {
     const has = veterans.includes(name)
     if (!has && veterans.length >= veteranSlots) {
-      alert('Each “Gain a Veteran Special” Moment unlocks one Veteran Special. Check one of those Moments first.')
+      toast({ kind: 'warning', message: 'Each “Gain a Veteran Special” Moment unlocks one Veteran Special. Check one of those Moments first.' })
       return
     }
     updateEvolution({ veteranSpecials: has ? veterans.filter(v => v !== name) : [...veterans, name] })
