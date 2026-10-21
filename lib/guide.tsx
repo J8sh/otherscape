@@ -134,6 +134,51 @@ export const GUIDE: GuideTopic[] = [
     ),
   },
   {
+    slug: 'session-zero',
+    title: 'Session Zero: Setting Up a Series',
+    summary: 'Before the first job: agree on the concept, the Megacity, the characters and the crew — then play one ordinary night.',
+    pages: 'pp. 145–159',
+    group: 'basics',
+    body: (
+      <>
+        <p>
+          A <b>series</b> is your ongoing campaign. Its first session is a group conversation more than a game: you decide together what
+          the story is about, then build the world and the crew. Going fast with ready-made options takes about 15 minutes; building
+          everything yourselves can fill a whole session.
+        </p>
+        <h2>1. The series concept</h2>
+        <p>Three questions shape everything else:</p>
+        <ul>
+          <li><b>What is the game about?</b> A moral question, a technology (say, cloning), or a set of myths you want at the center.</li>
+          <li><b>Who is the crew?</b> What kind of people, what keeps them together, what jobs they take, and who they’re up against.</li>
+          <li><b>What is the Megacity like?</b> Settled in the next step.</li>
+        </ul>
+        <p>Possible focuses include runaway tech and broken morals, corporate intrigue, exploring ruins, deep cyberspace, or gangs, cults and subcultures.</p>
+        <h2>Lines &amp; veils</h2>
+        <p>
+          While you talk concept, agree on boundaries. A <b>line</b> is content that won’t appear at all. A <b>veil</b> is content that can
+          happen, but off-screen — you cut away. Revisit them whenever someone needs to.
+        </p>
+        <h2>2. The Megacity</h2>
+        <p>Use a ready-made city, one the MC prepared, or build one together. It isn’t just scenery — it pushes back and remembers.</p>
+        <h2>3. The characters</h2>
+        <p>Each player makes a character — quick from a trope or custom from the themebook questions. See <Link href="/guide/making-a-character">Making a Character</Link>.</p>
+        <h2>4. The crew theme</h2>
+        <p>Where do your jobs come from? Who are your contacts, what agency (if any) backs you, and what support do you get? Turn the answers into the crew’s tags.</p>
+        <h2>5. A night in the Megacity</h2>
+        <p>
+          A low-stakes warm-up. The MC picks an ordinary night and asks where everyone is and what they’re doing. Play a few short,
+          casual scenes — friends, rivals, daily hassles — to learn the characters and the neighborhood and to try a few rolls. Nothing
+          has to go perfectly; it’s a rehearsal.
+        </p>
+        <OnTheSite>
+          The MC creates the campaign and shares its <b>invite link</b>. The concept, city and boundaries go in <b>Series notes</b> on the
+          campaign page, where everyone can read them. The crew card there has <b>crew kits</b> for a ready-made crew theme.
+        </OnTheSite>
+      </>
+    ),
+  },
+  {
     slug: 'tags',
     title: 'Tags',
     summary: 'Short descriptors instead of stats. Every relevant tag is worth ±1 Power.',
