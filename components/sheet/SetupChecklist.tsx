@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { CheckCircle2, Circle, X, Users } from 'lucide-react'
 import { api } from '@/lib/api'
+import { TropePicker } from '@/components/sheet/TropePicker'
 import type { ICharacter } from '@/types'
 
 interface Step { done: boolean; label: string; hint: string; href: string }
@@ -60,6 +61,12 @@ export function SetupChecklist({ character, onChange }: { character: ICharacter;
         </div>
         <button type="button" className="btn btn-ghost btn-icon" onClick={dismiss} aria-label="Hide the setup checklist"><X size={16} /></button>
       </div>
+      {themes.length === 0 && (
+        <div className="mt-3 rounded-lg p-3 flex flex-wrap items-center gap-3" style={{ background: 'var(--bg-inset)' }}>
+          <TropePicker character={character} onApply={onChange} />
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>New to the game? Pick an archetype and get all four themes at once.</span>
+        </div>
+      )}
       <ol className="mt-3 space-y-1.5">
         {steps.map(s => (
           <li key={s.label}>
