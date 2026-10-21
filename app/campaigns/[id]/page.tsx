@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Users, Zap, ArrowLeft, Trash2, Pencil, Eye, NotebookPen, MonitorPlay, Upload, Undo2, Redo2 } from 'lucide-react'
+import { Plus, Users, Zap, ArrowLeft, Trash2, Pencil, Eye, NotebookPen, MonitorPlay, Upload, Undo2, Redo2, BookOpen } from 'lucide-react'
 import { CrewThemeCard } from '@/components/cards/CrewThemeCard'
 import { MembersPanel } from '@/components/campaign/MembersPanel'
 import { ChallengesPanel } from '@/components/campaign/ChallengesPanel'
@@ -238,6 +238,21 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
           <span>{error}</span>
           <button onClick={() => setError(null)} className="btn btn-danger btn-sm">DISMISS</button>
         </div>
+      )}
+
+      {me?.role === 'player' && !characters.some(c => c.ownerId === user?._id) && (
+        <section className="panel p-5 mb-6" style={{ borderColor: 'var(--accent-lime)' }} aria-labelledby="welcome-heading">
+          <h2 id="welcome-heading" className="font-display text-2xl tracking-widest" style={{ color: 'var(--accent-lime)' }}>WELCOME TO THE CREW</h2>
+          <ol className="list-decimal pl-5 mt-2 space-y-1" style={{ color: 'var(--text-soft)' }}>
+            {campaign.seriesNotes?.trim() && <li>Read the <b>series notes</b> — what this game is about and where it’s set.</li>}
+            <li>Make your character: <b>Add character</b>, then start from a trope or build your own themes.</li>
+            <li>Fill in the crew card together, and add a relationship tag for each crewmate.</li>
+          </ol>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <button onClick={addCharacter} className="btn btn-primary btn-sm"><Plus size={16} aria-hidden /> ADD MY CHARACTER</button>
+            <Link href="/guide/making-a-character" className="btn btn-ghost btn-sm"><BookOpen size={15} aria-hidden /> HOW TO MAKE A CHARACTER</Link>
+          </div>
+        </section>
       )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 xl:gap-8">
