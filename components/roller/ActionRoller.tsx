@@ -4,15 +4,18 @@ import Link from 'next/link'
 import { Dices, Flame, Minus, Plus, RotateCcw, Check } from 'lucide-react'
 import { InfoTip } from '@/components/ui/Tooltip'
 import { BLAZE_DEGREES, actionPower, blazeResult, rollOutcome, spendablePower, type BlazeDegree, type Outcome } from '@/lib/rules'
-import { applyRoll, refKey, rollD6, type TagRef } from '@/lib/roll'
+import { applyCrewRoll, applyRoll, refKey, rollD6, type TagRef } from '@/lib/roll'
 import { CATEGORY_META } from '@/lib/themeMeta'
-import type { IChallenge, ICharacter, IOptionalRules, IStatus } from '@/types'
+import type { IChallenge, ICharacter, ICrewThemeCard, IOptionalRules, IStatus } from '@/types'
 import { ApplyToChallenge } from '@/components/roller/ApplyToChallenge'
 
 interface Props {
   character?: ICharacter
   /** Save sheet changes caused by the roll (burns, upgrade marks). */
   onApply?: (character: ICharacter) => void
+  /** The campaign's shared crew theme — its tags can be invoked too. */
+  crew?: ICrewThemeCard | null
+  onApplyCrew?: (crew: ICrewThemeCard) => void
   /** Share a finished roll with the campaign (shown as a toggle when provided). */
   onShare?: (roll: { dice: [number, number]; power: number; tags: string[]; note: string }) => void
   /** The campaign's optional rules (power tag cap, Enhance cost). */
@@ -58,6 +61,18 @@ function sheetChips(c: ICharacter): Chip[] {
   return chips
 }
 
+/** Crew theme tags anyone in the crew can invoke (p. 74). */
+function crewChips(crew: ICrewThemeCard): Chip[] {
+  const group = crew.name ? `Crew: ${crew.name}` : 'Crew theme'
+  const chips: Chip[] = []
+  ;(crew.tags ?? []).forEach((tag, i) => {
+    if (!tag.text.trim()) return
+    if (tag.isWeakness) chips.push({ ref: { kind: 'crew', index: i }, text: tag.text, sign: -1, note: 'marks a crew upgrade', burnable: false, group, covers: tag.note?.trim() || undefined })
+    else if (!tag.isBurned) chips.push({ ref: { kind: 'crew', index: i }, text: tag.text, sign: 1, burnable: true, group, covers: tag.note?.trim() || undefined })
+  })
+  return chips
+}
+
 function Counter({ label, value, onChange, help }: { label: string; value: number; onChange: (v: number) => void; help: string }) {
   return (
     <div className="flex items-center justify-between gap-2">
@@ -87,8 +102,8 @@ function TierPicker({ label, value, onChange, help }: { label: string; value: nu
   )
 }
 
-export function ActionRoller({ character, onApply, onShare, rules, challenges }: Props) {
-  const chips = useMemo(() => (character ? sheetChips(character) : []), [character])
+export function ActionRoller({ character, onApply, onShare, rules, challenges, crew, onApplyCrew }: Props) {
+  const chips = useMemo(() => [...(character ? sheetChips(character) : []), ...(crew ? crewChips(crew) : [])], [character, crew])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [burnKey, setBurnKey] = useState<string | null>(null)
   const [extraPos, setExtraPos] = useState(0)
@@ -114,7 +129,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
   const [rollWith, setRollWith] = useState<'' | 'self' | 'mythos' | 'noise'>('')
 
   // A fresh sheet (after applying) invalidates selections by index.
-  useEffect(() => { setSelected(new Set()); setBurnKey(null); setStatusPicks(new Set()) }, [character])
+  useEffect(() => { setSelected(new Set()); setBurnKey(null); setStatusPicks(new Set()) }, [character, crew])
 
   const statuses: IStatus[] = character?.statuses ?? []
   const picked = statuses.filter((_, i) => statusPicks.has(i))
@@ -183,8 +198,11 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
       burnedForPower: burned ? chosen.find(c => refKey(c.ref) === burnKey)?.ref ?? null : null,
     }
     const { character: next, changes } = applyRoll(character, sel)
+    const crewResult = crew && onApplyCrew ? applyCrewRoll(crew, sel) : null
     onApply(next)
-    setApplied(changes.length ? changes : ['Nothing to update on the sheet.'])
+    if (crewResult) onApplyCrew!(crewResult.crew)
+    const all = [...changes, ...(crewResult?.changes ?? [])]
+    setApplied(all.length ? all : ['Nothing to update on the sheet.'])
   }
 
   const groups = [...new Set(chips.map(c => c.group))]

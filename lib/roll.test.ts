@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { applyRoll, rollD6 } from './roll.ts'
+import { applyCrewRoll, applyRoll, rollD6 } from './roll.ts'
 import type { ICharacter } from '../types/index.ts'
 
 function sheet(): ICharacter {
@@ -54,4 +54,19 @@ test('d6 stays in range', () => {
     const d = rollD6()
     assert.ok(d >= 1 && d <= 6 && Number.isInteger(d))
   }
+})
+
+test('crew tags: burn for power, weaknesses mark the crew upgrade, sheet untouched', () => {
+  const crew = { name: 'Crew', motivation: '', upgrade: 2, decay: 0, specials: [], tags: [
+    { text: 'safehouse', isPower: true, isWeakness: false, isBurned: false },
+    { text: 'wanted', isPower: false, isWeakness: true, isBurned: false },
+  ] } as unknown as Parameters<typeof applyCrewRoll>[0]
+  const sel = { positive: [{ kind: 'crew' as const, index: 0 }], weaknesses: [{ kind: 'crew' as const, index: 1 }, { kind: 'crew' as const, index: 1 }], burnedForPower: { kind: 'crew' as const, index: 0 } }
+  const out = applyCrewRoll(crew, sel)!
+  assert.equal(out.crew.tags[0].isBurned, true)
+  assert.equal(out.crew.upgrade, 3, 'capped at 3')
+  assert.equal(crew.tags[0].isBurned, false, 'input not mutated')
+  assert.equal(applyCrewRoll(crew, { positive: [], weaknesses: [] }), null)
+  const sheetOnly = applyRoll(sheet(), sel)
+  assert.deepEqual(sheetOnly.changes, [], 'crew refs never touch the character sheet')
 })

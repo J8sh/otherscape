@@ -4,17 +4,27 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { Dices, X } from 'lucide-react'
 import { ActionRoller } from '@/components/roller/ActionRoller'
 import { api } from '@/lib/api'
-import type { ICampaign, IChallenge, ICharacter, IOptionalRules } from '@/types'
+import type { ICampaign, IChallenge, ICharacter, ICrewThemeCard, IOptionalRules } from '@/types'
 
 /** “Roll” from a character sheet: the roller in a dialog, full-screen on phones. */
 export function RollerDialog({ character, onApply, rules }: { character: ICharacter; onApply?: (c: ICharacter) => void; rules?: IOptionalRules }) {
   const [challenges, setChallenges] = useState<IChallenge[]>([])
-  // Load the Challenges this player can see each time the roller opens.
+  const [crew, setCrew] = useState<ICrewThemeCard | null>(null)
+  // Load the Challenges this player can see, and the crew card, each time the roller opens.
   function onOpenChange(open: boolean) {
     if (!open || !onApply) return
     api<ICampaign>(`/api/campaigns/${character.campaignId}`)
-      .then(c => setChallenges((c.challenges ?? []).filter(ch => ch.revealed || c.me?.canManage)))
-      .catch(() => setChallenges([]))
+      .then(c => {
+        setChallenges((c.challenges ?? []).filter(ch => ch.revealed || c.me?.canManage))
+        setCrew(c.crewTheme ?? null)
+      })
+      .catch(() => { setChallenges([]); setCrew(null) })
+  }
+
+  // Burned crew tags and crew upgrade marks go to the shared crew card.
+  function applyCrew(next: ICrewThemeCard) {
+    setCrew(next)
+    api(`/api/campaigns/${character.campaignId}`, { method: 'PATCH', json: { crewTheme: next } }).catch(() => {})
   }
 
   return (
@@ -41,6 +51,8 @@ export function RollerDialog({ character, onApply, rules }: { character: ICharac
               rules={rules}
               challenges={challenges}
               onApply={onApply}
+              crew={crew}
+              onApplyCrew={onApply ? applyCrew : undefined}
               onShare={onApply ? roll => { api(`/api/campaigns/${character.campaignId}/rolls`, { method: 'POST', json: { characterId: character._id, ...roll } }).catch(() => {}) } : undefined}
             />
           </div>
