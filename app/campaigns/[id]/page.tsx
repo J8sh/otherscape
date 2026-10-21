@@ -9,6 +9,7 @@ import { ChallengesPanel } from '@/components/campaign/ChallengesPanel'
 import { TableTools } from '@/components/campaign/TableTools'
 import { RollLog } from '@/components/campaign/RollLog'
 import { OptionalRules } from '@/components/campaign/OptionalRules'
+import { RelationshipWeb } from '@/components/campaign/RelationshipWeb'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
 import { useSession } from '@/components/auth/SessionProvider'
 import { api } from '@/lib/api'
@@ -319,6 +320,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
             </div>
             <CrewThemeCard crew={campaign.crewTheme} onChange={updateCrew} readOnly={!me?.canEditCrew} />
           </section>
+          <RelationshipWeb characters={characters} />
           <RollLog campaignId={id} />
           {me?.canManage && <TableTools campaignId={id} onDone={load} />}
           <OptionalRules campaignId={id} rules={campaign.optionalRules} canManage={!!me?.canManage} onSaved={optionalRules => setCampaign(c => (c ? { ...c, optionalRules } : c))} />
