@@ -4,6 +4,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { Dices, X } from 'lucide-react'
 import { ActionRoller } from '@/components/roller/ActionRoller'
 import { api } from '@/lib/api'
+import { UPGRADE_BOXES } from '@/lib/rules'
 import type { ICampaign, IChallenge, ICharacter, ICrewThemeCard, IOptionalRules } from '@/types'
 
 /** “Roll” from a character sheet: the roller in a dialog, full-screen on phones. */
@@ -22,9 +23,23 @@ export function RollerDialog({ character, onApply, rules }: { character: ICharac
   }
 
   // Burned crew tags and crew upgrade marks go to the shared crew card.
-  function applyCrew(next: ICrewThemeCard) {
+  // Only this roll's changes are applied on top of a fresh copy, so a
+  // crewmate's edit since the roller opened isn't overwritten.
+  async function applyCrew(next: ICrewThemeCard) {
+    const before = crew
     setCrew(next)
-    api(`/api/campaigns/${character.campaignId}`, { method: 'PATCH', json: { crewTheme: next } }).catch(() => {})
+    if (!before) return
+    try {
+      const fresh = (await api<ICampaign>(`/api/campaigns/${character.campaignId}`)).crewTheme
+      const newlyBurned = new Set(next.tags.filter((t, i) => t.isBurned && !before.tags[i]?.isBurned).map(t => t.text))
+      const merged: ICrewThemeCard = {
+        ...fresh,
+        tags: fresh.tags.map(t => (newlyBurned.has(t.text) ? { ...t, isBurned: true } : t)),
+        upgrade: Math.min(UPGRADE_BOXES, (fresh.upgrade ?? 0) + Math.max(0, next.upgrade - before.upgrade)),
+      }
+      await api(`/api/campaigns/${character.campaignId}`, { method: 'PATCH', json: { crewTheme: merged } })
+      setCrew(merged)
+    } catch { /* the sheet update still landed; the crew card can be fixed by hand */ }
   }
 
   return (
