@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useRef, useState, use } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Eye, Zap } from 'lucide-react'
+import { ArrowLeft, Eye, Printer, Zap } from 'lucide-react'
 import { CharacterCard } from '@/components/cards/CharacterCard'
 import { ThemeSlot } from '@/components/cards/ThemeSlot'
 import { LoadoutThemeCard } from '@/components/cards/LoadoutThemeCard'
@@ -106,12 +106,13 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div className="no-print flex flex-wrap items-center justify-between gap-3 mb-4">
         <Link href={`/campaigns/${id}`} className="inline-flex items-center gap-1.5 font-display tracking-widest text-sm hover:text-white" style={{ color: 'var(--text-muted)', minHeight: 32 }}>
           <ArrowLeft size={14} aria-hidden /> {character.campaignName ? character.campaignName.toUpperCase() : 'CREW'}
         </Link>
         <div className="flex items-center gap-3">
           <SaveIndicator state={autosave.state} error={autosave.error} />
+          <button type="button" className="btn btn-ghost btn-sm hidden md:inline-flex" onClick={() => window.print()} aria-label="Print this sheet"><Printer size={14} aria-hidden /> PRINT</button>
           <Link href="/guide/effects" className="btn btn-ghost btn-sm"><Zap size={14} aria-hidden /> EFFECTS</Link>
           <RollerDialog character={character} onApply={character.canEdit ? c => updateCharacter(c) : undefined} />
         </div>
@@ -124,7 +125,7 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
         </div>
       )}
 
-      <nav aria-label="Sheet sections" className="scroll-row sticky z-30 -mx-4 md:mx-0 px-4 md:px-0 py-2 mb-4 flex gap-2 overflow-x-auto" style={{ top: 'var(--nav-height)', background: 'rgba(8,12,24,0.92)' }}>
+      <nav aria-label="Sheet sections" className="no-print scroll-row sticky z-30 -mx-4 md:mx-0 px-4 md:px-0 py-2 mb-4 flex gap-2 overflow-x-auto" style={{ top: 'var(--nav-height)', background: 'rgba(8,12,24,0.92)' }}>
         {[['#card', 'CHARACTER'], ['#themes', 'THEMES'], ['#gear', 'LOADOUT & STORY'], ['#statuses', 'STATUSES'], ['#notes', 'NOTES']].map(([href, label]) => (
           <a key={href} href={href} className="chip shrink-0" style={{ minHeight: 36, padding: '0 14px', color: 'var(--text-soft)' }}>{label}</a>
         ))}

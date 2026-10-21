@@ -373,3 +373,20 @@ fieldset:disabled .tag-slot-input::placeholder, fieldset:disabled .lined-field::
 .challenge-limit { background: #1e1626; border-radius: 8px; padding: 8px 10px; }
 .limit-box { width: 22px; height: 22px; border-radius: 4px; border: 2px solid #ff4f6e; display: inline-block; }
 .limit-box.small { width: 12px; height: 12px; border-width: 1px; border-color: #7a3a8a; border-radius: 2px; }
+
+/* ── Printing a character sheet ──────────────────────────────────────────── */
+@media print {
+  @page { margin: 12mm; }
+  html, body { background: #fff !important; color: #000; }
+  header, nav, .no-print, .edit-only, [role="status"], .app-main > a[href="#main"] { display: none !important; }
+  .app-main { padding: 0 !important; }
+  .paper-card, .tracking-card, .panel { box-shadow: none !important; break-inside: avoid; }
+  .paper-card { border: 1px solid #9aa3b2; }
+  .panel { background: #fff !important; border-color: #9aa3b2 !important; color: #000 !important; }
+  .panel * { color: #000 !important; }
+  section { break-inside: avoid-page; }
+  #themes, #gear, #statuses, #notes { break-before: page; }
+  input, textarea, select { border: 0 !important; background: transparent !important; }
+  .slot-btn:not(.is-on), .tracking-card-actions, .challenge-icon { display: none !important; }
+  a { text-decoration: none !important; }
+}
