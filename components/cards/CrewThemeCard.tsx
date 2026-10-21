@@ -5,6 +5,8 @@ import { BoxTrack, CardStrip, LegendChip, LinedField, PaperCard, TagSlot } from 
 import { DECAY_BOXES, UPGRADE_BOXES } from '@/lib/rules'
 import { CREW_SPECIALS } from '@/lib/crewBook'
 import { CrewKitPicker } from '@/components/cards/CrewKitPicker'
+import { ThemeQuestions } from '@/components/cards/ThemeQuestions'
+import { CREW_QUESTIONS } from '@/lib/themeQuestions'
 import type { ICrewThemeCard, ITag } from '@/types'
 
 interface Props {
@@ -101,6 +103,14 @@ export function CrewThemeCard({ crew, onChange, readOnly = false }: Props) {
             <Plus size={14} aria-hidden /> WEAKNESS
           </button>
         </div>
+        {!readOnly && (
+          <ThemeQuestions
+            questions={CREW_QUESTIONS}
+            label="Crew"
+            onAddPower={() => update({ tags: [...tags, { text: '', isPower: true, isWeakness: false, isBurned: false }] })}
+            onAddWeakness={() => update({ tags: [...tags, { text: '', isPower: false, isWeakness: true, isBurned: false }] })}
+          />
+        )}
 
         <CardStrip>IDENTITY / RITUAL / ITCH</CardStrip>
         <div className="px-3">

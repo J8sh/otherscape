@@ -297,3 +297,25 @@ export const THEME_QUESTIONS: Record<ThemeType, ThemeQuestions> = {
     ],
   },
 }
+
+/** Questions for building the crew theme from scratch (p. 155), paraphrased. */
+export const CREW_QUESTIONS: ThemeQuestions = {
+  power: [
+    'Who are you, as a crew?',
+    'Where do you meet, work, rest or gear up?',
+    'What have you learned to do well together?',
+    'Who guides, backs or helps your operation?',
+    'How do you get around?',
+    'Where, or in what situations, are you most at home?',
+    'What special sources of information do you have?',
+    'What reputation or name have you made for yourselves?',
+    'How do you look out for each other?',
+    'What special gear, resource or power do you share?',
+  ],
+  weakness: [
+    'What’s flawed or missing in how you work together?',
+    'How do you drag each other into trouble?',
+    'Who or what are you all afraid of?',
+    'What places or situations do you struggle with?',
+  ],
+}
