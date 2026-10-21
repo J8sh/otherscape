@@ -600,7 +600,7 @@ export const GUIDE: GuideTopic[] = [
           <li>Change anyone’s role from the same panel. Make a new link at any time to stop the old one working.</li>
         </ol>
         <h2>Saving</h2>
-        <p>Everything saves automatically a moment after you stop typing — watch for “Saved” at the top of a sheet.</p>
+        <p>Everything saves automatically a moment after you stop typing — watch for “Saved” at the top of a sheet. Changed something by mistake? The undo and redo arrows next to it (or ⌘Z / Ctrl+Z) step your sheet back and forward.</p>
       </>
     ),
   },
