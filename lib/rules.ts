@@ -139,3 +139,31 @@ export function blazeResult(degree: BlazeDegree, outcome: Outcome): { succeeds: 
   if (degree === 'significant') return { succeeds, price: 'Burn only two tags in the theme at stake' }
   return { succeeds, price: BLAZE_DEGREES[i - 1].price }
 }
+
+// ── Polar statuses (p.108) ────────────────────────────────────────────────
+/** Common opposite pairs; a character can never have both at once. */
+export const POLAR_PAIRS: [string, string][] = [
+  ['hostile', 'friendly'], ['hidden', 'exposed'], ['hot', 'cold'], ['calm', 'panicked'],
+  ['confident', 'shaken'], ['trusting', 'suspicious'], ['alert', 'distracted'], ['charged', 'drained'],
+]
+
+export function polarOpposite(name: string): string | null {
+  const n = name.trim().toLowerCase()
+  for (const [a, b] of POLAR_PAIRS) {
+    if (n === a) return b
+    if (n === b) return a
+  }
+  return null
+}
+
+/**
+ * Taking a status opposite to one you have: the larger cancels the smaller
+ * tier for tier. Returns the surviving status (name + tier), or null if
+ * they cancel out exactly.
+ */
+export function resolvePolar(existing: { name: string; tier: number }, incoming: { name: string; tier: number }) {
+  const diff = existing.tier - incoming.tier
+  if (diff > 0) return { name: existing.name, tier: diff }
+  if (diff < 0) return { name: incoming.name, tier: -diff }
+  return null
+}

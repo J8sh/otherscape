@@ -70,3 +70,12 @@ test('going out in a blaze', async () => {
   assert.equal(blazeResult('significant', 'strong').price, 'Burn only two tags in the theme at stake')
   assert.equal(blazeResult('inescapable', 'strong').price, 'Take a tier-6 status, whatever you roll')
 })
+
+test('polar statuses cancel tier for tier', async () => {
+  const { polarOpposite, resolvePolar } = await import('./rules.ts')
+  assert.equal(polarOpposite('Hostile'), 'friendly')
+  assert.equal(polarOpposite('wounded'), null)
+  assert.deepEqual(resolvePolar({ name: 'hostile', tier: 3 }, { name: 'friendly', tier: 2 }), { name: 'hostile', tier: 1 })
+  assert.deepEqual(resolvePolar({ name: 'hostile', tier: 3 }, { name: 'friendly', tier: 4 }), { name: 'friendly', tier: 1 })
+  assert.equal(resolvePolar({ name: 'hidden', tier: 2 }, { name: 'exposed', tier: 2 }), null)
+})
