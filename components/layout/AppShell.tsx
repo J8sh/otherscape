@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { BookOpen, LayoutGrid, LogOut, Shield, User as UserIcon } from 'lucide-react'
+import { BookOpen, Dices, LayoutGrid, LogOut, Shield, User as UserIcon } from 'lucide-react'
 import { useSession } from '@/components/auth/SessionProvider'
 
 const BARE_PATHS = ['/login', '/register']
@@ -10,6 +10,7 @@ const BARE_PATHS = ['/login', '/register']
 const NAV = [
   { href: '/campaigns', label: 'Campaigns', icon: LayoutGrid },
   { href: '/guide', label: 'Rules Guide', icon: BookOpen },
+  { href: '/roller', label: 'Dice', icon: Dices },
 ]
 
 function isActive(pathname: string, href: string) {

@@ -7,6 +7,7 @@ import { ThemeSlot } from '@/components/cards/ThemeSlot'
 import { LoadoutThemeCard } from '@/components/cards/LoadoutThemeCard'
 import { TrackingCards } from '@/components/cards/TrackingCard'
 import { StoryTagsCard } from '@/components/cards/StoryTagsCard'
+import { RollerDialog } from '@/components/roller/RollerDialog'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
 import { api } from '@/lib/api'
@@ -90,6 +91,7 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
         <div className="flex items-center gap-3">
           <SaveIndicator state={autosave.state} error={autosave.error} />
           <Link href="/guide/effects" className="btn btn-ghost btn-sm"><Zap size={14} aria-hidden /> EFFECTS</Link>
+          <RollerDialog character={character} onApply={character.canEdit ? c => updateCharacter(c) : undefined} />
         </div>
       </div>
 
