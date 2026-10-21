@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Pencil, Plus, RotateCcw, Sparkles, Trash2, Aler
 import { Tooltip, InfoTip } from '@/components/ui/Tooltip'
 import { BoxTrack, CardStrip, LegendChip, LinedField, PaperCard, TagSlot, ViewButton } from '@/components/sheet/primitives'
 import { ThemeSpecialsPicker } from '@/components/cards/ThemeSpecialsPicker'
+import { ThemeQuestions } from '@/components/cards/ThemeQuestions'
 import { CATEGORY_META } from '@/lib/themeMeta'
 import { DECAY_BOXES, UPGRADE_BOXES } from '@/lib/rules'
 import type { IThemeCard, ITag, ThemeType } from '@/types'
@@ -240,6 +241,7 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete, onReplace,
               <Plus size={14} aria-hidden /> WEAKNESS TAG
             </button>
           </div>
+          <ThemeQuestions themeType={theme.themeType as ThemeType} onAddPower={() => addTag(NEW_POWER_TAG)} onAddWeakness={() => addTag(NEW_WEAKNESS_TAG)} />
 
           <CardStrip>
             IDENTITY / RITUAL / ITCH{' '}
