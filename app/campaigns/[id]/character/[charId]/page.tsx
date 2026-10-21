@@ -15,6 +15,7 @@ import { api } from '@/lib/api'
 import { useAutosave } from '@/lib/useAutosave'
 import { addEvolution } from '@/lib/rules'
 import { normalizeCharacter } from '@/lib/normalize'
+import { isNewer, usePolling } from '@/lib/usePolling'
 import type { ICharacter } from '@/types'
 
 type CharacterView = ICharacter & { canEdit: boolean; campaignName?: string }
@@ -28,13 +29,19 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
   // (e.g. reset a theme's upgrade track + add an Evolution point) both land.
   const latest = useRef<CharacterView | null>(null)
 
-  const autosave = useAutosave((c: ICharacter) =>
-    api(`/api/characters/${charId}`, { method: 'PATCH', json: c }))
+  // Server time of the newest version we hold, so polling only applies newer edits.
+  const serverStamp = useRef<string | undefined>(undefined)
+
+  const autosave = useAutosave(async (c: ICharacter) => {
+    const saved = await api<ICharacter>(`/api/characters/${charId}`, { method: 'PATCH', json: c })
+    serverStamp.current = saved.updatedAt
+  })
 
   const load = useCallback(async () => {
     setError(null)
     try {
       const loaded = normalizeCharacter(await api<CharacterView>(`/api/characters/${charId}`))
+      serverStamp.current = loaded.updatedAt
       latest.current = loaded
       setCharacter(loaded)
     } catch (e) {
@@ -45,6 +52,19 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
   }, [charId])
 
   useEffect(() => { load() }, [load])
+
+  // Pick up changes made by the MC or another device — but never while our
+  // own edit is waiting to save.
+  usePolling(async () => {
+    if (autosave.isBusy()) return
+    const remote = await api<CharacterView>(`/api/characters/${charId}`)
+    if (!isNewer(remote.updatedAt, serverStamp.current)) return
+    if (autosave.isBusy()) return // an edit started while we were fetching
+    const next = normalizeCharacter(remote)
+    serverStamp.current = remote.updatedAt
+    latest.current = next
+    setCharacter(next)
+  }, 8000, !!character)
 
   function updateCharacter(updated: Partial<ICharacter>) {
     const current = latest.current

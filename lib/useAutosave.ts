@@ -13,6 +13,8 @@ export function useAutosave<T>(save: (value: T) => Promise<unknown>, delay = 700
   const [error, setError] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const latest = useRef<{ value: T } | null>(null)
+  // Mirrors "an edit is queued or in flight", readable from async callbacks.
+  const busy = useRef(false)
   const saveRef = useRef(save)
   saveRef.current = save
 
@@ -22,6 +24,7 @@ export function useAutosave<T>(save: (value: T) => Promise<unknown>, delay = 700
     const pending = latest.current
     if (!pending) return
     latest.current = null
+    busy.current = true
     setState('saving')
     try {
       await saveRef.current(pending.value)
@@ -30,11 +33,14 @@ export function useAutosave<T>(save: (value: T) => Promise<unknown>, delay = 700
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Save failed')
       setState('error')
+    } finally {
+      busy.current = latest.current !== null
     }
   }, [])
 
   const schedule = useCallback((value: T) => {
     latest.current = { value }
+    busy.current = true
     setState('pending')
     if (timer.current) clearTimeout(timer.current)
     timer.current = setTimeout(flush, delay)
@@ -49,5 +55,7 @@ export function useAutosave<T>(save: (value: T) => Promise<unknown>, delay = 700
     }
   }, [flush])
 
-  return { schedule, flush, state, error }
+  const isBusy = useCallback(() => busy.current, [])
+
+  return { schedule, flush, state, error, isBusy }
 }

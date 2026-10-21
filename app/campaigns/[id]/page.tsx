@@ -13,6 +13,7 @@ import { useAutosave } from '@/lib/useAutosave'
 import { ROLE_HELP, ROLE_LABEL } from '@/lib/roles'
 import { CATEGORY_META } from '@/lib/themeMeta'
 import { normalizeCrew } from '@/lib/normalize'
+import { isNewer, usePolling } from '@/lib/usePolling'
 import type { ICampaign, ICharacter, IChallenge, ICrewThemeCard } from '@/types'
 
 type CharacterRow = ICharacter & { canEdit: boolean }
@@ -50,6 +51,24 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
   }, [id])
 
   useEffect(() => { load() }, [load])
+
+  // Keep the crew page live: characters (statuses, names), members, the crew
+  // card and Challenges — skipping parts with an unsaved local edit.
+  usePolling(async () => {
+    const [c, chars] = await Promise.all([
+      api<ICampaign>(`/api/campaigns/${id}`),
+      api<CharacterRow[]>(`/api/characters?campaignId=${id}`),
+    ])
+    setCharacters(chars)
+    setCampaign(prev => {
+      if (!prev || !isNewer(c.updatedAt, prev.updatedAt)) return prev ? { ...prev, members: c.members, me: c.me } : prev
+      return {
+        ...c,
+        crewTheme: crewSave.isBusy() ? prev.crewTheme : normalizeCrew(c.crewTheme),
+        challenges: challengeSave.isBusy() ? prev.challenges : c.challenges,
+      }
+    })
+  }, 8000, !!campaign && !editingDetails)
 
   const challengeSave = useAutosave((challenges: IChallenge[]) =>
     api(`/api/campaigns/${id}`, { method: 'PATCH', json: { challenges } }))
