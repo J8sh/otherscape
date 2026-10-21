@@ -72,3 +72,12 @@ test('crew tags: using one burns it, weaknesses mark the crew upgrade, sheet unt
   const sheetOnly = applyRoll(sheet(), sel)
   assert.deepEqual(sheetOnly.changes, [], 'crew refs never touch the character sheet')
 })
+
+test('a relationship invoked as a weakness marks a crew upgrade, not the sheet', () => {
+  const crew = { name: '', motivation: '', upgrade: 0, decay: 0, specials: [], tags: [] } as unknown as Parameters<typeof applyCrewRoll>[0]
+  const sel = { positive: [], weaknesses: [{ kind: 'relationshipWeak' as const, index: 0 }] }
+  assert.equal(applyCrewRoll(crew, sel)!.crew.upgrade, 1)
+  const sheetResult = applyRoll(sheet(), sel)
+  assert.equal(sheetResult.character.crewRelationships[0].isBurned, false)
+  assert.deepEqual(sheetResult.changes, [])
+})
