@@ -108,8 +108,20 @@ function TierPicker({ label, value, onChange, help }: { label: string; value: nu
   )
 }
 
+/** Tags of the Challenges in the scene that hinder you (−1 each when relevant). */
+function challengeChips(challenges: IChallenge[]): Chip[] {
+  return challenges.flatMap((ch, ci) => (ch.tags ?? []).flatMap((tag, ti) =>
+    tag.text.trim() && !tag.isBurned
+      ? [{ ref: { kind: 'challengeTag' as const, challenge: ci, tag: ti }, text: tag.text, sign: -1 as const, note: 'against you', burnable: false, group: `Challenge: ${ch.name || 'unnamed'}`, color: '#ff4f6e' }]
+      : []))
+}
+
 export function ActionRoller({ character, onApply, onShare, rules, challenges, crew, onApplyCrew }: Props) {
-  const chips = useMemo(() => [...(character ? sheetChips(character) : []), ...(crew ? crewChips(crew) : [])], [character, crew])
+  const chips = useMemo(() => [
+    ...(character ? sheetChips(character) : []),
+    ...(crew ? crewChips(crew) : []),
+    ...(character && challenges ? challengeChips(challenges) : []),
+  ], [character, crew, challenges])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [burnKey, setBurnKey] = useState<string | null>(null)
   const [extraPos, setExtraPos] = useState(0)
@@ -143,7 +155,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges, c
   const [rollWith, setRollWith] = useState<'' | 'self' | 'mythos' | 'noise'>('')
 
   // A fresh sheet (after applying) invalidates selections by index.
-  useEffect(() => { setSelected(new Set()); setBurnKey(null); setStatusPicks(new Set()) }, [character, crew])
+  useEffect(() => { setSelected(new Set()); setBurnKey(null); setStatusPicks(new Set()) }, [character, crew, challenges])
 
   const statuses: IStatus[] = character?.statuses ?? []
   const picked = statuses.filter((_, i) => statusPicks.has(i))
@@ -208,7 +220,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges, c
     if (!character || !onApply) return
     const sel = {
       positive: chosen.filter(c => c.sign > 0).map(c => c.ref),
-      weaknesses: chosen.filter(c => c.sign < 0 && c.ref.kind !== 'story').map(c => c.ref),
+      weaknesses: chosen.filter(c => c.sign < 0 && c.ref.kind !== 'story' && c.ref.kind !== 'challengeTag').map(c => c.ref),
       burnedForPower: burned ? chosen.find(c => refKey(c.ref) === burnKey)?.ref ?? null : null,
     }
     const { character: next, changes } = applyRoll(character, sel)
@@ -226,7 +238,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges, c
   const q = tagQuery.trim().toLowerCase()
   const shown = q ? chips.filter(c => selected.has(refKey(c.ref)) || `${c.text} ${c.covers ?? ''} ${c.group}`.toLowerCase().includes(q)) : chips
   const groups = [...new Set(shown.map(c => c.group))]
-  const hasSheetChanges = burned || chosen.some(c => c.sign < 0 && c.ref.kind !== 'story') || chosen.some(c => c.ref.kind === 'relationship' || c.ref.kind === 'crew')
+  const hasSheetChanges = burned || chosen.some(c => c.sign < 0 && c.ref.kind !== 'story' && c.ref.kind !== 'challengeTag') || chosen.some(c => c.ref.kind === 'relationship' || c.ref.kind === 'crew')
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_340px] items-start">
