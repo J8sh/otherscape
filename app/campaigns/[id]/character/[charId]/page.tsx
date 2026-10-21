@@ -187,6 +187,13 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
             <StoryTagsCard
               tags={character.storyTags ?? []}
               onChange={storyTags => updateCharacter({ storyTags })}
+              onKeep={(tag, index) => {
+                const cur = latest.current ?? character
+                updateCharacter({
+                  storyTags: (cur.storyTags ?? []).filter((_, i) => i !== index),
+                  loadoutTheme: { ...cur.loadoutTheme, tags: [...(cur.loadoutTheme.tags ?? []), { text: tag.text, isFlaw: false, isBurned: false }] },
+                })
+              }}
             />
           </div>
         </section>
