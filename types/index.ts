@@ -221,6 +221,8 @@ export interface ICampaign {
   members?: ICampaignMember[]
   challenges?: IChallenge[]
   optionalRules?: IOptionalRules
+  /** MC's notes on the series concept and Megacity, visible to all members. */
+  seriesNotes?: string
   me?: ICampaignPermissions
   createdAt: string
   updatedAt: string

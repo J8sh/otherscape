@@ -75,6 +75,7 @@ const CampaignSchema = new Schema(
     members: { type: [MemberSchema], default: () => [] },
     inviteCode: { type: String, index: { unique: true, sparse: true } },
     challenges: { type: [ChallengeSchema], default: () => [] },
+    seriesNotes: { type: String, default: '', maxlength: 8000 },
     optionalRules: {
       pcLimit: { type: Number, enum: [3, 4, 5], default: 5 },
       enhanceCost: { type: Number, enum: [1, 2], default: 1 },
