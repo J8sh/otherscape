@@ -9,6 +9,7 @@ import { ESSENCE_INFO } from '@/lib/essence'
 import { DECAY_BOXES, PC_STATUS_LIMIT, TIER_NAMES, UPGRADE_BOXES, essenceOf, type Category } from '@/lib/rules'
 import { STATUS_TYPES } from '@/components/cards/TrackingCard'
 import { RollLog } from '@/components/campaign/RollLog'
+import { DealStatus } from '@/components/campaign/DealStatus'
 import type { ICampaign, ICharacter } from '@/types'
 
 /**
@@ -39,7 +40,7 @@ export default function ScreenPage({ params }: { params: Promise<{ id: string }>
       </Link>
       <div className="flex flex-wrap items-end justify-between gap-2 mt-1 mb-4">
         <h1 className="font-display text-4xl md:text-5xl tracking-widest">TABLE VIEW</h1>
-        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Updates live · tap a name to open the sheet</span>
+        <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Updates live · tap a name to open the sheet{campaign?.me?.canManage ? ' · deal Consequences right from the cards' : ''}</span>
       </div>
       {error && <div role="alert" className="alert-error mb-4">{error}</div>}
 
@@ -112,6 +113,7 @@ export default function ScreenPage({ params }: { params: Promise<{ id: string }>
                   ))}
                 </ul>
               )}
+              {campaign?.me?.canManage && <DealStatus characterId={c._id} onDone={load} />}
               {c.crewRelationships.some(r => r.relationshipTag) && (
                 <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
                   {c.crewRelationships.filter(r => r.relationshipTag).map(r => `${r.crewMember}: ${r.relationshipTag}${r.isBurned ? ' (burned)' : ''}`).join(' · ')}
