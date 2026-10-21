@@ -6,6 +6,7 @@ import { BoxTrack, CardStrip, LegendChip, LinedField, PaperCard, TagSlot, ViewBu
 import { ThemeSpecialsPicker } from '@/components/cards/ThemeSpecialsPicker'
 import { ThemeQuestions } from '@/components/cards/ThemeQuestions'
 import { THEME_QUESTIONS } from '@/lib/themeQuestions'
+import { THEME_BOOK_BY_TYPE } from '@/lib/themeBook'
 import { CATEGORY_META } from '@/lib/themeMeta'
 import { DECAY_BOXES, UPGRADE_BOXES } from '@/lib/rules'
 import type { IThemeCard, ITag, ThemeType } from '@/types'
@@ -256,6 +257,26 @@ export function ThemeCard({ theme, index, onChange, onEdit, onDelete, onReplace,
               onChange={motivation => update({ motivation })}
               placeholder={`Your ${meta.motivation.toLowerCase()}…`}
             />
+            {(THEME_BOOK_BY_TYPE[theme.themeType as ThemeType]?.kits.length ?? 0) > 0 && (
+              <details className="edit-only mt-1">
+                <summary className="cursor-pointer font-display tracking-widest text-xs flex items-center" style={{ minHeight: 32, color: 'var(--card-ink-soft)' }}>
+                  {meta.motivation.toUpperCase()} IDEAS FROM {theme.themeType.toUpperCase()} KITS
+                </summary>
+                <p className="text-sm" style={{ color: 'var(--card-ink-soft)' }}>
+                  {meta.motivationHelp} Tap one to use it, then make it your own.
+                </p>
+                <ul className="flex flex-wrap gap-1.5 mt-1.5 mb-1">
+                  {THEME_BOOK_BY_TYPE[theme.themeType as ThemeType].kits.map(k => (
+                    <li key={k.name}>
+                      <button type="button" className="text-left text-sm italic rounded-md px-2 py-1 hover:bg-black/10" style={{ background: 'var(--card-slot)', minHeight: 36 }}
+                        onClick={() => update({ motivation: k.identity })} aria-label={`Use “${k.identity}” as the ${meta.motivation.toLowerCase()}`}>
+                        “{k.identity}”
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </div>
 
           <div className="px-3 mt-3 flex justify-end">
