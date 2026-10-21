@@ -62,9 +62,10 @@ export default function ScreenPage({ params }: { params: Promise<{ id: string }>
           const burned = c.themes.flatMap(t => t.tags.filter(tag => tag.isBurned && tag.text).map(tag => tag.text))
           const atRisk = c.themes.filter(t => t.themeType && (t.decay >= DECAY_BOXES - 1 || t.upgrade >= UPGRADE_BOXES - 1))
           const packed = (c.loadoutTheme?.tags ?? []).filter(t => !t.isBurned && !t.isFlaw && t.text)
+          const limit = campaign?.optionalRules?.pcLimit ?? PC_STATUS_LIMIT
           const worst = c.statuses.filter(s => s.type !== 'helpful' && s.type !== 'progress').reduce((m, s) => Math.max(m, s.tier), 0)
           return (
-            <li key={c._id} className="panel p-4" style={{ borderColor: worst >= PC_STATUS_LIMIT ? 'var(--danger)' : undefined }}>
+            <li key={c._id} className="panel p-4" style={{ borderColor: worst >= limit ? 'var(--danger)' : undefined }}>
               <Link href={`/campaigns/${id}/character/${c._id}`} className="font-display text-2xl tracking-wide hover:underline">{c.name || 'Unnamed'}</Link>
               <div className="flex flex-wrap items-center gap-2 text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
                 {essence && <span title={ESSENCE_INFO[essence].special}>{essence}</span>}
@@ -86,7 +87,7 @@ export default function ScreenPage({ params }: { params: Promise<{ id: string }>
                     ))}
                   </div>
                 )}
-                {worst >= PC_STATUS_LIMIT && <p className="text-sm mt-1 flex items-center gap-1" style={{ color: 'var(--danger)' }}><AlertTriangle size={14} aria-hidden /> Overcome — at or past their Limit</p>}
+                {worst >= limit && <p className="text-sm mt-1 flex items-center gap-1" style={{ color: 'var(--danger)' }}><AlertTriangle size={14} aria-hidden /> Overcome — at or past their Limit</p>}
               </div>
 
               {c.storyTags && c.storyTags.length > 0 && (

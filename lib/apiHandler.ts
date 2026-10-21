@@ -19,7 +19,10 @@ export function route<A extends unknown[]>(
 ) {
   return async (...args: A): Promise<Response> => {
     try {
-      return await handler(...args)
+      const res = await handler(...args)
+      // Per-user data: keep it out of browser and shared caches.
+      res.headers.set('Cache-Control', 'private, no-store')
+      return res
     } catch (err) {
       if (err instanceof HttpError) {
         return NextResponse.json({ error: err.message }, { status: err.status })

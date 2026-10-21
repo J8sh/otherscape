@@ -75,6 +75,12 @@ const CampaignSchema = new Schema(
     members: { type: [MemberSchema], default: () => [] },
     inviteCode: { type: String, index: { unique: true, sparse: true } },
     challenges: { type: [ChallengeSchema], default: () => [] },
+    optionalRules: {
+      pcLimit: { type: Number, enum: [3, 4, 5], default: 5 },
+      enhanceCost: { type: Number, enum: [1, 2], default: 1 },
+      powerTagCap: { type: Number, min: 1, max: 10, default: null },
+      noDeathSpiral: { type: Boolean, default: false },
+    },
   },
   { timestamps: true }
 )

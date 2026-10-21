@@ -25,10 +25,11 @@ function withMarks(s: IStatus, marks: number[]): IStatus | null {
   return tier > 0 ? { ...s, marks, tier } : null
 }
 
-function StatusCard({ status, onChange, onRemove }: {
+function StatusCard({ status, onChange, onRemove, limit }: {
   status: IStatus
   onChange: (s: IStatus | null) => void
   onRemove: () => void
+  limit: number
 }) {
   const meta = STATUS_TYPES[status.type] ?? STATUS_TYPES.harmful
   const marks = marksOf(status)
@@ -43,7 +44,7 @@ function StatusCard({ status, onChange, onRemove }: {
 
   const limitNote = status.type === 'progress' || status.type === 'helpful'
     ? null
-    : tier >= 6 ? 'Permanent — beyond your Limit' : tier >= PC_STATUS_LIMIT ? 'Overcome — at your Limit (5)' : null
+    : tier > limit ? 'Permanent — beyond your Limit' : tier === limit ? `Overcome — at your Limit (${limit})` : null
 
   return (
     <div className="tracking-card" style={{ ['--status-color' as string]: meta.color }}>
@@ -113,9 +114,11 @@ function StatusCard({ status, onChange, onRemove }: {
 interface Props {
   statuses: IStatus[]
   onChange: (statuses: IStatus[]) => void
+  /** This campaign's PC status Limit (book default 5). */
+  limit?: number
 }
 
-export function TrackingCards({ statuses, onChange }: Props) {
+export function TrackingCards({ statuses, onChange, limit = PC_STATUS_LIMIT }: Props) {
   const [name, setName] = useState('')
   const [type, setType] = useState<StatusType>('harmful')
   const [tier, setTier] = useState(1)
@@ -145,7 +148,7 @@ export function TrackingCards({ statuses, onChange }: Props) {
         <h2 className="font-display text-2xl tracking-widest flex items-center gap-2">
           STATUSES
           <InfoTip label="statuses">
-            Statuses are temporary conditions with a tier from 1 (mild) to 6 (lethal or permanent). On a roll, add your best relevant helpful status and subtract your worst relevant negative one. At tier 5 you’re overcome by it; tier 6 is permanent.
+            Statuses are temporary conditions with a tier from 1 (mild) to 6 (lethal or permanent). On a roll, add your best relevant helpful status and subtract your worst relevant negative one. At your Limit ({limit} in this campaign) you’re overcome by it; beyond it is permanent.
           </InfoTip>
         </h2>
         {(best > 0 || worst > 0) && (
@@ -164,6 +167,7 @@ export function TrackingCards({ statuses, onChange }: Props) {
               status={s}
               onChange={next => onChange(next ? statuses.map((x, idx) => idx === i ? next : x) : statuses.filter((_, idx) => idx !== i))}
               onRemove={() => onChange(statuses.filter((_, idx) => idx !== i))}
+              limit={limit}
             />
           ))}
         </div>

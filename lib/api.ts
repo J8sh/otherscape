@@ -6,6 +6,7 @@
 export async function api<T = unknown>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T> {
   const { json, headers, ...rest } = init
   const res = await fetch(path, {
+    cache: 'no-store', // sheets change constantly; never reuse a stale response
     ...rest,
     headers: json !== undefined ? { 'Content-Type': 'application/json', ...headers } : headers,
     body: json !== undefined ? JSON.stringify(json) : rest.body,

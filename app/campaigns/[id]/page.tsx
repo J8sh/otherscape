@@ -8,6 +8,7 @@ import { MembersPanel } from '@/components/campaign/MembersPanel'
 import { ChallengesPanel } from '@/components/campaign/ChallengesPanel'
 import { TableTools } from '@/components/campaign/TableTools'
 import { RollLog } from '@/components/campaign/RollLog'
+import { OptionalRules } from '@/components/campaign/OptionalRules'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
 import { useSession } from '@/components/auth/SessionProvider'
 import { api } from '@/lib/api'
@@ -296,6 +297,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
           </section>
           <RollLog campaignId={id} />
           {me?.canManage && <TableTools campaignId={id} onDone={load} />}
+          <OptionalRules campaignId={id} rules={campaign.optionalRules} canManage={!!me?.canManage} onSaved={optionalRules => setCampaign(c => (c ? { ...c, optionalRules } : c))} />
           {user && <MembersPanel campaign={campaign} currentUserId={user._id} onChanged={load} onLeft={() => router.push('/campaigns')} />}
         </aside>
       </div>

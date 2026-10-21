@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 
 interface Props { mode: 'login' | 'register' }
@@ -41,7 +41,11 @@ export function AuthForm({ mode }: Props) {
   }
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [k]: e.target.value }))
-  const otherHref = (base: string) => (typeof window === 'undefined' ? base : `${base}${window.location.search}`)
+  // Carry ?next= over to the other form — read after mount so server and
+  // client render the same link (avoids a hydration mismatch).
+  const [search, setSearch] = useState('')
+  useEffect(() => setSearch(window.location.search), [])
+  const otherHref = (base: string) => `${base}${search}`
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10" style={{ background: 'radial-gradient(ellipse at top, #121a33 0%, #080c18 60%)' }}>

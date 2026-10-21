@@ -20,6 +20,7 @@ export const GET = route(async (_: Request, { params }: Ctx) => {
     canEdit,
     campaignName: campaign.name,
     myRole: access.role,
+    rules: campaign.optionalRules,
   })
 })
 

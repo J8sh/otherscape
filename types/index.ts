@@ -194,6 +194,20 @@ export interface IChallenge {
   notes?: string
 }
 
+/** The book's optional rules, chosen per campaign by the MC. */
+export interface IOptionalRules {
+  /** Status Limit for PCs (book default 5; 4 or 3 for grittier games, p.107). */
+  pcLimit: 3 | 4 | 5
+  /** Power per tier for Enhance (book default 1; 2 makes buffs costlier, p.95). */
+  enhanceCost: 1 | 2
+  /** Max positive tags counted per roll; null = no cap (p.89). */
+  powerTagCap: number | null
+  /** Statuses counting toward a Limit don't affect rolls about that Limit (p.109). */
+  noDeathSpiral: boolean
+}
+
+export const DEFAULT_RULES: IOptionalRules = { pcLimit: 5, enhanceCost: 1, powerTagCap: null, noDeathSpiral: false }
+
 export interface ICampaign {
   _id: string
   name: string
@@ -204,6 +218,7 @@ export interface ICampaign {
   inviteCode?: string // only sent to members who can manage the campaign
   members?: ICampaignMember[]
   challenges?: IChallenge[]
+  optionalRules?: IOptionalRules
   me?: ICampaignPermissions
   createdAt: string
   updatedAt: string

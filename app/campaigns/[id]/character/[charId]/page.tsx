@@ -17,9 +17,9 @@ import { useAutosave } from '@/lib/useAutosave'
 import { addEvolution } from '@/lib/rules'
 import { normalizeCharacter } from '@/lib/normalize'
 import { isNewer, usePolling } from '@/lib/usePolling'
-import type { ICharacter } from '@/types'
+import type { ICharacter, IOptionalRules } from '@/types'
 
-type CharacterView = ICharacter & { canEdit: boolean; campaignName?: string }
+type CharacterView = ICharacter & { canEdit: boolean; campaignName?: string; rules?: IOptionalRules }
 
 export default function CharacterPage({ params }: { params: Promise<{ id: string; charId: string }> }) {
   const { id, charId } = use(params)
@@ -59,6 +59,11 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
   usePolling(async () => {
     if (autosave.isBusy()) return
     const remote = await api<CharacterView>(`/api/characters/${charId}`)
+    // Campaign rules can change without the sheet changing.
+    if (JSON.stringify(remote.rules) !== JSON.stringify(latest.current?.rules)) {
+      if (latest.current) latest.current = { ...latest.current, rules: remote.rules }
+      setCharacter(c => (c ? { ...c, rules: remote.rules } : c))
+    }
     if (!isNewer(remote.updatedAt, serverStamp.current)) return
     if (autosave.isBusy()) return // an edit started while we were fetching
     const next = normalizeCharacter(remote)
@@ -114,7 +119,7 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
           <SaveIndicator state={autosave.state} error={autosave.error} />
           <button type="button" className="btn btn-ghost btn-sm hidden md:inline-flex" onClick={() => window.print()} aria-label="Print this sheet"><Printer size={14} aria-hidden /> PRINT</button>
           <Link href="/guide/effects" className="btn btn-ghost btn-sm"><Zap size={14} aria-hidden /> EFFECTS</Link>
-          <RollerDialog character={character} onApply={character.canEdit ? c => updateCharacter(c) : undefined} />
+          <RollerDialog character={character} rules={character.rules} onApply={character.canEdit ? c => updateCharacter(c) : undefined} />
         </div>
       </div>
 
@@ -178,6 +183,7 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
           <TrackingCards
             statuses={character.statuses}
             onChange={statuses => updateCharacter({ statuses })}
+            limit={character.rules?.pcLimit}
           />
         </section>
 

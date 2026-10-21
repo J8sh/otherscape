@@ -3,10 +3,10 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { Dices, X } from 'lucide-react'
 import { ActionRoller } from '@/components/roller/ActionRoller'
 import { api } from '@/lib/api'
-import type { ICharacter } from '@/types'
+import type { ICharacter, IOptionalRules } from '@/types'
 
 /** “Roll” from a character sheet: the roller in a dialog, full-screen on phones. */
-export function RollerDialog({ character, onApply }: { character: ICharacter; onApply?: (c: ICharacter) => void }) {
+export function RollerDialog({ character, onApply, rules }: { character: ICharacter; onApply?: (c: ICharacter) => void; rules?: IOptionalRules }) {
   return (
     <Dialog.Root>
       <Dialog.Trigger asChild>
@@ -28,6 +28,7 @@ export function RollerDialog({ character, onApply }: { character: ICharacter; on
           <div className="p-4 md:p-6" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}>
             <ActionRoller
               character={character}
+              rules={rules}
               onApply={onApply}
               onShare={onApply ? roll => { api(`/api/campaigns/${character.campaignId}/rolls`, { method: 'POST', json: { characterId: character._id, ...roll } }).catch(() => {}) } : undefined}
             />

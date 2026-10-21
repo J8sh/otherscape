@@ -6,7 +6,7 @@ import { InfoTip } from '@/components/ui/Tooltip'
 import { actionPower, rollOutcome, spendablePower, type Outcome } from '@/lib/rules'
 import { applyRoll, refKey, rollD6, type TagRef } from '@/lib/roll'
 import { CATEGORY_META } from '@/lib/themeMeta'
-import type { ICharacter, IStatus } from '@/types'
+import type { ICharacter, IOptionalRules, IStatus } from '@/types'
 
 interface Props {
   character?: ICharacter
@@ -14,6 +14,8 @@ interface Props {
   onApply?: (character: ICharacter) => void
   /** Share a finished roll with the campaign (shown as a toggle when provided). */
   onShare?: (roll: { dice: [number, number]; power: number; tags: string[]; note: string }) => void
+  /** The campaign's optional rules (power tag cap, Enhance cost). */
+  rules?: IOptionalRules
 }
 
 interface Chip { ref: TagRef; text: string; sign: 1 | -1; note?: string; burnable: boolean; group: string; color?: string }
@@ -82,7 +84,7 @@ function TierPicker({ label, value, onChange, help }: { label: string; value: nu
   )
 }
 
-export function ActionRoller({ character, onApply, onShare }: Props) {
+export function ActionRoller({ character, onApply, onShare, rules }: Props) {
   const chips = useMemo(() => (character ? sheetChips(character) : []), [character])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [burnKey, setBurnKey] = useState<string | null>(null)
@@ -110,7 +112,9 @@ export function ActionRoller({ character, onApply, onShare }: Props) {
   const best = Math.max(manualBest, ...picked.filter(s => s.type === 'helpful').map(s => s.tier), 0)
   const worst = Math.max(manualWorst, ...picked.filter(s => s.type !== 'helpful' && s.type !== 'progress').map(s => s.tier), 0)
   const chosen = chips.filter(c => selected.has(refKey(c.ref)))
-  const positive = chosen.filter(c => c.sign > 0).length + extraPos
+  const rawPositive = chosen.filter(c => c.sign > 0).length + extraPos
+  const cap = rules?.powerTagCap ?? null
+  const positive = cap != null ? Math.min(rawPositive, cap) : rawPositive
   const negative = chosen.filter(c => c.sign < 0).length + extraNeg
   const burned = burnKey !== null && selected.has(burnKey)
   const power = actionPower({ positive, negative, burned, bestStatus: best, worstStatus: worst })
@@ -264,7 +268,7 @@ export function ActionRoller({ character, onApply, onShare }: Props) {
           {power > 0 ? `+${power}` : power}
         </div>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          {positive} helpful{burned ? ' (one burned: +3)' : ''} · {negative} hindering{best ? ` · +${best} status` : ''}{worst ? ` · −${worst} status` : ''}
+          {positive} helpful{cap != null && rawPositive > cap ? ` (capped at ${cap})` : ''}{burned ? ' (one burned: +3)' : ''} · {negative} hindering{best ? ` · +${best} status` : ''}{worst ? ` · −${worst} status` : ''}
         </p>
 
         {onShare && (
@@ -307,6 +311,7 @@ export function ActionRoller({ character, onApply, onShare }: Props) {
                     )}
                     <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
                       Only if the MC asks for Effects. <Link href="/guide/effects" className="underline">See Effects</Link>.
+                      {rules?.enhanceCost === 2 && ' In this campaign, Enhance costs 2 Power per tier.'}
                     </p>
                   </div>
                 )}
