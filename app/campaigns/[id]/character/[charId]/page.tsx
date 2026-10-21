@@ -9,6 +9,7 @@ import { TrackingCards } from '@/components/cards/TrackingCard'
 import { StoryTagsCard } from '@/components/cards/StoryTagsCard'
 import { RollerDialog } from '@/components/roller/RollerDialog'
 import { CardStrip, LinedField, PaperCard } from '@/components/sheet/primitives'
+import { SetupChecklist } from '@/components/sheet/SetupChecklist'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
 import { api } from '@/lib/api'
@@ -128,6 +129,8 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
           <a key={href} href={href} className="chip shrink-0" style={{ minHeight: 36, padding: '0 14px', color: 'var(--text-soft)' }}>{label}</a>
         ))}
       </nav>
+
+      {!readOnly && <SetupChecklist character={character} onChange={updateCharacter} />}
 
       <fieldset disabled={readOnly} className="space-y-10 min-w-0">
         <section id="card" className="scroll-mt-32">

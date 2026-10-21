@@ -78,8 +78,8 @@ const CharacterSchema = new Schema(
     themes: { type: [ThemeCardSchema], default: () => Array(4).fill(null).map(() => ({})) },
     loadoutTheme: { type: LoadoutThemeSchema, default: () => ({}) },
     evolution: { type: EvolutionSchema, default: () => ({}) },
-    specials: { type: [String], default: () => Array(4).fill('') },
-    crewRelationships: { type: [CrewRelationshipSchema], default: () => Array(3).fill(null).map(() => ({ crewMember: '', relationshipTag: '' })) },
+    specials: { type: [String], default: () => [] },
+    crewRelationships: { type: [CrewRelationshipSchema], default: () => [] }, // one per crewmate; the setup checklist adds rows
     statuses: { type: [StatusSchema], default: () => [] },
     storyTags: { type: [StoryTagSchema], default: () => [] },
     essence: { mythosSameSource: { type: Boolean, default: false } },
