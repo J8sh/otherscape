@@ -6,7 +6,7 @@ import { api } from '@/lib/api'
 import { usePolling } from '@/lib/usePolling'
 import { CATEGORY_META } from '@/lib/themeMeta'
 import { ESSENCE_INFO } from '@/lib/essence'
-import { DECAY_BOXES, PC_STATUS_LIMIT, TIER_NAMES, UPGRADE_BOXES, essenceOf, type Category } from '@/lib/rules'
+import { DECAY_BOXES, PC_STATUS_LIMIT, TIER_NAMES, UPGRADE_BOXES, essenceOf, limitProgress, type Category } from '@/lib/rules'
 import { STATUS_TYPES } from '@/components/cards/TrackingCard'
 import { RollLog } from '@/components/campaign/RollLog'
 import { DealStatus } from '@/components/campaign/DealStatus'
@@ -55,6 +55,32 @@ export default function ScreenPage({ params }: { params: Promise<{ id: string }>
       )}
 
       <div className="mb-4"><RollLog campaignId={id} limit={5} /></div>
+
+      {(campaign?.challenges?.length ?? 0) > 0 && (
+        <section className="mb-4" aria-labelledby="tv-challenges">
+          <h2 id="tv-challenges" className="font-display tracking-widest text-xl mb-2" style={{ color: '#ff4f6e' }}>CHALLENGES</h2>
+          <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {campaign!.challenges!.map((ch, i) => (
+              <li key={ch._id ?? i} className="challenge-card p-3" style={{ opacity: campaign?.me?.canManage && !ch.revealed ? 0.6 : 1 }}>
+                <div className="font-display text-lg tracking-wide">{ch.name}{campaign?.me?.canManage && !ch.revealed ? ' (hidden)' : ''}</div>
+                {ch.statuses.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {ch.statuses.map((st, j) => <span key={j} className="text-sm px-1.5 rounded" style={{ background: '#2a1630', border: '1px solid #5a2a5a' }}>{st.name}-{st.tier}</span>)}
+                  </div>
+                )}
+                {ch.limits.length > 0 && (
+                  <ul className="mt-1 text-sm">
+                    {ch.limits.map((l, j) => {
+                      const p = limitProgress(l.max, ch.statuses, l.name)
+                      return <li key={j} style={{ color: p.state === 'maxed' || p.state === 'exceeded' ? 'var(--accent-lime)' : 'var(--text-muted)' }}>{l.name}: {l.max == null ? 'immune' : `${p.current}/${l.max}`}{p.state === 'maxed' ? (l.progress ? ' — triggered' : ' — overcome') : p.state === 'exceeded' ? ' — permanent' : ''}</li>
+                    })}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {chars.map(c => {
