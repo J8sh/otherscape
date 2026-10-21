@@ -240,6 +240,39 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
         </div>
       )}
 
+      {me?.canManage && (() => {
+        const steps = [
+          { done: (campaign.members?.length ?? 0) > 1, label: 'Invite your players', hint: 'Copy the invite link from Members.', href: '#members-heading' },
+          { done: !!campaign.seriesNotes?.trim(), label: 'Write the series notes', hint: 'Concept, Megacity, lines & veils.', href: '#series-heading' },
+          { done: (campaign.crewTheme?.tags ?? []).some(t => t.text.trim()), label: 'Set up the crew card', hint: 'Together with the players — or start from a crew kit.', href: '#crew-heading' },
+          { done: (campaign.challenges?.length ?? 0) > 0, label: 'Prepare a Challenge', hint: 'A template is a quick start.', href: '#challenges-heading' },
+        ]
+        const left = steps.filter(st => !st.done).length
+        if (left === 0) return null
+        return (
+          <section className="panel p-5 mb-6" style={{ borderColor: 'var(--accent-cyan)' }} aria-labelledby="mc-start-heading">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 id="mc-start-heading" className="font-display text-2xl tracking-widest" style={{ color: 'var(--accent-cyan)' }}>GET YOUR GAME READY</h2>
+              <Link href="/guide/session-zero" className="text-sm underline" style={{ color: 'var(--text-muted)' }}>Session Zero guide</Link>
+            </div>
+            <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>{left} step{left === 1 ? '' : 's'} left · this disappears once they’re done.</p>
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {steps.map(st => (
+                <li key={st.label}>
+                  <a href={st.href} className="flex items-start gap-2 rounded-lg px-3 py-2 hover:bg-white/5" style={{ minHeight: 44, opacity: st.done ? 0.55 : 1 }}>
+                    <span aria-hidden className="mt-0.5" style={{ color: st.done ? 'var(--accent-lime)' : 'var(--text-muted)' }}>{st.done ? '✓' : '○'}</span>
+                    <span>
+                      <span className="block font-semibold" style={{ textDecoration: st.done ? 'line-through' : undefined }}>{st.label}<span className="sr-only">{st.done ? ' (done)' : ''}</span></span>
+                      <span className="block text-sm" style={{ color: 'var(--text-muted)' }}>{st.hint}</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      })()}
+
       {me?.role === 'player' && !characters.some(c => c.ownerId === user?._id) && (
         <section className="panel p-5 mb-6" style={{ borderColor: 'var(--accent-lime)' }} aria-labelledby="welcome-heading">
           <h2 id="welcome-heading" className="font-display text-2xl tracking-widest" style={{ color: 'var(--accent-lime)' }}>WELCOME TO THE CREW</h2>
