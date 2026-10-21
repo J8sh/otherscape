@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Dices, Flame, Minus, Plus, RotateCcw, Check } from 'lucide-react'
 import { InfoTip } from '@/components/ui/Tooltip'
@@ -106,6 +106,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
   const [applied, setApplied] = useState<string[] | null>(null)
   const [share, setShare] = useState(true)
   // Action rolls drive the story; mitigation rolls soften incoming Consequences.
+  const resultRef = useRef<HTMLElement>(null)
   const [mode, setMode] = useState<'action' | 'mitigate' | 'blaze'>('action')
   const [stake, setStake] = useState(() => Math.max(0, character?.themes.findIndex(t => t.themeType) ?? 0))
   const [degree, setDegree] = useState<BlazeDegree>('significant')
@@ -311,8 +312,23 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
         </section>}
       </div>
 
+      {/* Phones: the result column sits below every tag, so keep Power and the roll button in reach. */}
+      {!dice && (
+        <div className="lg:hidden sticky bottom-0 z-10 -mx-1 px-3 py-2 rounded-xl flex items-center gap-3"
+          style={{ background: 'rgba(8,12,24,0.95)', border: '1px solid var(--border-card)', boxShadow: '0 -8px 24px rgba(0,0,0,0.5)' }}>
+          <div className="font-display leading-none" style={{ fontSize: 36, color: power > 0 ? 'var(--accent-lime)' : power < 0 ? 'var(--danger)' : 'var(--text-soft)' }} aria-hidden>
+            {power > 0 ? `+${power}` : power}
+          </div>
+          <div className="text-xs font-display tracking-widest flex-1" style={{ color: 'var(--text-muted)' }}>POWER</div>
+          <button type="button" className="btn btn-primary" style={{ minHeight: 48 }} disabled={rolling}
+            onClick={() => { roll(); resultRef.current?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }) }}>
+            <Dices size={20} aria-hidden /> ROLL 2D6
+          </button>
+        </div>
+      )}
+
       {/* Result column: sticks in view on desktop */}
-      <aside className="panel p-4 lg:sticky" style={{ top: 'calc(var(--nav-height) + 16px)' }} aria-labelledby="roll-result">
+      <aside ref={resultRef} className="panel p-4 lg:sticky scroll-mt-4" style={{ top: 'calc(var(--nav-height) + 16px)' }} aria-labelledby="roll-result">
         <div className="flex rounded-lg overflow-hidden mb-3" role="group" aria-label="Roll type" style={{ border: '1px solid var(--border-card)' }}>
           {(character ? (['action', 'mitigate', 'blaze'] as const) : (['action', 'mitigate'] as const)).map(m => (
             <button key={m} type="button" aria-pressed={mode === m} onClick={() => { setMode(m); setDice(null) }} className="flex-1 font-display tracking-widest"
