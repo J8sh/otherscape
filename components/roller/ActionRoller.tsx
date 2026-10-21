@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Dices, Flame, Minus, Plus, RotateCcw, Check } from 'lucide-react'
 import { InfoTip } from '@/components/ui/Tooltip'
-import { actionPower, rollOutcome, spendablePower, type Outcome } from '@/lib/rules'
+import { BLAZE_DEGREES, actionPower, blazeResult, rollOutcome, spendablePower, type BlazeDegree, type Outcome } from '@/lib/rules'
 import { applyRoll, refKey, rollD6, type TagRef } from '@/lib/roll'
 import { CATEGORY_META } from '@/lib/themeMeta'
 import type { IChallenge, ICharacter, IOptionalRules, IStatus } from '@/types'
@@ -106,7 +106,9 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
   const [applied, setApplied] = useState<string[] | null>(null)
   const [share, setShare] = useState(true)
   // Action rolls drive the story; mitigation rolls soften incoming Consequences.
-  const [mode, setMode] = useState<'action' | 'mitigate'>('action')
+  const [mode, setMode] = useState<'action' | 'mitigate' | 'blaze'>('action')
+  const [stake, setStake] = useState(() => Math.max(0, character?.themes.findIndex(t => t.themeType) ?? 0))
+  const [degree, setDegree] = useState<BlazeDegree>('significant')
 
   // A fresh sheet (after applying) invalidates selections by index.
   useEffect(() => { setSelected(new Set()); setBurnKey(null); setStatusPicks(new Set()) }, [character])
@@ -121,7 +123,10 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
   const positive = cap != null ? Math.min(rawPositive, cap) : rawPositive
   const negative = chosen.filter(c => c.sign < 0).length + extraNeg
   const burned = burnKey !== null && selected.has(burnKey)
-  const power = actionPower({ positive, negative, burned, bestStatus: best, worstStatus: worst, scaleGap })
+  // Blaze: Power is the number of themes sharing the category of the theme at stake; nothing else counts.
+  const stakeTheme = character?.themes[stake]
+  const blazePower = stakeTheme?.themeType ? character!.themes.filter(t => t.themeType && t.category === stakeTheme.category).length : 0
+  const power = mode === 'blaze' ? blazePower : actionPower({ positive, negative, burned, bestStatus: best, worstStatus: worst, scaleGap })
   const result = dice ? rollOutcome(dice[0], dice[1], rolledPower) : null
 
   function toggle(c: Chip) {
@@ -147,7 +152,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
     const finish = () => {
       setDice(final)
       setRolling(false)
-      if (onShare && share) onShare({ dice: final, power, tags: usedTags, note: mode === 'mitigate' ? 'mitigation' : '' })
+      if (onShare && share) onShare({ dice: final, power, tags: usedTags, note: mode === 'mitigate' ? 'mitigation' : mode === 'blaze' ? 'blaze' : '' })
     }
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { finish(); return }
     setRolling(true)
@@ -180,7 +185,30 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_340px] items-start">
       <div className="space-y-5">
-        {character && (
+        {mode === 'blaze' && character && (
+          <section className="panel p-4 space-y-4" aria-labelledby="blaze-heading" style={{ borderColor: '#ff8c42' }}>
+            <h2 id="blaze-heading" className="font-display text-xl tracking-widest flex items-center gap-2" style={{ color: '#ff8c42' }}>
+              GO OUT IN A BLAZE
+              <InfoTip label="Going Out in a Blaze">Push past every limit to achieve something beyond your abilities. Describe the outcome; the MC sets the degree of sacrifice and you agree which theme is at stake. Roll 2d6 + the number of themes you have of that theme’s type — no tags or statuses count (core book p.123).</InfoTip>
+            </h2>
+            <label className="block">
+              <span className="field-label">THEME AT STAKE</span>
+              <select className="input" value={stake} onChange={e => { setStake(Number(e.target.value)); setDice(null) }}>
+                {character.themes.map((t, i) => t.themeType && <option key={i} value={i}>{t.name || t.themeType} ({t.category})</option>)}
+              </select>
+            </label>
+            <fieldset className="space-y-1.5">
+              <legend className="field-label">DEGREE OF SACRIFICE (THE MC DECIDES)</legend>
+              {BLAZE_DEGREES.map(d => (
+                <label key={d.key} className="flex items-start gap-3 rounded-lg p-2 cursor-pointer" style={{ background: degree === d.key ? 'rgba(255,140,66,0.12)' : 'var(--bg-inset)', border: `1px solid ${degree === d.key ? '#ff8c42' : 'var(--border-card)'}` }}>
+                  <input type="radio" name="blaze-degree" className="mt-1" checked={degree === d.key} onChange={() => { setDegree(d.key); setDice(null) }} />
+                  <span><b>{d.label}</b> — <span style={{ color: 'var(--text-soft)' }}>{d.examples}</span><br /><span className="text-sm" style={{ color: '#ff8c42' }}>Price: {d.price}</span></span>
+                </label>
+              ))}
+            </fieldset>
+          </section>
+        )}
+        {mode !== 'blaze' && character && (
           <section className="panel p-4" aria-labelledby="roll-tags">
             <h2 id="roll-tags" className="font-display text-xl tracking-widest mb-1">YOUR TAGS</h2>
             <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>Tap every tag that’s <b>directly</b> relevant. Burned and unpacked tags aren’t listed.</p>
@@ -235,7 +263,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
           </section>
         )}
 
-        <section className="panel p-4 space-y-3" aria-labelledby="roll-other">
+        {mode !== 'blaze' && <section className="panel p-4 space-y-3" aria-labelledby="roll-other">
           <h2 id="roll-other" className="font-display text-xl tracking-widest">{character ? 'EVERYTHING ELSE' : 'COUNT YOUR POWER'}</h2>
           <Counter label={character ? 'Other helpful tags' : 'Helpful tags'} value={extraPos} onChange={v => { setExtraPos(v); setDice(null) }}
             help="+1 each: tags that directly help — a crewmate’s tag, your target’s weakness, the environment." />
@@ -259,16 +287,16 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
           </div>
           <TierPicker label="Worst hindering status" value={manualWorst} onChange={v => { setManualWorst(v); setDice(null) }}
             help="Only the single highest relevant negative status counts — yours, or one on the target that stops you (e.g. their behind-cover)." />
-        </section>
+        </section>}
       </div>
 
       {/* Result column: sticks in view on desktop */}
       <aside className="panel p-4 lg:sticky" style={{ top: 'calc(var(--nav-height) + 16px)' }} aria-labelledby="roll-result">
         <div className="flex rounded-lg overflow-hidden mb-3" role="group" aria-label="Roll type" style={{ border: '1px solid var(--border-card)' }}>
-          {(['action', 'mitigate'] as const).map(m => (
+          {(character ? (['action', 'mitigate', 'blaze'] as const) : (['action', 'mitigate'] as const)).map(m => (
             <button key={m} type="button" aria-pressed={mode === m} onClick={() => { setMode(m); setDice(null) }} className="flex-1 font-display tracking-widest"
               style={{ minHeight: 40, background: mode === m ? 'var(--accent-lime)' : 'transparent', color: mode === m ? 'var(--bg-dark)' : 'var(--text-muted)' }}>
-              {m === 'action' ? 'ACTION' : 'MITIGATE'}
+              {m === 'action' ? 'ACTION' : m === 'mitigate' ? 'MITIGATE' : 'BLAZE'}
             </button>
           ))}
         </div>
@@ -280,8 +308,8 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
           {power > 0 ? `+${power}` : power}
         </div>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          {positive} helpful{cap != null && rawPositive > cap ? ` (capped at ${cap})` : ''}{burned ? ' (one burned: +3)' : ''} · {negative} hindering{best ? ` · +${best} status` : ''}{worst ? ` · −${worst} status` : ''}{scaleGap ? ` · Scale ${scaleGap > 0 ? '+' : ''}${scaleGap}` : ''}
-        </p>
+          {mode === 'blaze' ? `${blazePower} ${stakeTheme?.category ?? ''} theme${blazePower === 1 ? '' : 's'} — nothing else counts` : <>{positive} helpful{cap != null && rawPositive > cap ? ` (capped at ${cap})` : ''}{burned ? ' (one burned: +3)' : ''} · {negative} hindering{best ? ` · +${best} status` : ''}{worst ? ` · −${worst} status` : ''}{scaleGap ? ` · Scale ${scaleGap > 0 ? '+' : ''}${scaleGap}` : ''}
+        </>}</p>
 
         {onShare && (
           <label className="flex items-center gap-2 text-sm mt-3" style={{ minHeight: 36, color: 'var(--text-soft)' }}>
@@ -306,7 +334,9 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
                 {dice[0] === 1 && dice[1] === 1 && <p className="text-center text-sm">Snake eyes always miss.</p>}
                 {dice[0] === 6 && dice[1] === 6 && <p className="text-center text-sm">Boxcars always hit strong.</p>}
                 <p className="text-[15px] mt-1" style={{ color: 'var(--text-soft)' }}>
-                  {mode === 'mitigate'
+                  {mode === 'blaze'
+                    ? `${blazeResult(degree, result.outcome).succeeds ? 'You pull it off.' : 'It fails.'} Price: ${blazeResult(degree, result.outcome).price}. These Consequences can’t be mitigated.`
+                    : mode === 'mitigate'
                     ? result.outcome === 'miss'
                       ? 'You take the Consequences as dealt.'
                       : `You may spend ${Math.max(rolledPower, 1) + (result.outcome === 'strong' ? 1 : 0)} Power to block them: 1 per status tier, 2 per tag.`

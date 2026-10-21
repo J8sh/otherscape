@@ -117,3 +117,25 @@ export function limitProgress(max: number | null, statuses: { tier: number; limi
   const state: LimitState = max == null ? 'immune' : current > max ? 'exceeded' : current === max ? 'maxed' : 'open'
   return { current, state }
 }
+
+// ── Going Out in a Blaze (p.123) ──────────────────────────────────────────
+export type BlazeDegree = 'significant' | 'noReturn' | 'ultimate' | 'inescapable'
+
+export const BLAZE_DEGREES: { key: BlazeDegree; label: string; examples: string; price: string }[] = [
+  { key: 'significant', label: 'Significant', examples: 'Beat an equal foe, survive a tough spot, reshape the scene', price: 'Burn all tags in the theme at stake' },
+  { key: 'noReturn', label: 'No Return', examples: 'Beat a stronger foe, survive a dire spot, reshape the neighborhood', price: 'Replace the theme at stake' },
+  { key: 'ultimate', label: 'Ultimate', examples: 'Beat a mighty foe, survive the hopeless, leave a mark on the Megacity', price: 'Take a tier-6 status' },
+  { key: 'inescapable', label: 'Inescapable', examples: 'Hold off an army or an Avatar, save someone from the impossible, mark the world', price: 'Take a tier-6 status, whatever you roll' },
+]
+
+/**
+ * What a Blaze costs: success on any hit; a strong hit pays one degree
+ * lower (Significant: burn only 2 tags; Inescapable: no discount).
+ */
+export function blazeResult(degree: BlazeDegree, outcome: Outcome): { succeeds: boolean; price: string } {
+  const i = BLAZE_DEGREES.findIndex(d => d.key === degree)
+  const succeeds = outcome !== 'miss'
+  if (outcome !== 'strong' || degree === 'inescapable') return { succeeds, price: BLAZE_DEGREES[i].price }
+  if (degree === 'significant') return { succeeds, price: 'Burn only two tags in the theme at stake' }
+  return { succeeds, price: BLAZE_DEGREES[i - 1].price }
+}

@@ -61,3 +61,12 @@ test('challenge limit progress', () => {
   assert.deepEqual(limitProgress(4, st, 'banish'), { current: 0, state: 'open' })
   assert.equal(limitProgress(null, st, 'hurt').state, 'immune')
 })
+
+test('going out in a blaze', async () => {
+  const { blazeResult } = await import('./rules.ts')
+  assert.deepEqual(blazeResult('noReturn', 'strong'), { succeeds: true, price: 'Burn all tags in the theme at stake' })
+  assert.equal(blazeResult('noReturn', 'mixed').price, 'Replace the theme at stake')
+  assert.equal(blazeResult('noReturn', 'miss').succeeds, false)
+  assert.equal(blazeResult('significant', 'strong').price, 'Burn only two tags in the theme at stake')
+  assert.equal(blazeResult('inescapable', 'strong').price, 'Take a tier-6 status, whatever you roll')
+})
