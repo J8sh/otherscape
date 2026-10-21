@@ -695,6 +695,7 @@ export const GUIDE: GuideTopic[] = [
           <li><b>Write your own tags.</b> Theme and crew cards list their themebook’s questions, plus Identity / Ritual / Itch ideas from the kits.</li>
           <li><b>Your characters</b> quick links on the Campaigns page.</li>
           <li><b>Phone roller bar</b> keeps Power and the roll button in reach.</li>
+          <li>Pop-up alerts are now gentle notices in the corner; downtime tells you what it changed, and the roller remembers whether you share rolls.</li>
           <li>New guide pages: <Link href="/guide/making-a-character">Making a Character</Link> and <Link href="/guide/session-zero">Session Zero</Link>.</li>
         </ul>
       </>
