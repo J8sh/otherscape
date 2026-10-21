@@ -155,6 +155,15 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
     }
   }
 
+  async function reassign(charId: string, ownerId: string) {
+    try {
+      await api(`/api/characters/${charId}/owner`, { method: 'POST', json: { ownerId } })
+      setCharacters(prev => prev.map(c => (c._id === charId ? { ...c, ownerId } : c)))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not reassign')
+    }
+  }
+
   async function deleteCharacter(charId: string, name: string) {
     if (!confirm(`Delete ${name || 'this character'}? You can restore it from “Recently deleted” for 30 days.`)) return
     try {
@@ -365,6 +374,18 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
                         )}
                       </div>
                     </Link>
+                    {me?.canManage && (campaign.members?.length ?? 0) > 1 && (
+                      <label className="flex items-center gap-2 text-sm mt-1.5 px-1" style={{ color: 'var(--text-muted)' }}>
+                        Played by
+                        <select className="input text-sm py-1" style={{ width: 'auto', minHeight: 36 }} value={char.ownerId ?? ''}
+                          onChange={e => reassign(char._id, e.target.value)} aria-label={`Who plays ${char.name || 'this character'}`}>
+                          {!campaign.members?.some(m => m.userId === char.ownerId) && <option value="">Nobody in the campaign</option>}
+                          {campaign.members?.filter(m => m.role !== 'spectator').map(m => (
+                            <option key={m.userId} value={m.userId}>{m.displayName}{m.role === 'mc' ? ' (MC)' : ''}</option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
                     {char.canEdit && (
                       <button
                         onClick={() => deleteCharacter(char._id, char.name)}
