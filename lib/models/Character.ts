@@ -82,6 +82,16 @@ const CharacterSchema = new Schema(
     crewRelationships: { type: [CrewRelationshipSchema], default: () => [] }, // one per crewmate; the setup checklist adds rows
     statuses: { type: [StatusSchema], default: () => [] },
     storyTags: { type: [StoryTagSchema], default: () => [] },
+    themeHistory: {
+      type: [new Schema({
+        name: { type: String, default: '' },
+        themeType: { type: String, default: '' },
+        category: { type: String, default: '' },
+        evolution: { type: Number, default: 0 },
+        replacedAt: { type: Date, default: () => new Date() },
+      }, { _id: false })],
+      default: () => [],
+    },
     essence: { mythosSameSource: { type: Boolean, default: false } },
     notes: { type: String, default: '', maxlength: 5000 },
   },
@@ -93,5 +103,5 @@ export const Character = registerModel('Character', CharacterSchema)
 /** Sheet fields a player may write (and that export/import carry). campaignId and ownerId never come from a request body. */
 export const SHEET_FIELDS = [
   'name', 'player', 'themes', 'loadoutTheme', 'evolution', 'specials',
-  'crewRelationships', 'statuses', 'storyTags', 'essence', 'notes',
+  'crewRelationships', 'statuses', 'storyTags', 'essence', 'notes', 'themeHistory',
 ] as const
