@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { Clapperboard, PackageX } from 'lucide-react'
+import { Clapperboard, Download, PackageX } from 'lucide-react'
 import { InfoTip } from '@/components/ui/Tooltip'
 import { api } from '@/lib/api'
 
@@ -44,6 +44,12 @@ export function TableTools({ campaignId, onDone }: { campaignId: string; onDone:
             <PackageX size={15} aria-hidden /> LOAD OFF (END OF JOB)
           </button>
           <InfoTip label="Load Off">When the job ends, every loadout tag is burnt again. Players Load Up fresh before the next job.</InfoTip>
+        </div>
+        <div className="flex items-center gap-2">
+          <a className="btn btn-ghost btn-sm flex-1" href={`/api/campaigns/${campaignId}/backup`} download>
+            <Download size={15} aria-hidden /> BACKUP CAMPAIGN
+          </a>
+          <InfoTip label="Backup">Download the whole campaign — crew card, Challenges, rules, series notes, every character and the journal — as one file to keep somewhere safe.</InfoTip>
         </div>
       </div>
       {msg && <p role="status" className="text-sm mt-3" style={{ color: 'var(--text-soft)' }}>{msg}</p>}
