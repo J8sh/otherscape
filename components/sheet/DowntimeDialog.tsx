@@ -5,6 +5,7 @@ import { Coffee, Minus, Plus, X } from 'lucide-react'
 import { DOWNTIME_POWER, applyDowntimePower, applyDowntimeUpgrade, downtimeCost, recoverCrewTags, type DowntimeSpend } from '@/lib/downtime'
 import { UPGRADE_BOXES } from '@/lib/rules'
 import { api } from '@/lib/api'
+import { useToast } from '@/components/ui/Toast'
 import type { ICampaign, ICharacter, ICrewThemeCard } from '@/types'
 
 /** Radio value for “the crew theme” among the theme choices. */
@@ -17,6 +18,7 @@ const CREW = -2
  */
 export function DowntimeDialog({ character, onApply }: { character: ICharacter; onApply: (c: ICharacter) => void }) {
   const [open, setOpen] = useState(false)
+  const toast = useToast()
   const [mode, setMode] = useState<'power' | 'upgrade'>('power')
   const [spend, setSpend] = useState<DowntimeSpend>({ recover: [], heal: {} })
   const [theme, setTheme] = useState(character.themes.findIndex(t => t.themeType))
@@ -77,6 +79,17 @@ export function DowntimeDialog({ character, onApply }: { character: ICharacter; 
     }
     setOpen(false)
     setSpend({ recover: [], heal: {}, crew: [] })
+    const healed = Object.values(spend.heal).reduce((a, b) => a + b, 0)
+    toast({
+      kind: 'success',
+      title: 'DOWNTIME',
+      message: mode === 'upgrade'
+        ? `Marked an upgrade on ${theme === CREW ? 'the crew theme' : character.themes[theme]?.name || character.themes[theme]?.themeType || 'the theme'}.`
+        : [
+            spend.recover.length + (spend.crew?.length ?? 0) ? `Recovered ${spend.recover.length + (spend.crew?.length ?? 0)} tag${spend.recover.length + (spend.crew?.length ?? 0) === 1 ? '' : 's'}` : '',
+            healed ? `healed ${healed} tier${healed === 1 ? '' : 's'}` : '',
+          ].filter(Boolean).join(', ') + '.',
+    })
   }
 
   return (
