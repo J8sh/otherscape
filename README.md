@@ -8,17 +8,21 @@ at the table.
 
 - **Accounts & campaigns** — username/password sign-in. Each campaign has an **MC**, **players** and
   **spectators**; players join with an invite link or code. The first account becomes the site admin.
-- **Character sheets** modeled on the core book's cards: four themes (from the 112 theme kits or 33
-  character tropes), the character card with Essence and Evolution, loadout (with the Street Catalog and
-  Loading Up / Off), story tags, statuses that stack by the book, notes. Rules tips (ⓘ) everywhere.
-- **Crew** — the shared crew theme (from the 8 crew kits), relationship tags, live updates for everyone.
-- **Dice roller** — tap the tags and statuses that apply, roll 2d6 + Power, apply the results to your
-  sheet or to a Challenge, and share the roll with the crew. Action and mitigation modes.
-- **MC tools** — Challenge profiles with Limits and reveal controls, Table View of every character,
-  Credit Roll / Load Off, optional rules, a shared journal.
-- **Rules guide** — plain-language reference (our own wording, with core-book page numbers) and an index
-  of the Action Database. The book itself is needed for full rules text.
-- Print-friendly sheets, export/import characters, installable on phones (Add to Home Screen).
+- **Character sheets** modeled on the core book's cards: four themes (112 theme kits, or start from one
+  of 33 character tropes), the character card with Essence and Evolution (Moments, Veteran Specials,
+  lost themes), loadout with the Street Catalog and Loading Up / Off, story tags, statuses that stack,
+  reduce and cancel (polar) by the book, notes, and a setup checklist for new characters.
+- **Crew** — the shared crew theme (8 crew kits, crew Specials), relationship tags with suggestions, a
+  relationships overview, series notes, and a shared journal. Everything updates live.
+- **Dice roller** — tap the tags and statuses that apply, roll 2d6 + Power with Scale, burn for +3, or
+  roll with Self / Mythos / Noise; mitigation and Going Out in a Blaze modes. Apply results to your
+  sheet or to a revealed Challenge, and share rolls with the crew.
+- **Downtime helper** — mark an upgrade, or spend 3 Power recovering tags and healing statuses.
+- **MC tools** — Challenge profiles (templates, Limits, reveal controls), Table View with live statuses
+  and one-tap Consequences, Credit Roll / Load Off, optional rules (PC Limit, Enhance cost, tag cap).
+- **Rules guide** — plain-language topics in our own words with core-book page numbers, a searchable
+  index of the Action Database, the Effects cards, and a themebook/kit browser.
+- Print-friendly sheets, character export/import, installable on phones (Add to Home Screen).
 
 ## Running it
 
