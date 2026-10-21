@@ -503,7 +503,7 @@ export const GUIDE: GuideTopic[] = [
           <li><b>Mark an upgrade box</b> on any one of your themes or the crew theme, <i>or</i></li>
           <li><b>3 Power</b> to spend on Effects without rolling — heal and recover (burnt tags cost only 1 each), prepare or Load Up, spend quality time to create a relationship tag, or research (Discover).</li>
         </ul>
-        <OnTheSite>Use the <b>DOWNTIME</b> button on your sheet: pick a theme to mark an upgrade on, or spend 3 Power recovering burned tags (1 each) and healing statuses (1 per tier).</OnTheSite>
+        <OnTheSite>Use the <b>DOWNTIME</b> button on your sheet: pick a theme — or the crew theme — to mark an upgrade on, or spend 3 Power recovering burned tags, your own or the crew’s (1 each), and healing statuses (1 per tier).</OnTheSite>
         <h2>The Credit Roll</h2>
         <p>At the end of each session, talk through what happened, then:</p>
         <ul>
