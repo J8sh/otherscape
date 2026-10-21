@@ -81,6 +81,8 @@ export function CrewThemeCard({ crew, onChange, readOnly = false }: Props) {
             onBurn={() => updateTag(i, { isBurned: !tag.isBurned })}
             burnHelp="Crew power tags burn whenever someone invokes them. Recover them like your own tags, or one per crew member at the Credit Roll."
             onRemove={() => update({ tags: tags.filter((_, idx) => idx !== i) })}
+            note={tag.note}
+            onNote={readOnly ? undefined : note => updateTag(i, { note })}
           />
         ))}
         {weak.map(({ tag, i }) => (
@@ -91,6 +93,8 @@ export function CrewThemeCard({ crew, onChange, readOnly = false }: Props) {
             placeholder="crew weakness tag…"
             onText={text => updateTag(i, { text })}
             onRemove={() => update({ tags: tags.filter((_, idx) => idx !== i) })}
+            note={tag.note}
+            onNote={readOnly ? undefined : note => updateTag(i, { note })}
           />
         ))}
         <div className="flex gap-2 px-3 edit-only">

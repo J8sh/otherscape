@@ -68,7 +68,7 @@ function crewChips(crew: ICrewThemeCard): Chip[] {
   ;(crew.tags ?? []).forEach((tag, i) => {
     if (!tag.text.trim()) return
     if (tag.isWeakness) chips.push({ ref: { kind: 'crew', index: i }, text: tag.text, sign: -1, note: 'marks a crew upgrade', burnable: false, group, covers: tag.note?.trim() || undefined })
-    else if (!tag.isBurned) chips.push({ ref: { kind: 'crew', index: i }, text: tag.text, sign: 1, burnable: true, group, covers: tag.note?.trim() || undefined })
+    else if (!tag.isBurned) chips.push({ ref: { kind: 'crew', index: i }, text: tag.text, sign: 1, note: 'burns when used', burnable: true, group, covers: tag.note?.trim() || undefined })
   })
   return chips
 }
@@ -206,7 +206,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges, c
   }
 
   const groups = [...new Set(chips.map(c => c.group))]
-  const hasSheetChanges = burned || chosen.some(c => c.sign < 0 && c.ref.kind !== 'story') || chosen.some(c => c.ref.kind === 'relationship')
+  const hasSheetChanges = burned || chosen.some(c => c.sign < 0 && c.ref.kind !== 'story') || chosen.some(c => c.ref.kind === 'relationship' || c.ref.kind === 'crew')
 
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_340px] items-start">

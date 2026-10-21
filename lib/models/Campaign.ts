@@ -6,6 +6,7 @@ const TagSchema = new Schema({
   isPower: { type: Boolean, default: false },
   isWeakness: { type: Boolean, default: false },
   isBurned: { type: Boolean, default: false },
+  note: { type: String, default: '', maxlength: 200 },
 })
 
 const CrewThemeSchema = new Schema({
