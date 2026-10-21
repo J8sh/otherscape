@@ -109,6 +109,8 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
   const [mode, setMode] = useState<'action' | 'mitigate' | 'blaze'>('action')
   const [stake, setStake] = useState(() => Math.max(0, character?.themes.findIndex(t => t.themeType) ?? 0))
   const [degree, setDegree] = useState<BlazeDegree>('significant')
+  // Roll with Self / Mythos / Noise (p.122): theme count replaces positive tags.
+  const [rollWith, setRollWith] = useState<'' | 'self' | 'mythos' | 'noise'>('')
 
   // A fresh sheet (after applying) invalidates selections by index.
   useEffect(() => { setSelected(new Set()); setBurnKey(null); setStatusPicks(new Set()) }, [character])
@@ -126,7 +128,12 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
   // Blaze: Power is the number of themes sharing the category of the theme at stake; nothing else counts.
   const stakeTheme = character?.themes[stake]
   const blazePower = stakeTheme?.themeType ? character!.themes.filter(t => t.themeType && t.category === stakeTheme.category).length : 0
-  const power = mode === 'blaze' ? blazePower : actionPower({ positive, negative, burned, bestStatus: best, worstStatus: worst, scaleGap })
+  const categoryCount = rollWith && character ? character.themes.filter(t => t.themeType && t.category === rollWith).length : 0
+  const power = mode === 'blaze'
+    ? blazePower
+    : rollWith
+      ? actionPower({ positive: categoryCount, negative, bestStatus: best, worstStatus: worst, scaleGap })
+      : actionPower({ positive, negative, burned, bestStatus: best, worstStatus: worst, scaleGap })
   const result = dice ? rollOutcome(dice[0], dice[1], rolledPower) : null
 
   function toggle(c: Chip) {
@@ -265,6 +272,20 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
 
         {mode !== 'blaze' && <section className="panel p-4 space-y-3" aria-labelledby="roll-other">
           <h2 id="roll-other" className="font-display text-xl tracking-widest">{character ? 'EVERYTHING ELSE' : 'COUNT YOUR POWER'}</h2>
+          {character && mode === 'action' && (
+            <label className="block">
+              <span className="text-[15px] font-semibold flex items-center gap-2 mb-1">Count Power from
+                <InfoTip label="rolling with a theme type">For actions about humanity, the mythic, or technology in general — sensing a Source, figuring out strange tech, resisting a change to who you are — you may use the number of your themes of that type instead of positive tags. Negative tags and statuses still count; you can’t burn a tag for Power.</InfoTip>
+              </span>
+              <select className="input" value={rollWith} onChange={e => { setRollWith(e.target.value as typeof rollWith); setDice(null) }}>
+                <option value="">Positive tags (normal)</option>
+                {(['self', 'mythos', 'noise'] as const).map(cat => {
+                  const n = character.themes.filter(t => t.themeType && t.category === cat).length
+                  return <option key={cat} value={cat} disabled={n === 0}>Roll with {cat[0].toUpperCase() + cat.slice(1)} ({n})</option>
+                })}
+              </select>
+            </label>
+          )}
           <Counter label={character ? 'Other helpful tags' : 'Helpful tags'} value={extraPos} onChange={v => { setExtraPos(v); setDice(null) }}
             help="+1 each: tags that directly help — a crewmate’s tag, your target’s weakness, the environment." />
           <Counter label={character ? 'Other hindering tags' : 'Hindering tags'} value={extraNeg} onChange={v => { setExtraNeg(v); setDice(null) }}
@@ -308,7 +329,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
           {power > 0 ? `+${power}` : power}
         </div>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          {mode === 'blaze' ? `${blazePower} ${stakeTheme?.category ?? ''} theme${blazePower === 1 ? '' : 's'} — nothing else counts` : <>{positive} helpful{cap != null && rawPositive > cap ? ` (capped at ${cap})` : ''}{burned ? ' (one burned: +3)' : ''} · {negative} hindering{best ? ` · +${best} status` : ''}{worst ? ` · −${worst} status` : ''}{scaleGap ? ` · Scale ${scaleGap > 0 ? '+' : ''}${scaleGap}` : ''}
+          {mode === 'blaze' ? `${blazePower} ${stakeTheme?.category ?? ''} theme${blazePower === 1 ? '' : 's'} — nothing else counts` : rollWith ? `${categoryCount} ${rollWith} theme${categoryCount === 1 ? '' : 's'} · ${negative} hindering${best ? ` · +${best} status` : ''}${worst ? ` · −${worst} status` : ''}` : <>{positive} helpful{cap != null && rawPositive > cap ? ` (capped at ${cap})` : ''}{burned ? ' (one burned: +3)' : ''} · {negative} hindering{best ? ` · +${best} status` : ''}{worst ? ` · −${worst} status` : ''}{scaleGap ? ` · Scale ${scaleGap > 0 ? '+' : ''}${scaleGap}` : ''}
         </>}</p>
 
         {onShare && (
