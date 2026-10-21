@@ -4,7 +4,11 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { Coffee, Minus, Plus, X } from 'lucide-react'
 import { DOWNTIME_POWER, applyDowntimePower, applyDowntimeUpgrade, downtimeCost, type DowntimeSpend } from '@/lib/downtime'
 import { UPGRADE_BOXES } from '@/lib/rules'
-import type { ICharacter } from '@/types'
+import { api } from '@/lib/api'
+import type { ICampaign, ICharacter, ICrewThemeCard } from '@/types'
+
+/** Radio value for “the crew theme” among the theme choices. */
+const CREW = -2
 
 /**
  * Downtime (core book p.124): describe what your character does, then take
@@ -16,6 +20,15 @@ export function DowntimeDialog({ character, onApply }: { character: ICharacter; 
   const [mode, setMode] = useState<'power' | 'upgrade'>('power')
   const [spend, setSpend] = useState<DowntimeSpend>({ recover: [], heal: {} })
   const [theme, setTheme] = useState(character.themes.findIndex(t => t.themeType))
+  const [crew, setCrew] = useState<ICrewThemeCard | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  // The crew theme can take the upgrade mark too (giving the crew attention, p. 134).
+  function onOpenChange(next: boolean) {
+    setOpen(next)
+    setError(null)
+    if (next) api<ICampaign>(`/api/campaigns/${character.campaignId}`).then(c => setCrew(c.me?.canEditCrew === false ? null : c.crewTheme ?? null)).catch(() => setCrew(null))
+  }
   const cost = downtimeCost(spend)
   const left = DOWNTIME_POWER - cost
 
@@ -32,14 +45,25 @@ export function DowntimeDialog({ character, onApply }: { character: ICharacter; 
     setSpend(sp => ({ ...sp, heal: { ...sp.heal, [i]: Math.max(0, Math.min(max, (sp.heal[i] ?? 0) + delta)) } }))
   }
 
-  function apply() {
-    onApply(mode === 'upgrade' ? applyDowntimeUpgrade(character, theme) : applyDowntimePower(character, spend))
+  async function apply() {
+    if (mode === 'upgrade' && theme === CREW) {
+      try {
+        // Re-read the crew card so a crewmate's recent edit isn't overwritten.
+        const fresh = (await api<ICampaign>(`/api/campaigns/${character.campaignId}`)).crewTheme
+        await api(`/api/campaigns/${character.campaignId}`, { method: 'PATCH', json: { crewTheme: { ...fresh, upgrade: Math.min(UPGRADE_BOXES, (fresh.upgrade ?? 0) + 1) } } })
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Couldn’t update the crew card')
+        return
+      }
+    } else {
+      onApply(mode === 'upgrade' ? applyDowntimeUpgrade(character, theme) : applyDowntimePower(character, spend))
+    }
     setOpen(false)
     setSpend({ recover: [], heal: {} })
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Trigger asChild>
         <button type="button" className="btn btn-ghost btn-sm"><Coffee size={14} aria-hidden /> <span className="hidden sm:inline">DOWNTIME</span></button>
       </Dialog.Trigger>
@@ -74,6 +98,13 @@ export function DowntimeDialog({ character, onApply }: { character: ICharacter; 
                     <span className="text-sm" style={{ color: 'var(--text-muted)' }}>upgrade {t.upgrade}/{UPGRADE_BOXES}</span>
                   </label>
                 ))}
+                {crew && (
+                  <label className="panel px-3 flex items-center gap-3 cursor-pointer" style={{ minHeight: 48, borderColor: theme === CREW ? 'var(--accent-lime)' : undefined }}>
+                    <input type="radio" name="dt-theme" checked={theme === CREW} onChange={() => setTheme(CREW)} className="w-4 h-4" />
+                    <span className="flex-1 font-semibold">Crew: {crew.name || 'crew theme'}</span>
+                    <span className="text-sm" style={{ color: 'var(--text-muted)' }}>upgrade {crew.upgrade ?? 0}/{UPGRADE_BOXES}</span>
+                  </label>
+                )}
               </fieldset>
             ) : (
               <>
@@ -114,7 +145,8 @@ export function DowntimeDialog({ character, onApply }: { character: ICharacter; 
                 </section>
               </>
             )}
-            <button type="button" className="btn btn-primary w-full" onClick={apply} disabled={mode === 'power' ? cost === 0 || left < 0 : theme < 0}>TAKE THIS BENEFIT</button>
+            {error && <p role="alert" className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
+            <button type="button" className="btn btn-primary w-full" onClick={apply} disabled={mode === 'power' ? cost === 0 || left < 0 : theme < 0 && theme !== CREW}>TAKE THIS BENEFIT</button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
