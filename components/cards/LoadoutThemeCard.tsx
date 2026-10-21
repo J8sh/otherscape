@@ -1,8 +1,10 @@
 'use client'
-import { Backpack, PackageX, Plus, Sparkles, TriangleAlert } from 'lucide-react'
+import { Backpack, PackageX, Plus, Sparkles, TriangleAlert, X } from 'lucide-react'
 import { Tooltip, InfoTip } from '@/components/ui/Tooltip'
 import { BoxTrack, CardStrip, LegendChip, PaperCard, TagSlot } from '@/components/sheet/primitives'
 import { UPGRADE_BOXES } from '@/lib/rules'
+import { LOADOUT_SPECIALS } from '@/lib/streetCatalog'
+import { CatalogPicker } from '@/components/cards/CatalogPicker'
 import type { ILoadoutTag, ILoadoutThemeCard } from '@/types'
 
 interface Props {
@@ -117,11 +119,12 @@ export function LoadoutThemeCard({ loadout, onChange }: Props) {
           }
         />
       ))}
-      <div className="px-3 edit-only">
-        <button type="button" className="w-full flex items-center justify-center gap-1 font-display tracking-widest text-sm rounded-lg" style={{ minHeight: 40, border: '2px dashed #a7b0bd', color: 'var(--card-ink-soft)' }}
+      <div className="px-3 edit-only flex gap-2 items-stretch">
+        <button type="button" className="flex-1 flex items-center justify-center gap-1 font-display tracking-widest text-sm rounded-lg" style={{ minHeight: 40, border: '2px dashed #a7b0bd', color: 'var(--card-ink-soft)' }}
           onClick={() => update({ tags: [...tags, { text: '', isFlaw: false, isBurned: true }] })}>
           <Plus size={14} aria-hidden /> LOADOUT TAG
         </button>
+        <CatalogPicker onAdd={added => update({ tags: [...tags, ...added] })} />
       </div>
 
       {upgradeReady && (
@@ -129,7 +132,11 @@ export function LoadoutThemeCard({ loadout, onChange }: Props) {
           <div className="font-display tracking-widest" style={{ color: '#3d5200' }}>LOADOUT UPGRADE — CHOOSE ONE</div>
           <div className="flex flex-wrap gap-2 mt-2">
             <button type="button" className="btn btn-sm btn-ghost" onClick={() => update({ upgrade: 0, loadingUpBonus: bonus + 1 })}>+1 LOADING UP POWER</button>
-            <button type="button" className="btn btn-sm btn-ghost" onClick={() => update({ upgrade: 0, specials: [...loadout.specials, ''] })}>LOADOUT SPECIAL</button>
+            <select className="btn btn-sm btn-ghost" value="" aria-label="Choose a loadout special"
+              onChange={e => { if (e.target.value) update({ upgrade: 0, specials: [...loadout.specials, e.target.value] }) }}>
+              <option value="">LOADOUT SPECIAL…</option>
+              {LOADOUT_SPECIALS.filter(sp => !loadout.specials.includes(sp.name)).map(sp => <option key={sp.name} value={sp.name}>{sp.name}</option>)}
+            </select>
           </div>
         </div>
       )}
@@ -138,16 +145,37 @@ export function LoadoutThemeCard({ loadout, onChange }: Props) {
         LOADOUT THEME SPECIALS{' '}
         <InfoTip label="loadout specials">Chosen with loadout upgrades (see the Street Catalog in the core book, p.253).</InfoTip>
       </CardStrip>
-      {loadout.specials.map((s, i) => (
-        <TagSlot
-          key={i}
-          kind="power"
-          text={s}
-          placeholder="loadout special…"
-          onText={text => update({ specials: loadout.specials.map((x, idx) => idx === i ? text : x) })}
-          onRemove={() => update({ specials: loadout.specials.filter((_, idx) => idx !== i) })}
-        />
-      ))}
+      <div className="px-3 space-y-1.5">
+        {loadout.specials.map((name, i) => {
+          const book = LOADOUT_SPECIALS.find(sp => sp.name === name)
+          return book ? (
+            <div key={i} className="rounded-lg px-3 py-2 flex items-start justify-between gap-2" style={{ background: 'var(--card-slot)', borderLeft: '5px solid var(--accent-lime)' }}>
+              <div>
+                <div className="font-display tracking-wide text-lg leading-tight">{book.name}</div>
+                <p className="text-[15px] leading-snug" style={{ color: 'var(--card-ink-soft)' }}>{book.summary}</p>
+              </div>
+              <button type="button" className="slot-btn remove edit-only shrink-0" onClick={() => update({ specials: loadout.specials.filter((_, idx) => idx !== i) })} aria-label={`Remove ${name}`}><X size={14} /></button>
+            </div>
+          ) : (
+            <div key={i} className="-mx-3">
+              <TagSlot kind="power" text={name} placeholder="custom loadout special…"
+                onText={text => update({ specials: loadout.specials.map((x, idx) => idx === i ? text : x) })}
+                onRemove={() => update({ specials: loadout.specials.filter((_, idx) => idx !== i) })} />
+            </div>
+          )
+        })}
+        <select
+          className="edit-only w-full rounded-lg px-2 font-semibold"
+          style={{ minHeight: 40, border: '2px dashed #a7b0bd', background: 'transparent', color: 'var(--card-ink-soft)' }}
+          value=""
+          onChange={e => { if (e.target.value) update({ specials: [...loadout.specials, e.target.value === '__custom' ? '' : e.target.value] }) }}
+          aria-label="Add a loadout special"
+        >
+          <option value="">+ Add a loadout special (with an upgrade)…</option>
+          {LOADOUT_SPECIALS.filter(sp => !loadout.specials.includes(sp.name)).map(sp => <option key={sp.name} value={sp.name}>{sp.name}</option>)}
+          <option value="__custom">Custom…</option>
+        </select>
+      </div>
 
       <div className="px-3 mt-3 flex justify-end">
         <div className="track-panel">
