@@ -1,4 +1,5 @@
-import { Schema, model, models } from 'mongoose'
+import { Schema } from 'mongoose'
+import { registerModel } from '@/lib/models/register'
 
 const TagSchema = new Schema({
   text: { type: String, default: '' },
@@ -10,10 +11,17 @@ const TagSchema = new Schema({
 const CrewThemeSchema = new Schema({
   name: { type: String, default: '' },
   motivation: { type: String, default: '' },
-  tags: { type: [TagSchema], default: () => Array(8).fill(null).map(() => ({ text: '', isPower: false, isWeakness: false, isBurned: false })) },
+  // Starts with 3 power tags + 1 weakness tag, like a character theme.
+  tags: {
+    type: [TagSchema],
+    default: () => [
+      ...Array(3).fill(null).map(() => ({ text: '', isPower: true, isWeakness: false, isBurned: false })),
+      { text: '', isPower: false, isWeakness: true, isBurned: false },
+    ],
+  },
   decay: { type: Number, default: 0, min: 0, max: 3 },
   upgrade: { type: Number, default: 0, min: 0, max: 3 },
-  specials: { type: [String], default: () => Array(6).fill('') },
+  specials: { type: [String], default: () => [] },
 })
 
 /** A user's seat in a campaign: the MC runs it, players own characters, spectators watch. */
@@ -41,4 +49,4 @@ const CampaignSchema = new Schema(
 
 CampaignSchema.index({ 'members.userId': 1 })
 
-export const Campaign = models.Campaign || model('Campaign', CampaignSchema)
+export const Campaign = registerModel('Campaign', CampaignSchema)

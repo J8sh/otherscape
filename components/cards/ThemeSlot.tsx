@@ -4,16 +4,19 @@ import { Plus } from 'lucide-react'
 import { ThemeCard } from '@/components/cards/ThemeCard'
 import { ThemeBookModal } from '@/components/modals/ThemeBookModal'
 import { THEME_BOOK_BY_TYPE, type ThemeBookEntry, type ThemeKit } from '@/lib/themeBook'
+import { evolutionForReplacedTheme } from '@/lib/rules'
 import type { IThemeCard, ITag, ThemeType } from '@/types'
 
 interface Props {
   theme: IThemeCard
   index: number
   onChange: (theme: IThemeCard) => void
+  /** Evolution points earned (replacing a theme, or spending an upgrade on Evolution). */
+  onEvolution?: (points: number) => void
 }
 
 /** Reset a slot back to the model's empty-theme defaults. */
-function emptyTheme(): IThemeCard {
+function emptyTheme(nascent = false): IThemeCard {
   return {
     name: '',
     category: 'self',
@@ -23,10 +26,11 @@ function emptyTheme(): IThemeCard {
     decay: 0,
     upgrade: 0,
     specials: [],
+    nascent,
   }
 }
 
-export function ThemeSlot({ theme, index, onChange }: Props) {
+export function ThemeSlot({ theme, index, onChange, onEvolution }: Props) {
   const [modalOpen, setModalOpen] = useState(false)
   const isConfigured = theme.themeType !== ''
 
@@ -50,7 +54,14 @@ export function ThemeSlot({ theme, index, onChange }: Props) {
     // or deselect those, so re-applying must not silently drop them.
     const burned = new Set(theme.tags.filter(t => t.isBurned).map(t => t.text))
     const oldKitTags = new Set([...(currentKit?.powerTags ?? []), ...(currentKit?.weaknessTags ?? [])])
-    const picked = selectedTags.map(t => ({ ...t, isBurned: burned.has(t.text) }))
+    let picked = selectedTags.map(t => ({ ...t, isBurned: burned.has(t.text) }))
+    // A replacement (nascent) theme starts with just its title tag and one weakness tag.
+    if (theme.nascent) {
+      const title = picked.find(t => t.isTitle)
+      const weakness = picked.find(t => t.isWeakness)
+      const keptPower = picked.filter(t => t.isPower && !t.isTitle).slice(0, Math.max(0, theme.tags.filter(t => t.isPower && !t.isTitle).length))
+      picked = [title, ...keptPower, weakness].filter((t): t is ITag => !!t)
+    }
     const pickedTexts = new Set(picked.map(t => t.text))
     const custom = theme.tags.filter(
       t => t.text.trim() && !t.isTitle && !oldKitTags.has(t.text) && !pickedTexts.has(t.text)
@@ -70,6 +81,17 @@ export function ThemeSlot({ theme, index, onChange }: Props) {
   function handleDelete() {
     if (!confirm('Delete this theme? The card will be cleared back to an empty slot.')) return
     onChange(emptyTheme())
+  }
+
+  // Decay is full: the theme is lost, it pays out Evolution points, and the
+  // slot waits for a new nascent theme.
+  function handleReplace() {
+    const powerTags = theme.tags.filter(t => !t.isWeakness && (t.isPower || t.isTitle) && t.text.trim()).length
+    const weaknessTags = theme.tags.filter(t => t.isWeakness && t.text.trim()).length
+    const points = evolutionForReplacedTheme({ powerTags, weaknessTags, specials: theme.specials.filter(Boolean).length })
+    if (!confirm(`Replace “${theme.name || theme.themeType}”? You lose this theme and gain ${points} Evolution point${points === 1 ? '' : 's'}. Then pick a new theme — it starts nascent (title tag + 1 weakness).`)) return
+    onChange(emptyTheme(true))
+    onEvolution?.(points)
   }
 
   return (
@@ -93,9 +115,12 @@ export function ThemeSlot({ theme, index, onChange }: Props) {
           onChange={onChange}
           onEdit={() => setModalOpen(true)}
           onDelete={handleDelete}
+          onReplace={handleReplace}
+          onMarkEvolution={onEvolution ? () => onEvolution(1) : undefined}
         />
       ) : (
         <button
+          type="button"
           onClick={() => setModalOpen(true)}
           className="group w-full rounded-xl card-chamfer flex flex-col items-center justify-center gap-3 transition-all"
           style={{
@@ -115,10 +140,12 @@ export function ThemeSlot({ theme, index, onChange }: Props) {
           </div>
           <div className="text-center">
             <div className="font-display tracking-widest transition-colors group-hover:text-[#c8ff00]" style={{ fontSize: 18, color: '#7a8099' }}>
-              ADD THEME
+              {theme.nascent ? 'PICK A NEW THEME' : 'ADD THEME'}
             </div>
-            <div style={{ fontSize: 12, color: '#4a5570', fontFamily: 'Rajdhani, sans-serif', marginTop: 2 }}>
-              Slot #{index + 1} · pick from the Theme Book
+            <div style={{ fontSize: 14, color: 'var(--text-muted)', fontFamily: 'Rajdhani, sans-serif', marginTop: 2 }}>
+              {theme.nascent
+                ? 'Replacing a lost theme · it starts nascent (title tag + 1 weakness)'
+                : `Slot #${index + 1} · pick from the Theme Book`}
             </div>
           </div>
         </button>

@@ -1,277 +1,239 @@
 'use client'
-import { Tooltip } from '@/components/ui/Tooltip'
-import type { ICharacter, IEvolution } from '@/types'
-
-// Essence web: 8 axes mapped to theme balance
-// Self themes → REAL + SELF; Mythos → AVATAR + SPIRITUALIST; Noise → CYBORG + TRANSHUMAN
-// NEXUS and CONDUIT are midpoints
-
-const ESSENCE_NODES = [
-  { key: 'REAL', angle: 270, tooltip: 'Real — predominantly Self-themed: grounded in humanity and personal identity' },
-  { key: 'CYBORG', angle: 315, tooltip: 'Cyborg — high Noise, lower Mythos: tech-enhanced human' },
-  { key: 'SINGULARITY', angle: 0, tooltip: 'Singularity — pure Noise: fully integrated with technology' },
-  { key: 'TRANSHUMAN', angle: 45, tooltip: 'Transhuman — high Noise with some Mythos influence' },
-  { key: 'AVATAR', angle: 90, tooltip: 'Avatar — pure Mythos: embodiment of a mythical Source' },
-  { key: 'SPIRITUALIST', angle: 135, tooltip: 'Spiritualist — high Mythos with Self grounding' },
-  { key: 'CONDUIT', angle: 180, tooltip: 'Conduit — balanced between Mythos and Noise' },
-  { key: 'NEXUS', angle: 225, tooltip: 'Nexus — balanced across all three forces: Self, Mythos, Noise' },
-]
-
-const EVOLUTION_ITEMS: { key: keyof IEvolution; label: string; tooltip: string }[] = [
-  { key: 'newEssenceType', label: 'Create a new type of Essence', tooltip: 'Gain access to a new Essence Special by shifting your theme balance' },
-  { key: 'broadPowerTag', label: 'Create another broad power tag', tooltip: 'Add a new permanent broad power tag to one of your themes' },
-  { key: 'veteranSpecial1', label: 'Gain a Veteran Special', tooltip: 'Unlock a Veteran Special ability (1st)' },
-  { key: 'veteranSpecial2', label: 'Gain a Veteran Special', tooltip: 'Unlock a Veteran Special ability (2nd)' },
-  { key: 'veteranSpecial3', label: 'Gain a Veteran Special', tooltip: 'Unlock a Veteran Special ability (3rd)' },
-  { key: 'retirement', label: 'Ride off into the sunset (Retirement)', tooltip: 'Your character retires from active play — narrative conclusion' },
-  { key: 'sunderCosmology', label: 'Sunder the cosmology (Narrative development)', tooltip: 'Permanently alter the world with a major narrative event' },
-  { key: 'totalReconstitution', label: 'Total Reconstitution (Respec)', tooltip: 'Rebuild your character from scratch while retaining Essence evolution' },
-]
-
-function EssenceWeb({ themes }: { themes: ICharacter['themes'] }) {
-  const selfCount = themes.filter(t => t.category === 'self').length
-  const mythosCount = themes.filter(t => t.category === 'mythos').length
-  const noiseCount = themes.filter(t => t.category === 'noise').length
-  const total = Math.max(selfCount + mythosCount + noiseCount, 1)
-
-  // Determine dominant essence node
-  let dominant = 'NEXUS'
-  if (selfCount >= 3) dominant = 'REAL'
-  else if (noiseCount >= 3) dominant = 'SINGULARITY'
-  else if (mythosCount >= 3) dominant = 'AVATAR'
-  else if (noiseCount > mythosCount && noiseCount > selfCount) dominant = selfCount > mythosCount ? 'CYBORG' : 'TRANSHUMAN'
-  else if (mythosCount > noiseCount && mythosCount > selfCount) dominant = selfCount > noiseCount ? 'SPIRITUALIST' : 'CONDUIT'
-  else if (selfCount > 0) dominant = 'NEXUS'
-
-  const cx = 80, cy = 80, r = 58
-
-  return (
-    <Tooltip content={`Essence web: Self ${selfCount} · Mythos ${mythosCount} · Noise ${noiseCount}. Your dominant nature is ${dominant}.`}>
-      <div className="cursor-help" style={{ width: 160, height: 160 }}>
-        <svg width="160" height="160" viewBox="0 0 160 160">
-          {/* Grid lines */}
-          {ESSENCE_NODES.map((n, i) => {
-            const rad = (n.angle * Math.PI) / 180
-            return (
-              <line
-                key={i}
-                x1={cx} y1={cy}
-                x2={cx + r * Math.cos(rad)}
-                y2={cy + r * Math.sin(rad)}
-                stroke="#2a3352" strokeWidth="1"
-              />
-            )
-          })}
-          {/* Rings */}
-          {[0.33, 0.66, 1].map(f => (
-            <circle key={f} cx={cx} cy={cy} r={r * f} fill="none" stroke="#2a3352" strokeWidth="0.8" />
-          ))}
-          {/* Theme balance fill */}
-          <polygon
-            points={ESSENCE_NODES.map(n => {
-              const rad = (n.angle * Math.PI) / 180
-              let strength = 0
-              if (['REAL', 'NEXUS'].includes(n.key)) strength = selfCount / total
-              if (['AVATAR', 'SPIRITUALIST'].includes(n.key)) strength = mythosCount / total
-              if (['SINGULARITY', 'CYBORG', 'TRANSHUMAN', 'CONDUIT'].includes(n.key)) strength = noiseCount / total
-              const dist = 0.15 + strength * 0.85
-              return `${cx + r * dist * Math.cos(rad)},${cy + r * dist * Math.sin(rad)}`
-            }).join(' ')}
-            fill="rgba(0,212,255,0.15)"
-            stroke="#00d4ff"
-            strokeWidth="1.5"
-          />
-          {/* Nodes */}
-          {ESSENCE_NODES.map((n) => {
-            const rad = (n.angle * Math.PI) / 180
-            const isDominant = n.key === dominant
-            return (
-              <g key={n.key}>
-                <circle
-                  cx={cx + r * Math.cos(rad)}
-                  cy={cy + r * Math.sin(rad)}
-                  r={isDominant ? 5 : 3}
-                  fill={isDominant ? '#c8ff00' : '#2a3352'}
-                  stroke={isDominant ? '#c8ff00' : '#4a5a7a'}
-                  strokeWidth="1.5"
-                />
-                <text
-                  x={cx + (r + 12) * Math.cos(rad)}
-                  y={cy + (r + 12) * Math.sin(rad)}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fontSize="7"
-                  fontFamily="Bebas Neue, sans-serif"
-                  letterSpacing="0.05em"
-                  fill={isDominant ? '#c8ff00' : '#4a5a7a'}
-                >
-                  {n.key}
-                </text>
-              </g>
-            )
-          })}
-          {/* Center label */}
-          <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle" fontSize="8" fontFamily="Bebas Neue, sans-serif" fill="#c8ff00" letterSpacing="0.08em">
-            {dominant}
-          </text>
-        </svg>
-      </div>
-    </Tooltip>
-  )
-}
+import { Plus } from 'lucide-react'
+import { Tooltip, InfoTip } from '@/components/ui/Tooltip'
+import { BoxTrack, CardStrip, PaperCard, TagSlot } from '@/components/sheet/primitives'
+import { EssenceWeb } from '@/components/cards/EssenceWeb'
+import { ESSENCE_INFO, MOMENTS, VETERAN_SPECIALS } from '@/lib/essence'
+import { EVOLUTION_TRACK, essenceOf, type Category } from '@/lib/rules'
+import type { ICharacter, ICrewRelationship, IEvolution } from '@/types'
 
 interface Props {
   character: ICharacter
   onChange: (character: ICharacter) => void
 }
 
+const VETERAN_KEYS: (keyof IEvolution)[] = ['veteranSpecial1', 'veteranSpecial2', 'veteranSpecial3']
+
+/**
+ * The character card, front and back, as on the printed sheet. Front: name,
+ * player, the Essence hexagon and crew relationship tags. Back: Evolution
+ * track and Moments of Evolution, plus Specials.
+ */
 export function CharacterCard({ character, onChange }: Props) {
-  function update<K extends keyof ICharacter>(key: K, value: ICharacter[K]) {
-    onChange({ ...character, [key]: value })
+  const categories = character.themes.filter(t => t.themeType).map(t => t.category as Category)
+  const mythosSameSource = character.essence?.mythosSameSource ?? false
+  const essence = essenceOf(categories, mythosSameSource)
+  const info = essence ? ESSENCE_INFO[essence] : null
+  const mythosOnly = categories.length > 0 && categories.every(c => c === 'mythos')
+  const evo = character.evolution
+  const points = evo.points ?? 0
+  const veterans = evo.veteranSpecials ?? []
+  const veteranSlots = VETERAN_KEYS.filter(k => evo[k]).length
+
+  const update = (patch: Partial<ICharacter>) => onChange({ ...character, ...patch })
+  const updateEvolution = (patch: Partial<IEvolution>) => update({ evolution: { ...evo, ...patch } })
+
+  function updateRelationship(i: number, patch: Partial<ICrewRelationship>) {
+    update({ crewRelationships: character.crewRelationships.map((r, idx) => idx === i ? { ...r, ...patch } : r) })
   }
 
-  function updateEvolution(key: keyof IEvolution, value: boolean) {
-    onChange({ ...character, evolution: { ...character.evolution, [key]: value } })
+  function setPoints(v: number) {
+    if (v >= EVOLUTION_TRACK) {
+      alert('Moment of Evolution! Your Evolution track resets — check one Moment below and work out what it means with your MC.')
+      updateEvolution({ points: 0 })
+    } else {
+      updateEvolution({ points: v })
+    }
   }
 
-  function updateRelationship(i: number, field: 'crewMember' | 'relationshipTag', value: string) {
-    const crewRelationships = character.crewRelationships.map((r, idx) =>
-      idx === i ? { ...r, [field]: value } : r
-    )
-    onChange({ ...character, crewRelationships })
-  }
-
-  function updateSpecial(i: number, value: string) {
-    const specials = character.specials.map((s, idx) => idx === i ? value : s)
-    onChange({ ...character, specials })
+  function toggleVeteran(name: string) {
+    const has = veterans.includes(name)
+    if (!has && veterans.length >= veteranSlots) {
+      alert('Each “Gain a Veteran Special” Moment unlocks one Veteran Special. Check one of those Moments first.')
+      return
+    }
+    updateEvolution({ veteranSpecials: has ? veterans.filter(v => v !== name) : [...veterans, name] })
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* Card 1: Identity + Essence */}
-      <div className="rounded-xl card-chamfer overflow-hidden" style={{ background: '#141929', border: '1px solid #2a3352' }}>
-        <div style={{ height: 4, background: '#c8ff00' }} />
-        <div className="px-4 pt-3 pb-4">
-          <div className="font-display text-2xl tracking-widest mb-4" style={{ color: '#c8ff00' }}>CHARACTER CARD</div>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {/* FRONT */}
+      <PaperCard label="Character card">
+        <div className="paper-band"><span className="font-display tracking-[0.2em] text-lg">CHARACTER CARD</span></div>
 
-          {/* Name / Player */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div>
-              <Tooltip content="Your character's name in the :Otherscape world">
-                <label className="font-display text-xs tracking-widest block mb-1 cursor-help" style={{ color: '#7a8099' }}>NAME</label>
-              </Tooltip>
-              <input
-                className="editable-field font-display"
-                style={{ fontSize: 16 }}
-                value={character.name}
-                onChange={e => update('name', e.target.value)}
-                placeholder="Character name"
-              />
-            </div>
-            <div>
-              <Tooltip content="The player controlling this character">
-                <label className="font-display text-xs tracking-widest block mb-1 cursor-help" style={{ color: '#7a8099' }}>PLAYER</label>
-              </Tooltip>
-              <input
-                className="editable-field"
-                value={character.player}
-                onChange={e => update('player', e.target.value)}
-                placeholder="Player name"
-              />
-            </div>
+        <div className="px-3 pt-3">
+          <input
+            className="w-full rounded-lg px-3 font-display tracking-wide outline-none"
+            style={{ background: 'var(--card-slot)', fontSize: 34, lineHeight: '52px', minHeight: 52 }}
+            value={character.name}
+            onChange={e => update({ name: e.target.value })}
+            placeholder="CHARACTER NAME"
+            aria-label="Character name"
+          />
+        </div>
+        <CardStrip>PLAYER</CardStrip>
+        <div className="px-3">
+          <input
+            className="w-full rounded-lg px-3 outline-none font-semibold"
+            style={{ background: 'var(--card-slot)', fontSize: 18, minHeight: 44 }}
+            value={character.player}
+            onChange={e => update({ player: e.target.value })}
+            placeholder="Player name"
+            aria-label="Player"
+          />
+        </div>
+
+        <CardStrip>
+          ESSENCE{' '}
+          <InfoTip label="Essence">
+            Your Essence comes from which theme categories you have — Self, Mythos, Noise — and grants one Essence Special. It changes when you replace themes.
+          </InfoTip>
+        </CardStrip>
+        <div className="px-3 flex flex-col sm:flex-row items-center gap-3">
+          <EssenceWeb categories={categories} essence={essence} />
+          <div className="flex-1 min-w-0">
+            {info ? (
+              <>
+                <div className="font-display text-2xl tracking-widest leading-none">{essence}</div>
+                <div className="text-sm font-semibold mb-1" style={{ color: 'var(--card-ink-soft)' }}>{info.mix}</div>
+                <p className="text-[15px] leading-snug">{info.summary}</p>
+                <div className="mt-2 rounded-lg p-2" style={{ background: 'var(--card-slot)', borderLeft: '5px solid var(--accent-lime)' }}>
+                  <div className="font-display tracking-widest text-sm">ESSENCE SPECIAL</div>
+                  <p className="text-[15px] leading-snug">{info.special}</p>
+                </div>
+              </>
+            ) : (
+              <p className="text-[15px]" style={{ color: 'var(--card-ink-soft)' }}>Add themes to see your Essence.</p>
+            )}
+            {mythosOnly && (
+              <label className="flex items-center gap-2 mt-2 text-[15px] font-semibold cursor-pointer" style={{ minHeight: 40 }}>
+                <input type="checkbox" className="w-5 h-5 accent-[#a66bff]" checked={mythosSameSource} onChange={e => update({ essence: { mythosSameSource: e.target.checked } })} />
+                All my Mythos themes share one Source (Avatar)
+              </label>
+            )}
           </div>
+        </div>
 
-          {/* Essence */}
-          <div className="flex items-start gap-4 mb-4">
-            <div>
-              <Tooltip content="Essence — your cosmological nature determined by the balance of Self, Mythos, and Noise themes. It defines your Essence Special ability.">
-                <label className="font-display text-xs tracking-widest block mb-2 cursor-help" style={{ color: '#7a8099' }}>ESSENCE</label>
-              </Tooltip>
-              <EssenceWeb themes={character.themes} />
+        <CardStrip>
+          CREW RELATIONSHIPS{' '}
+          <InfoTip label="crew relationships">
+            One tag for each other player character. Use it like any tag — but it’s burned when you invoke it, and it can’t be burned for extra Power. The MC can invoke it against you (mark an upgrade on the crew theme). Burned ones come back at the Credit Roll.
+          </InfoTip>
+        </CardStrip>
+        <div className="space-y-1">
+          {character.crewRelationships.map((rel, i) => (
+            <div key={i}>
+              <input
+                className="mx-3 mb-0.5 bg-transparent outline-none font-display tracking-widest text-sm w-[calc(100%-24px)]"
+                value={rel.crewMember}
+                onChange={e => updateRelationship(i, { crewMember: e.target.value })}
+                placeholder="CREW MEMBER"
+                aria-label={`Crew member ${i + 1}`}
+              />
+              <TagSlot
+                kind="story"
+                text={rel.relationshipTag}
+                burned={rel.isBurned}
+                placeholder="relationship tag…"
+                onText={relationshipTag => updateRelationship(i, { relationshipTag })}
+                onBurn={() => updateRelationship(i, { isBurned: !rel.isBurned })}
+                burnHelp="Crew relationship tags burn whenever you invoke them. They’re restored at the Credit Roll at the end of the session."
+                onRemove={() => update({ crewRelationships: character.crewRelationships.filter((_, idx) => idx !== i) })}
+              />
             </div>
-            <div className="flex-1">
-              {/* Crew Relationships */}
-              <Tooltip content="Crew relationships — tags describing your bond with each crew member. These can be invoked for Power in relevant situations.">
-                <label className="font-display text-xs tracking-widest block mb-2 cursor-help" style={{ color: '#7a8099' }}>CREW RELATIONSHIPS</label>
-              </Tooltip>
-              <div className="flex flex-col gap-2">
-                {character.crewRelationships.map((rel, i) => (
-                  <div key={i} className="flex gap-2">
+          ))}
+          <div className="px-3 edit-only">
+            <button type="button" className="w-full flex items-center justify-center gap-1 font-display tracking-widest text-sm rounded-lg" style={{ minHeight: 40, border: '2px dashed #a7b0bd', color: 'var(--card-ink-soft)' }}
+              onClick={() => update({ crewRelationships: [...character.crewRelationships, { crewMember: '', relationshipTag: '', isBurned: false }] })}>
+              <Plus size={14} aria-hidden /> RELATIONSHIP
+            </button>
+          </div>
+        </div>
+      </PaperCard>
+
+      {/* BACK */}
+      <PaperCard label="Character card — evolution and specials">
+        <div className="paper-band"><span className="font-display tracking-[0.2em] text-lg">CHARACTER CARD</span></div>
+
+        <CardStrip>
+          EVOLUTION{' '}
+          <InfoTip label="Evolution">
+            Gain Evolution points by replacing a theme (1, plus 1 per extra power tag, extra weakness tag and Special it had) or by spending a theme upgrade. Five points = a Moment of Evolution; the track then resets.
+          </InfoTip>
+        </CardStrip>
+        <div className="px-3">
+          <div className="track-panel inline-flex">
+            <BoxTrack label="POINTS" value={points} max={EVOLUTION_TRACK} onChange={setPoints} round />
+          </div>
+          <div className="font-display tracking-widest text-sm mt-3 mb-1">MOMENTS OF EVOLUTION <span style={{ color: 'var(--card-ink-soft)' }}>(each once)</span></div>
+          <ul className="space-y-0.5">
+            {MOMENTS.map(m => (
+              <li key={m.key}>
+                <Tooltip content={m.help}>
+                  <label className="flex items-center gap-3 cursor-pointer rounded-md px-1 hover:bg-black/5" style={{ minHeight: 40 }}>
                     <input
-                      className="editable-field"
-                      style={{ fontSize: 12 }}
-                      value={rel.crewMember}
-                      onChange={e => updateRelationship(i, 'crewMember', e.target.value)}
-                      placeholder="crew member"
+                      type="checkbox"
+                      className="w-5 h-5 shrink-0 accent-[#10140a]"
+                      checked={!!evo[m.key]}
+                      onChange={e => updateEvolution({ [m.key]: e.target.checked })}
                     />
-                    <input
-                      className="editable-field"
-                      style={{ fontSize: 12 }}
-                      value={rel.relationshipTag}
-                      onChange={e => updateRelationship(i, 'relationshipTag', e.target.value)}
-                      placeholder="relationship tag"
-                    />
-                  </div>
-                ))}
+                    <span className="text-[16px] font-semibold leading-tight">{m.label}</span>
+                  </label>
+                </Tooltip>
+              </li>
+            ))}
+          </ul>
+
+          {veteranSlots > 0 && (
+            <div className="mt-3">
+              <div className="font-display tracking-widest text-sm mb-1">VETERAN SPECIALS <span style={{ color: 'var(--card-ink-soft)' }}>({veterans.length}/{veteranSlots})</span></div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {VETERAN_SPECIALS.map(v => {
+                  const on = veterans.includes(v.name)
+                  return (
+                    <button
+                      type="button"
+                      key={v.name}
+                      onClick={() => toggleVeteran(v.name)}
+                      aria-pressed={on}
+                      className="text-left rounded-lg px-2.5 py-1.5"
+                      style={{ background: on ? 'var(--accent-lime)' : 'var(--card-slot)', border: `1px solid ${on ? '#8ab000' : '#d0d6de'}`, opacity: !on && veterans.length >= veteranSlots ? 0.55 : 1 }}
+                    >
+                      <div className="font-display tracking-wide">{v.name}</div>
+                      <div className="text-sm leading-snug" style={{ color: 'var(--card-ink-soft)' }}>{v.summary}</div>
+                    </button>
+                  )
+                })}
               </div>
             </div>
+          )}
+        </div>
+
+        <CardStrip>
+          SPECIALS{' '}
+          <InfoTip label="specials">
+            Record special abilities here — your Essence Special is shown on the front automatically. Theme Specials live on the back of each theme card.
+          </InfoTip>
+        </CardStrip>
+        <div className="space-y-1">
+          {character.specials.map((s, i) => (
+            <TagSlot
+              key={i}
+              kind="power"
+              text={s}
+              placeholder="special…"
+              onText={text => update({ specials: character.specials.map((x, idx) => idx === i ? text : x) })}
+              onRemove={() => update({ specials: character.specials.filter((_, idx) => idx !== i) })}
+            />
+          ))}
+          <div className="px-3 edit-only">
+            <button type="button" className="w-full flex items-center justify-center gap-1 font-display tracking-widest text-sm rounded-lg" style={{ minHeight: 40, border: '2px dashed #a7b0bd', color: 'var(--card-ink-soft)' }}
+              onClick={() => update({ specials: [...character.specials, ''] })}>
+              <Plus size={14} aria-hidden /> SPECIAL
+            </button>
           </div>
         </div>
-      </div>
-
-      {/* Card 2: Evolution + Specials */}
-      <div className="rounded-xl card-chamfer overflow-hidden" style={{ background: '#141929', border: '1px solid #2a3352' }}>
-        <div style={{ height: 4, background: '#c8ff00' }} />
-        <div className="px-4 pt-3 pb-4">
-          <div className="font-display text-2xl tracking-widest mb-4" style={{ color: '#c8ff00' }}>CHARACTER CARD</div>
-
-          <Tooltip content="Evolution — milestone checkboxes marking your character's major growth moments. Check each when achieved. Each character starts with none.">
-            <label className="font-display text-xs tracking-widest block mb-3 cursor-help" style={{ color: '#7a8099' }}>EVOLUTION</label>
-          </Tooltip>
-          <div className="flex flex-col gap-2 mb-5">
-            {EVOLUTION_ITEMS.map(item => (
-              <Tooltip key={item.key} content={item.tooltip}>
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div
-                    onClick={() => updateEvolution(item.key, !character.evolution[item.key])}
-                    className="w-5 h-5 rounded border shrink-0 flex items-center justify-center transition-all"
-                    style={{
-                      borderColor: character.evolution[item.key] ? '#c8ff00' : '#2a3352',
-                      background: character.evolution[item.key] ? '#c8ff00' : 'transparent',
-                    }}
-                  >
-                    {character.evolution[item.key] && (
-                      <svg width="10" height="10" viewBox="0 0 10 10">
-                        <polyline points="1.5,5 4,7.5 8.5,2.5" fill="none" stroke="#080c18" strokeWidth="1.5" strokeLinecap="round" />
-                      </svg>
-                    )}
-                  </div>
-                  <span className="text-sm group-hover:text-white transition-colors" style={{ color: character.evolution[item.key] ? '#c8ff00' : '#c8d0e0' }}>
-                    {item.label}
-                  </span>
-                </label>
-              </Tooltip>
-            ))}
-          </div>
-
-          {/* Specials */}
-          <Tooltip content="Specials — unique abilities your character has earned, including the Essence Special derived from your theme balance.">
-            <label className="font-display text-xs tracking-widest block mb-2 cursor-help" style={{ color: '#7a8099' }}>SPECIALS</label>
-          </Tooltip>
-          <div className="flex flex-col gap-1">
-            {character.specials.map((s, i) => (
-              <input
-                key={i}
-                className="editable-field"
-                style={{ fontSize: 13 }}
-                value={s}
-                onChange={e => updateSpecial(i, e.target.value)}
-                placeholder={`special ${i + 1}...`}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
+      </PaperCard>
     </div>
   )
 }

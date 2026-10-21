@@ -1,4 +1,5 @@
-import { Schema, model, models, type InferSchemaType } from 'mongoose'
+import { Schema, type InferSchemaType } from 'mongoose'
+import { registerModel } from '@/lib/models/register'
 
 /**
  * A person who signs in. `role` is the site-wide role: admins manage every
@@ -18,4 +19,4 @@ const UserSchema = new Schema(
 
 export type UserDoc = InferSchemaType<typeof UserSchema> & { _id: unknown }
 
-export const User = models.User || model('User', UserSchema)
+export const User = registerModel('User', UserSchema)

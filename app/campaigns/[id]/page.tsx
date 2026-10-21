@@ -11,6 +11,7 @@ import { api } from '@/lib/api'
 import { useAutosave } from '@/lib/useAutosave'
 import { ROLE_HELP, ROLE_LABEL } from '@/lib/roles'
 import { CATEGORY_META } from '@/lib/themeMeta'
+import { normalizeCrew } from '@/lib/normalize'
 import type { ICampaign, ICharacter, ICrewThemeCard } from '@/types'
 
 type CharacterRow = ICharacter & { canEdit: boolean }
@@ -37,7 +38,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
         api<ICampaign>(`/api/campaigns/${id}`),
         api<CharacterRow[]>(`/api/characters?campaignId=${id}`),
       ])
-      setCampaign(c)
+      setCampaign({ ...c, crewTheme: normalizeCrew(c.crewTheme) })
       setCharacters(chars)
       setDetails({ name: c.name, megacity: c.megacity, description: c.description })
     } catch (e) {

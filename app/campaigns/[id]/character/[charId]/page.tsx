@@ -1,15 +1,18 @@
 'use client'
-import { useCallback, useEffect, useState, use } from 'react'
+import { useCallback, useEffect, useRef, useState, use } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Eye, Zap } from 'lucide-react'
 import { CharacterCard } from '@/components/cards/CharacterCard'
 import { ThemeSlot } from '@/components/cards/ThemeSlot'
 import { LoadoutThemeCard } from '@/components/cards/LoadoutThemeCard'
 import { TrackingCards } from '@/components/cards/TrackingCard'
+import { StoryTagsCard } from '@/components/cards/StoryTagsCard'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
 import { api } from '@/lib/api'
 import { useAutosave } from '@/lib/useAutosave'
+import { addEvolution } from '@/lib/rules'
+import { normalizeCharacter } from '@/lib/normalize'
 import type { ICharacter } from '@/types'
 
 type CharacterView = ICharacter & { canEdit: boolean; campaignName?: string }
@@ -19,6 +22,9 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
   const [character, setCharacter] = useState<CharacterView | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // Latest sheet, updated synchronously, so two edits fired in one click
+  // (e.g. reset a theme's upgrade track + add an Evolution point) both land.
+  const latest = useRef<CharacterView | null>(null)
 
   const autosave = useAutosave((c: ICharacter) =>
     api(`/api/characters/${charId}`, { method: 'PATCH', json: c }))
@@ -26,7 +32,9 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
   const load = useCallback(async () => {
     setError(null)
     try {
-      setCharacter(await api<CharacterView>(`/api/characters/${charId}`))
+      const loaded = normalizeCharacter(await api<CharacterView>(`/api/characters/${charId}`))
+      latest.current = loaded
+      setCharacter(loaded)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load character')
     } finally {
@@ -36,10 +44,24 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
 
   useEffect(() => { load() }, [load])
 
-  function updateCharacter(updated: ICharacter) {
-    if (!character?.canEdit) return
-    setCharacter({ ...character, ...updated })
-    autosave.schedule(updated)
+  function updateCharacter(updated: Partial<ICharacter>) {
+    const current = latest.current
+    if (!current?.canEdit) return
+    const next = { ...current, ...updated }
+    latest.current = next
+    setCharacter(next)
+    autosave.schedule(next)
+  }
+
+  // Evolution points from replacing a theme or spending an upgrade; five earn a Moment.
+  function gainEvolution(points: number) {
+    const current = latest.current
+    if (!current) return
+    const { points: left, momentsEarned } = addEvolution(current.evolution.points ?? 0, points)
+    updateCharacter({ evolution: { ...current.evolution, points: left } })
+    if (momentsEarned > 0) {
+      alert(`Moment of Evolution! Check ${momentsEarned > 1 ? `${momentsEarned} Moments` : 'a Moment'} on your character card and talk it over with your MC.`)
+    }
   }
 
   if (loading) return <p className="font-display text-3xl tracking-widest text-center py-24" style={{ color: 'var(--border-card)' }}>LOADING…</p>
@@ -78,45 +100,57 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
         </div>
       )}
 
-      <fieldset disabled={readOnly} className="space-y-8 min-w-0">
-        <CharacterCard character={character} onChange={updateCharacter} />
+      <nav aria-label="Sheet sections" className="scroll-row sticky z-30 -mx-4 md:mx-0 px-4 md:px-0 py-2 mb-4 flex gap-2 overflow-x-auto" style={{ top: 'var(--nav-height)', background: 'rgba(8,12,24,0.92)' }}>
+        {[['#card', 'CHARACTER'], ['#themes', 'THEMES'], ['#gear', 'LOADOUT & STORY'], ['#statuses', 'STATUSES']].map(([href, label]) => (
+          <a key={href} href={href} className="chip shrink-0" style={{ minHeight: 36, padding: '0 14px', color: 'var(--text-soft)' }}>{label}</a>
+        ))}
+      </nav>
 
-        <section>
+      <fieldset disabled={readOnly} className="space-y-10 min-w-0">
+        <section id="card" className="scroll-mt-32">
+          <CharacterCard character={character} onChange={updateCharacter} />
+        </section>
+
+        <section id="themes" className="scroll-mt-32">
           <div className="flex items-center gap-2 mb-4">
             <Tooltip content="Each character has exactly 4 themes — their major aspects. Themes hold your power tags, weakness tags, and define your Essence.">
               <h2 className="font-display text-2xl tracking-widest cursor-help">THEMES</h2>
             </Tooltip>
             <span className="font-display text-sm tracking-widest" style={{ color: 'var(--text-muted)' }}>({character.themes.filter(t => t.themeType !== '').length}/4)</span>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {character.themes.map((theme, i) => (
               <ThemeSlot
                 key={i}
                 theme={theme}
                 index={i}
+                onEvolution={gainEvolution}
                 onChange={updated => updateCharacter({
-                  ...character,
-                  themes: character.themes.map((t, idx) => idx === i ? updated : t),
+                  themes: (latest.current ?? character).themes.map((t, idx) => idx === i ? updated : t),
                 })}
               />
             ))}
           </div>
         </section>
 
-        <section>
-          <Tooltip content="The Loadout Theme Card records your gear. Tags must be loaded up before a job and can be invoked for Power when relevant.">
-            <h2 className="font-display text-2xl tracking-widest mb-4 cursor-help">LOADOUT</h2>
-          </Tooltip>
-          <LoadoutThemeCard
-            loadout={character.loadoutTheme}
-            onChange={loadout => updateCharacter({ ...character, loadoutTheme: loadout })}
-          />
+        <section id="gear" className="scroll-mt-32">
+          <h2 className="font-display text-2xl tracking-widest mb-4">LOADOUT & STORY TAGS</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+            <LoadoutThemeCard
+              loadout={character.loadoutTheme}
+              onChange={loadout => updateCharacter({ loadoutTheme: loadout })}
+            />
+            <StoryTagsCard
+              tags={character.storyTags ?? []}
+              onChange={storyTags => updateCharacter({ storyTags })}
+            />
+          </div>
         </section>
 
-        <section className="panel p-4 md:p-6">
+        <section id="statuses" className="panel p-4 md:p-6 scroll-mt-32">
           <TrackingCards
             statuses={character.statuses}
-            onChange={statuses => updateCharacter({ ...character, statuses })}
+            onChange={statuses => updateCharacter({ statuses })}
           />
         </section>
       </fieldset>

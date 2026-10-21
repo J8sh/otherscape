@@ -36,26 +36,49 @@ export interface IThemeCard {
   themeType: ThemeType | '' // '' = empty/unconfigured slot (shows the add-theme prompt)
   motivation: string // identity / ritual / itch text
   tags: ITag[]
-  decay: number   // 0–3
-  upgrade: number // 0–2
+  decay: number   // 0–3 (3 = replace the theme)
+  upgrade: number // 0–3 (3 = the theme gains an upgrade, then resets)
   specials: string[]
+  /** A replacement theme starts with only its title tag until it has 3 power tags. */
+  nascent?: boolean
 }
 
 export interface ILoadoutThemeCard {
   _id?: string
   name: string
-  tags: ILoadoutTag[]
-  upgrade: number // 0–2
+  tags: ILoadoutTag[] // isBurned = not loaded up for this job
+  upgrade: number // 0–3
   specials: string[]
+  /** Permanent +Power when Loading Up, bought with loadout upgrades. */
+  loadingUpBonus?: number
+  /** Wildcard slots bought this job (2 Power each), spent to reveal gear later. */
+  wildcards?: number
 }
 
 export interface ICrewRelationship {
   _id?: string
   crewMember: string
   relationshipTag: string
+  isBurned?: boolean
+}
+
+export interface IStoryTag {
+  _id?: string
+  text: string
+  isBurned?: boolean
+  /** Weakness-style story tag that works against you. */
+  isNegative?: boolean
+}
+
+export interface IEssence {
+  /** Mythos-only characters: one Source (Avatar) or several (Conduit). */
+  mythosSameSource: boolean
 }
 
 export interface IEvolution {
+  /** Evolution points on the 5-circle track (0–4; reaching 5 grants a Moment). */
+  points?: number
+  veteranSpecials?: string[]
   newEssenceType: boolean
   broadPowerTag: boolean
   veteranSpecial1: boolean
@@ -66,11 +89,15 @@ export interface IEvolution {
   totalReconstitution: boolean
 }
 
+export type StatusType = 'helpful' | 'harmful' | 'hindering' | 'compelling' | 'progress'
+
 export interface IStatus {
   _id?: string
   name: string
-  tier: number // 1–6
-  type: 'helpful' | 'harmful' | 'hindering' | 'compelling'
+  tier: number // 1–6, always the highest mark
+  /** Every marked tier box (stacking marks the next free box). */
+  marks?: number[]
+  type: StatusType
 }
 
 export interface ICharacter {
@@ -85,6 +112,9 @@ export interface ICharacter {
   specials: string[]
   crewRelationships: ICrewRelationship[]
   statuses: IStatus[]
+  storyTags?: IStoryTag[]
+  essence?: IEssence
+  notes?: string
   createdAt: string
   updatedAt: string
 }
@@ -95,7 +125,7 @@ export interface ICrewThemeCard {
   motivation: string
   tags: ITag[]
   decay: number
-  upgrade: number
+  upgrade: number // 0–3
   specials: string[]
 }
 

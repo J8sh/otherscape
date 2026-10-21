@@ -1,4 +1,5 @@
-import { Schema, model, models } from 'mongoose'
+import { Schema } from 'mongoose'
+import { registerModel } from '@/lib/models/register'
 
 /**
  * A signed-in browser. The cookie holds a random token; only its SHA-256
@@ -14,4 +15,4 @@ const SessionSchema = new Schema(
   { timestamps: true }
 )
 
-export const Session = models.Session || model('Session', SessionSchema)
+export const Session = registerModel('Session', SessionSchema)
