@@ -5,6 +5,14 @@ import { Tooltip, InfoTip } from '@/components/ui/Tooltip'
 import { PC_STATUS_LIMIT, TIER_NAMES, reduceStatus, stackStatus, statusTier } from '@/lib/rules'
 import type { IStatus, StatusType } from '@/types'
 
+/** Common statuses (core book pp. 103–109 and the Action Database), offered as you type. */
+const STATUS_SUGGESTIONS = [
+  'wounded', 'bleeding', 'bruised', 'burned', 'stunned', 'exhausted', 'poisoned', 'prone', 'restrained', 'scared',
+  'shamed', 'humiliated', 'cursed', 'hacked', 'tagged', 'jammed', 'malfunctioning', 'bad-rap', 'wanted',
+  'charmed', 'convinced', 'enraged', 'hypnotized', 'controlled',
+  'alert', 'shielded', 'warded', 'firewalled', 'behind-cover', 'aiming', 'confident', 'hidden', 'boosted',
+]
+
 // Tier boxes shade from purple (1) to hot pink (6), like the printed tracking cards.
 const TIER_COLORS = ['#7c4dff', '#9446f0', '#ad3fdc', '#c938c2', '#e1329e', '#f72d78']
 
@@ -178,7 +186,10 @@ export function TrackingCards({ statuses, onChange, limit = PC_STATUS_LIMIT }: P
       <form onSubmit={addStatus} className="edit-only mt-4 flex flex-wrap gap-2 items-end">
         <div className="flex-1 min-w-[180px]">
           <label htmlFor="new-status" className="field-label">NEW STATUS</label>
-          <input id="new-status" className="input" placeholder="e.g. wounded, alert, hacked" value={name} onChange={e => setName(e.target.value)} />
+          <input id="new-status" className="input" placeholder="e.g. wounded, alert, hacked" value={name} onChange={e => setName(e.target.value)} list="status-suggestions" autoComplete="off" />
+          <datalist id="status-suggestions">
+            {[...new Set([...statuses.map(s => s.name), ...STATUS_SUGGESTIONS])].map(n => <option key={n} value={n} />)}
+          </datalist>
         </div>
         <div>
           <label htmlFor="new-status-type" className="field-label">TYPE</label>

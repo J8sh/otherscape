@@ -125,6 +125,8 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
         </div>
       </div>
 
+      <h1 className="sr-only">{character.name || 'Character'} — character sheet</h1>
+
       {readOnly && (
         <div className="panel px-4 py-3 mb-4 flex items-center gap-2" style={{ borderColor: 'var(--accent-cyan)' }}>
           <Eye size={16} style={{ color: 'var(--accent-cyan)' }} aria-hidden />
