@@ -679,6 +679,28 @@ export const GUIDE: GuideTopic[] = [
     ),
   },
   {
+    slug: 'whats-new',
+    title: 'What’s New',
+    summary: 'Recent additions to the site, newest first.',
+    group: 'site',
+    body: (
+      <>
+        <h2>October 2026</h2>
+        <ul>
+          <li><b>Crew tags in the roller.</b> Invoke the crew theme’s tags when you roll. Using a crew power tag burns it; a crew weakness marks the crew’s upgrade.</li>
+          <li><b>Downtime for the crew.</b> Mark the crew theme’s upgrade, or spend Power recovering burned crew tags.</li>
+          <li><b>Tag notes.</b> Record what a tag covers with the pen beside it — handy when agreeing on interpretations with your MC.</li>
+          <li><b>Restore deleted characters</b> from the campaign page for 30 days.</li>
+          <li><b>Undo / redo</b> on every character sheet (⌘Z / Ctrl+Z).</li>
+          <li><b>Write your own tags.</b> Theme and crew cards list their themebook’s questions, plus Identity / Ritual / Itch ideas from the kits.</li>
+          <li><b>Your characters</b> quick links on the Campaigns page.</li>
+          <li><b>Phone roller bar</b> keeps Power and the roll button in reach.</li>
+          <li>New guide pages: <Link href="/guide/making-a-character">Making a Character</Link> and <Link href="/guide/session-zero">Session Zero</Link>.</li>
+        </ul>
+      </>
+    ),
+  },
+  {
     slug: 'using-the-site',
     title: 'Roles, Invites & Sharing',
     summary: 'How campaigns, MCs, players and spectators work on this site.',
