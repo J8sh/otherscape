@@ -14,6 +14,7 @@ const LoadoutTagSchema = new Schema({
   text: { type: String, default: '' },
   isFlaw: { type: Boolean, default: false },
   isBurned: { type: Boolean, default: false },
+  note: { type: String, default: '', maxlength: 200 },
 })
 
 const ThemeCardSchema = new Schema({

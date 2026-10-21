@@ -29,6 +29,8 @@ export interface ILoadoutTag {
   text: string
   isFlaw: boolean
   isBurned: boolean
+  /** What the item covers, as agreed with the MC. */
+  note?: string
 }
 
 export interface IThemeCard {

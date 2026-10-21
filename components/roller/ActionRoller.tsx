@@ -48,8 +48,9 @@ function sheetChips(c: ICharacter): Chip[] {
   })
   ;(c.loadoutTheme?.tags ?? []).forEach((tag, i) => {
     if (!tag.text.trim()) return
-    if (tag.isFlaw) chips.push({ ref: { kind: 'loadout', index: i }, text: tag.text, sign: -1, note: 'marks a loadout upgrade', burnable: false, group: 'Loadout (packed)' })
-    else if (!tag.isBurned) chips.push({ ref: { kind: 'loadout', index: i }, text: tag.text, sign: 1, burnable: true, group: 'Loadout (packed)' })
+    const covers = tag.note?.trim() || undefined
+    if (tag.isFlaw) chips.push({ ref: { kind: 'loadout', index: i }, text: tag.text, sign: -1, note: 'marks a loadout upgrade', burnable: false, group: 'Loadout (packed)', covers })
+    else if (!tag.isBurned) chips.push({ ref: { kind: 'loadout', index: i }, text: tag.text, sign: 1, burnable: true, group: 'Loadout (packed)', covers })
   })
   ;(c.storyTags ?? []).forEach((tag, i) => {
     if (!tag.text.trim()) return
