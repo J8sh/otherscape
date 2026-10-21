@@ -156,6 +156,14 @@ export const GUIDE: GuideTopic[] = [
     ),
   },
   {
+    slug: 'themebooks',
+    title: 'Themebooks & Kits',
+    summary: 'Browse all 14 theme types, their 112 ready-made kits and their Theme Specials.',
+    pages: 'pp. 196–251',
+    group: 'basics',
+    body: null, // rendered by /guide/themebooks
+  },
+  {
     slug: 'actions',
     title: 'Taking Action & Rolling',
     summary: 'Count Power, roll 2d6 + Power: 10+ strong hit, 7–9 mixed hit, 6 or less a miss.',
