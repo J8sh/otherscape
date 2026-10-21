@@ -21,7 +21,7 @@ interface Props {
   challenges?: IChallenge[]
 }
 
-interface Chip { ref: TagRef; text: string; sign: 1 | -1; note?: string; burnable: boolean; group: string; color?: string }
+interface Chip { ref: TagRef; text: string; sign: 1 | -1; note?: string; burnable: boolean; group: string; color?: string; covers?: string }
 
 const OUTCOME_TEXT: Record<Outcome, { label: string; color: string; text: string }> = {
   strong: { label: 'STRONG HIT', color: 'var(--accent-lime)', text: 'It works, with no Consequences. You may take Consequences anyway for a greater success (+1 Power for Effects).' },
@@ -38,8 +38,8 @@ function sheetChips(c: ICharacter): Chip[] {
     const color = CATEGORY_META[t.category].color
     t.tags.forEach((tag, i) => {
       if (!tag.text.trim()) return
-      if (tag.isWeakness) chips.push({ ref: { kind: 'theme', theme: ti, tag: i }, text: tag.text, sign: -1, note: 'marks an upgrade', burnable: false, group, color })
-      else if (!tag.isBurned) chips.push({ ref: { kind: 'theme', theme: ti, tag: i }, text: tag.text, sign: 1, burnable: true, group, color })
+      if (tag.isWeakness) chips.push({ ref: { kind: 'theme', theme: ti, tag: i }, text: tag.text, sign: -1, note: 'marks an upgrade', burnable: false, group, color, covers: tag.note?.trim() || undefined })
+      else if (!tag.isBurned) chips.push({ ref: { kind: 'theme', theme: ti, tag: i }, text: tag.text, sign: 1, burnable: true, group, color, covers: tag.note?.trim() || undefined })
     })
   })
   ;(c.loadoutTheme?.tags ?? []).forEach((tag, i) => {
@@ -236,6 +236,7 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges }:
                             <span className="not-italic font-display mr-1" style={{ color: c.sign > 0 ? 'var(--accent-lime)' : 'var(--danger)' }}>{c.sign > 0 ? '+1' : '−1'}</span>
                             {c.text}
                             {c.note && <span className="not-italic text-xs ml-1" style={{ color: 'var(--text-muted)' }}>· {c.note}</span>}
+                            {c.covers && <span className="block not-italic text-xs" style={{ color: 'var(--text-muted)' }}>↳ {c.covers}</span>}
                           </button>
                           {on && c.burnable && (
                             <button type="button" onClick={() => { setBurnKey(burnKey === k ? null : k); setDice(null) }} aria-pressed={burnKey === k}

@@ -1,5 +1,6 @@
 'use client'
-import { Flame, Star, X } from 'lucide-react'
+import { useId, useState } from 'react'
+import { Flame, NotebookPen, Star, X } from 'lucide-react'
 import { Tooltip } from '@/components/ui/Tooltip'
 
 /**
@@ -64,6 +65,10 @@ interface TagSlotProps {
   extra?: React.ReactNode
   /** id of a <datalist> with suggestions. */
   list?: string
+  /** What the tag covers (agreed with the MC); shown under the tag. */
+  note?: string
+  /** Enables the note button. */
+  onNote?: (note: string) => void
 }
 
 const KIND_LABEL: Record<SlotKind, string> = {
@@ -75,10 +80,13 @@ const KIND_LABEL: Record<SlotKind, string> = {
  * title-star, burn-flame and remove controls on the right.
  */
 export function TagSlot({
-  kind, text, burned = false, placeholder, autoFocus, onText, onBurn, onTitle, onRemove, onFocus, burnHelp, extra, list,
+  kind, text, burned = false, placeholder, autoFocus, onText, onBurn, onTitle, onRemove, onFocus, burnHelp, extra, list, note, onNote,
 }: TagSlotProps) {
   const label = KIND_LABEL[kind]
+  const [editingNote, setEditingNote] = useState(false)
+  const noteId = useId()
   return (
+    <>
     <div className={`tag-slot tag-slot-${kind} ${burned ? 'is-burned' : ''}`}>
       <input
         className="tag-slot-input"
@@ -90,9 +98,17 @@ export function TagSlot({
         list={list}
         autoComplete={list ? 'off' : undefined}
         aria-label={`${label}${burned ? ' (burned)' : ''}`}
+        aria-describedby={note ? noteId : undefined}
       />
       <div className="tag-slot-controls">
         {extra}
+        {onNote && (
+          <Tooltip content="Note what this tag covers — the actions it helps with, as agreed with your MC.">
+            <button type="button" className={`slot-btn edit-only ${note ? 'is-on' : ''}`} onClick={() => setEditingNote(e => !e)} aria-expanded={editingNote} aria-label={`${note ? 'Edit' : 'Add'} note for ${label.toLowerCase()}`}>
+              <NotebookPen size={14} />
+            </button>
+          </Tooltip>
+        )}
         {onTitle && (
           <Tooltip content="Title tag — the theme’s first power tag. It names the theme and defines everything else on it. One per theme.">
             <button type="button" className={`slot-btn ${kind === 'title' ? 'is-on star' : ''}`} onClick={onTitle} aria-pressed={kind === 'title'} aria-label="Mark as title tag">
@@ -114,6 +130,22 @@ export function TagSlot({
         )}
       </div>
     </div>
+    {editingNote && onNote ? (
+      <input
+        className="tag-slot-note-input"
+        value={note ?? ''}
+        maxLength={200}
+        autoFocus
+        placeholder="What does this tag cover? e.g. sneaking, lock-picking…"
+        aria-label={`Note for ${label.toLowerCase()} ${text}`}
+        onChange={e => onNote(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') setEditingNote(false) }}
+        onBlur={() => setEditingNote(false)}
+      />
+    ) : note ? (
+      <p id={noteId} className="tag-slot-note">{note}</p>
+    ) : null}
+    </>
   )
 }
 
