@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { creditRoll, loadOff } from './sessionTools.ts'
+import { creditRoll, loadOff, sessionWrap } from './sessionTools.ts'
 import type { ICharacter, ICrewThemeCard } from '../types/index.ts'
 
 const crew: ICrewThemeCard = {
@@ -31,4 +31,15 @@ test('load off burns all loadout tags and clears wildcards', () => {
   const c = loadOff(pc('a'))
   assert.equal(c.loadoutTheme.tags[0].isBurned, true)
   assert.equal(c.loadoutTheme.wildcards, 0)
+})
+
+test('session wrap summarizes the credit roll and the rolls', () => {
+  const wrap = sessionWrap({ crewTagsRecovered: 1, relationshipsRestored: 2 }, [
+    { characterName: 'Rook', outcome: 'strong' }, { characterName: 'Vee', outcome: 'miss' }, { characterName: 'Rook', outcome: 'mixed' },
+  ], new Date('2026-10-21T20:00:00Z'))
+  assert.equal(wrap.title, 'Session wrap — 2026-10-21')
+  assert.match(wrap.body, /1 crew tag recovered, 2 relationship tags restored/)
+  assert.match(wrap.body, /Shared rolls: 3 — 1 strong hit, 1 mixed hit, 1 miss\./)
+  assert.match(wrap.body, /By character: Rook 2, Vee 1\./)
+  assert.match(sessionWrap({ crewTagsRecovered: 0, relationshipsRestored: 0 }, [], new Date()).body, /No shared rolls/)
 })

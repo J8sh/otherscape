@@ -31,3 +31,31 @@ export function loadOff(character: ICharacter): ICharacter {
     },
   }
 }
+
+export interface WrapRoll { characterName: string; outcome: 'strong' | 'mixed' | 'miss' }
+
+/**
+ * The journal entry the Credit Roll leaves behind: what it restored, and a
+ * tally of the session's shared rolls — a starting point for the recap.
+ */
+export function sessionWrap(
+  summary: { crewTagsRecovered: number; relationshipsRestored: number },
+  rolls: WrapRoll[],
+  date: Date,
+): { title: string; body: string } {
+  const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
+  const lines = [
+    `Credit Roll: ${plural(summary.crewTagsRecovered, 'crew tag')} recovered, ${plural(summary.relationshipsRestored, 'relationship tag')} restored.`,
+  ]
+  if (rolls.length) {
+    const count = (o: WrapRoll['outcome']) => rolls.filter(r => r.outcome === o).length
+    lines.push(`Shared rolls: ${rolls.length} — ${plural(count('strong'), 'strong hit')}, ${plural(count('mixed'), 'mixed hit')}, ${plural(count('miss'), 'miss', 'misses')}.`)
+    const per = new Map<string, number>()
+    for (const r of rolls) per.set(r.characterName || 'Unnamed', (per.get(r.characterName || 'Unnamed') ?? 0) + 1)
+    lines.push(`By character: ${[...per].map(([name, n]) => `${name} ${n}`).join(', ')}.`)
+  } else {
+    lines.push('No shared rolls this session.')
+  }
+  lines.push('', 'What happened? Write the recap here.')
+  return { title: `Session wrap — ${date.toISOString().slice(0, 10)}`, body: lines.join('\n') }
+}
