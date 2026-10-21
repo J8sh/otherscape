@@ -401,3 +401,6 @@ fieldset:disabled .tag-slot-input::placeholder, fieldset:disabled .lined-field::
   font-size: 15px; border-radius: 6px; background: #fff; border: 1px solid #c3cad6; color: var(--card-ink);
 }
 .slot-btn.is-on:not(.flame):not(.star) { color: var(--card-ink); }
+
+/* In-page links to section headings land below the sticky nav. */
+[id$="-heading"] { scroll-margin-top: calc(var(--nav-height, 56px) + 16px); }
