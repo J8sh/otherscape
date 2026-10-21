@@ -10,6 +10,7 @@ import { TableTools } from '@/components/campaign/TableTools'
 import { RollLog } from '@/components/campaign/RollLog'
 import { OptionalRules } from '@/components/campaign/OptionalRules'
 import { RelationshipWeb } from '@/components/campaign/RelationshipWeb'
+import { SeriesNotes } from '@/components/campaign/SeriesNotes'
 import { SaveIndicator } from '@/components/ui/SaveIndicator'
 import { useSession } from '@/components/auth/SessionProvider'
 import { api } from '@/lib/api'
@@ -320,6 +321,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
             </div>
             <CrewThemeCard crew={campaign.crewTheme} onChange={updateCrew} readOnly={!me?.canEditCrew} />
           </section>
+          <SeriesNotes campaignId={id} notes={campaign.seriesNotes ?? ''} canManage={!!me?.canManage} />
           <RelationshipWeb characters={characters} />
           <RollLog campaignId={id} />
           {me?.canManage && <TableTools campaignId={id} onDone={load} />}

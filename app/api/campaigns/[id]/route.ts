@@ -27,16 +27,17 @@ export const PATCH = route(async (req: Request, { params }: Ctx) => {
   const { campaign, access } = await loadCampaignFor(id, user)
   const body = await readJson(req)
 
-  const wantsDetails = ['name', 'description', 'megacity'].some(k => k in body)
+  const wantsDetails = ['name', 'description', 'megacity', 'seriesNotes'].some(k => k in body)
   if (wantsDetails && !access.canManage) throw new HttpError(403, 'Only the MC can edit campaign details.')
   if ('crewTheme' in body && !access.canEditCrew) throw new HttpError(403, 'Spectators can’t edit the crew.')
   if ('challenges' in body && !access.canManage) throw new HttpError(403, 'Only the MC can edit Challenges.')
   if ('optionalRules' in body && !access.canManage) throw new HttpError(403, 'Only the MC can change the rules.')
 
-  const update = pick(body, ['name', 'description', 'megacity', 'crewTheme', 'challenges', 'optionalRules'] as const)
+  const update = pick(body, ['name', 'description', 'megacity', 'crewTheme', 'challenges', 'optionalRules', 'seriesNotes'] as const)
   if ('name' in update) campaign.name = parseText(update.name, 'Campaign name', { required: true, max: 80 })
   if ('description' in update) campaign.description = parseText(update.description, 'Description', { max: 500 })
   if ('megacity' in update) campaign.megacity = parseText(update.megacity, 'Megacity', { max: 80 })
+  if ('seriesNotes' in update) campaign.seriesNotes = parseText(update.seriesNotes, 'Series notes', { max: 8000 })
   if ('crewTheme' in update) campaign.set('crewTheme', update.crewTheme)
   if ('optionalRules' in update) campaign.set('optionalRules', update.optionalRules)
   if ('challenges' in update) {
