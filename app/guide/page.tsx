@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Dices, ListTree } from 'lucide-react'
 import { GUIDE, GUIDE_GROUPS } from '@/lib/guide'
+import { GuideSearch } from '@/components/guide/GuideSearch'
 
 export const metadata = { title: 'Rules Guide · Metro :Otherscape' }
 
@@ -28,21 +29,7 @@ export default function GuidePage() {
         </div>
       </section>
 
-      {GUIDE_GROUPS.map(g => (
-        <section key={g.key} className="mt-8" aria-labelledby={`g-${g.key}`}>
-          <h2 id={`g-${g.key}`} className="font-display tracking-[0.2em] text-sm mb-3" style={{ color: 'var(--text-muted)' }}>{g.title.toUpperCase()}</h2>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {GUIDE.filter(t => t.group === g.key).map(t => (
-              <li key={t.slug}>
-                <Link href={`/guide/${t.slug}`} className="panel block h-full p-4 hover:border-[#c8ff00] transition-colors">
-                  <span className="font-display text-xl tracking-wide" style={{ color: 'var(--accent-lime)' }}>{t.title}</span>
-                  <p className="text-[15px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{t.summary}</p>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      <GuideSearch topics={GUIDE.map(t => ({ slug: t.slug, title: t.title, summary: t.summary, group: t.group }))} groups={GUIDE_GROUPS} />
     </div>
   )
 }
