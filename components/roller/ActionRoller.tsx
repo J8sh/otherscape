@@ -15,7 +15,8 @@ interface Props {
   onApply?: (character: ICharacter) => void
   /** The campaign's shared crew theme — its tags can be invoked too. */
   crew?: ICrewThemeCard | null
-  onApplyCrew?: (crew: ICrewThemeCard) => void
+  /** May resolve to the crew changes as actually saved (e.g. merged with a crewmate's edit). */
+  onApplyCrew?: (crew: ICrewThemeCard) => void | Promise<string[] | void>
   /** Share a finished roll with the campaign (shown as a toggle when provided). */
   onShare?: (roll: { dice: [number, number]; power: number; tags: string[]; note: string }) => void
   /** The campaign's optional rules (power tag cap, Enhance cost). */
@@ -200,9 +201,11 @@ export function ActionRoller({ character, onApply, onShare, rules, challenges, c
     const { character: next, changes } = applyRoll(character, sel)
     const crewResult = crew && onApplyCrew ? applyCrewRoll(crew, sel) : null
     onApply(next)
-    if (crewResult) onApplyCrew!(crewResult.crew)
     const all = [...changes, ...(crewResult?.changes ?? [])]
     setApplied(all.length ? all : ['Nothing to update on the sheet.'])
+    if (crewResult) {
+      Promise.resolve(onApplyCrew!(crewResult.crew)).then(saved => { if (saved?.length) setApplied([...changes, ...saved]) }).catch(() => {})
+    }
   }
 
   const groups = [...new Set(chips.map(c => c.group))]
