@@ -89,3 +89,9 @@ const CharacterSchema = new Schema(
 )
 
 export const Character = registerModel('Character', CharacterSchema)
+
+/** Sheet fields a player may write (and that export/import carry). campaignId and ownerId never come from a request body. */
+export const SHEET_FIELDS = [
+  'name', 'player', 'themes', 'loadoutTheme', 'evolution', 'specials',
+  'crewRelationships', 'statuses', 'storyTags', 'essence', 'notes',
+] as const
