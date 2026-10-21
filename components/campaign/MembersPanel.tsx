@@ -5,6 +5,7 @@ import { api } from '@/lib/api'
 import { ROLE_HELP, ROLE_LABEL } from '@/lib/roles'
 import { InfoTip } from '@/components/ui/Tooltip'
 import type { CampaignRole, ICampaign } from '@/types'
+import { InviteQr } from '@/components/campaign/InviteQr'
 
 interface Props {
   campaign: ICampaign
@@ -17,6 +18,7 @@ interface Props {
 export function MembersPanel({ campaign, currentUserId, onChanged, onLeft }: Props) {
   const me = campaign.me
   const [inviteCode, setInviteCode] = useState(campaign.inviteCode)
+  const [showQr, setShowQr] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inviteUrl = inviteCode && typeof window !== 'undefined' ? `${window.location.origin}/join/${inviteCode}` : ''
@@ -62,6 +64,10 @@ export function MembersPanel({ campaign, currentUserId, onChanged, onLeft }: Pro
           <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
             Code: <b className="font-display tracking-[0.2em] text-base" style={{ color: 'var(--text-primary)' }}>{inviteCode}</b>
           </p>
+          <details className="mt-1" onToggle={e => setShowQr((e.currentTarget as HTMLDetailsElement).open)}>
+            <summary className="cursor-pointer text-sm font-display tracking-widest flex items-center" style={{ minHeight: 36, color: 'var(--accent-cyan)' }}>SHOW QR CODE</summary>
+            {showQr && inviteUrl && <InviteQr url={inviteUrl} />}
+          </details>
         </div>
       )}
 

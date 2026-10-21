@@ -726,7 +726,7 @@ export const GUIDE: GuideTopic[] = [
         <p>Site <b>admins</b> can see every campaign and manage accounts (promote, disable, reset passwords). The first account created is the admin.</p>
         <h2>Inviting your crew</h2>
         <ol>
-          <li>Open your campaign; the <b>Members</b> panel shows the invite link and code.</li>
+          <li>Open your campaign; the <b>Members</b> panel shows the invite link and code — and a QR code players at the table can scan.</li>
           <li>Send it to your players. They sign up (or sign in) and land in your campaign as players.</li>
           <li>Change anyone’s role from the same panel. Make a new link at any time to stop the old one working.</li>
         </ol>
