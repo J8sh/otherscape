@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useRef, useState, use } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Download, Eye, Printer, Zap } from 'lucide-react'
+import { ArrowLeft, Download, Eye, Printer, Redo2, Undo2, Zap } from 'lucide-react'
 import { CharacterCard } from '@/components/cards/CharacterCard'
 import { ThemeSlot } from '@/components/cards/ThemeSlot'
 import { LoadoutThemeCard } from '@/components/cards/LoadoutThemeCard'
@@ -19,6 +19,7 @@ import { addEvolution } from '@/lib/rules'
 import { normalizeCharacter } from '@/lib/normalize'
 import { downloadCharacter } from '@/lib/characterFile'
 import { isNewer, usePolling } from '@/lib/usePolling'
+import { emptyHistory, record, redo, undo, type History } from '@/lib/history'
 import type { ICharacter, IOptionalRules } from '@/types'
 
 type CharacterView = ICharacter & { canEdit: boolean; campaignName?: string; rules?: IOptionalRules }
@@ -34,6 +35,12 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
 
   // Server time of the newest version we hold, so polling only applies newer edits.
   const serverStamp = useRef<string | undefined>(undefined)
+
+  // Undo/redo of this device's edits. Cleared when someone else's change
+  // arrives, so Undo never silently reverts the MC's edit.
+  const history = useRef<History<CharacterView>>(emptyHistory())
+  const [, setHistoryVersion] = useState(0)
+  const setHistory = (h: History<CharacterView>) => { history.current = h; setHistoryVersion(v => v + 1) }
 
   const autosave = useAutosave(async (c: ICharacter) => {
     const saved = await api<ICharacter>(`/api/characters/${charId}`, { method: 'PATCH', json: c })
@@ -72,16 +79,44 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
     serverStamp.current = remote.updatedAt
     latest.current = next
     setCharacter(next)
+    setHistory(emptyHistory())
   }, 8000, !!character)
 
   function updateCharacter(updated: Partial<ICharacter>) {
     const current = latest.current
     if (!current?.canEdit) return
     const next = { ...current, ...updated }
+    setHistory(record(history.current, current, Date.now()))
     latest.current = next
     setCharacter(next)
     autosave.schedule(next)
   }
+
+  function step(direction: 'undo' | 'redo') {
+    const current = latest.current
+    if (!current?.canEdit) return
+    const result = direction === 'undo' ? undo(history.current, current) : redo(history.current, current)
+    if (!result) return
+    // Keep the live permission/rules; restore only the sheet.
+    const next = { ...result.value, canEdit: current.canEdit, rules: current.rules, campaignName: current.campaignName }
+    setHistory(result.history)
+    latest.current = next
+    setCharacter(next)
+    autosave.schedule(next)
+  }
+
+  // ⌘Z / Ctrl+Z (⇧ to redo) outside text fields — fields keep their own undo.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!(e.metaKey || e.ctrlKey) || e.altKey || e.key.toLowerCase() !== 'z' && e.key.toLowerCase() !== 'y') return
+      const el = e.target as HTMLElement | null
+      if (el && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return
+      e.preventDefault()
+      step(e.key.toLowerCase() === 'y' || e.shiftKey ? 'redo' : 'undo')
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   // Evolution points from replacing a theme or spending an upgrade; five earn a Moment.
   function gainEvolution(points: number) {
@@ -117,11 +152,21 @@ export default function CharacterPage({ params }: { params: Promise<{ id: string
         <Link href={`/campaigns/${id}`} className="inline-flex items-center gap-1.5 font-display tracking-widest text-sm hover:text-white" style={{ color: 'var(--text-muted)', minHeight: 32 }}>
           <ArrowLeft size={14} aria-hidden /> {character.campaignName ? character.campaignName.toUpperCase() : 'CREW'}
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <SaveIndicator state={autosave.state} error={autosave.error} />
-          <button type="button" className="btn btn-ghost btn-sm hidden md:inline-flex" onClick={() => window.print()} aria-label="Print this sheet"><Printer size={14} aria-hidden /> PRINT</button>
+          {character.canEdit && (
+            <span className="flex gap-1">
+              <Tooltip content="Undo your last change (⌘Z / Ctrl+Z)">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => step('undo')} disabled={history.current.past.length === 0} aria-label="Undo last change"><Undo2 size={14} aria-hidden /></button>
+              </Tooltip>
+              <Tooltip content="Redo (⇧⌘Z / Ctrl+Y)">
+                <button type="button" className="btn btn-ghost btn-sm" onClick={() => step('redo')} disabled={history.current.future.length === 0} aria-label="Redo"><Redo2 size={14} aria-hidden /></button>
+              </Tooltip>
+            </span>
+          )}
+          <span className="hidden md:inline-flex"><button type="button" className="btn btn-ghost btn-sm" onClick={() => window.print()} aria-label="Print this sheet"><Printer size={14} aria-hidden /> PRINT</button></span>
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => downloadCharacter(character)} aria-label="Export this character to a file"><Download size={14} aria-hidden /> <span className="hidden sm:inline">EXPORT</span></button>
-          <Link href="/guide/effects" className="btn btn-ghost btn-sm"><Zap size={14} aria-hidden /> EFFECTS</Link>
+          <Link href="/guide/effects" className="btn btn-ghost btn-sm"><Zap size={14} aria-hidden /> <span className="hidden sm:inline">EFFECTS</span><span className="sr-only sm:hidden">Effects</span></Link>
           {character.canEdit && <DowntimeDialog character={character} onApply={c => updateCharacter(c)} />}
           <RollerDialog character={character} rules={character.rules} onApply={character.canEdit ? c => updateCharacter(c) : undefined} />
         </div>
