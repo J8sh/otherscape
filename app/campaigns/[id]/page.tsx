@@ -330,7 +330,7 @@ export default function CampaignPage({ params }: { params: Promise<{ id: string 
             </div>
           ) : (
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {characters.map(char => {
+              {[...characters].sort((a, b) => Number(b.ownerId === user?._id) - Number(a.ownerId === user?._id)).map(char => {
                 const counts = (['self', 'mythos', 'noise'] as const).map(cat => ({ cat, n: char.themes?.filter(t => t.themeType && t.category === cat).length ?? 0 }))
                 const mine = char.ownerId === user?._id
                 const essence = essenceOf(char.themes?.filter(t => t.themeType).map(t => t.category as Category) ?? [], char.essence?.mythosSameSource)
