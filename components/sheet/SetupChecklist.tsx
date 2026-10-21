@@ -57,7 +57,7 @@ export function SetupChecklist({ character, onChange }: { character: ICharacter;
       <div className="flex items-start justify-between gap-2">
         <div>
           <h2 id="setup-heading" className="font-display text-2xl tracking-widest" style={{ color: 'var(--accent-lime)' }}>BUILD YOUR CHARACTER</h2>
-          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{remaining} step{remaining === 1 ? '' : 's'} left · <a className="underline" href="/guide/themes">How themes work</a></p>
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>{remaining} step{remaining === 1 ? '' : 's'} left · <a className="underline" href="/guide/making-a-character">How to make a character</a></p>
         </div>
         <button type="button" className="btn btn-ghost btn-icon" onClick={dismiss} aria-label="Hide the setup checklist"><X size={16} /></button>
       </div>

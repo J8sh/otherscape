@@ -81,6 +81,55 @@ export const GUIDE: GuideTopic[] = [
     ),
   },
   {
+    slug: 'making-a-character',
+    title: 'Making a Character',
+    summary: 'Two ways in: build fast from a character trope, or write every theme yourself from the themebook questions.',
+    pages: 'pp. 174–195',
+    group: 'basics',
+    body: (
+      <>
+        <p>
+          A character is <b>four themes</b>, a <b>loadout</b>, and a few relationships. Each theme mixes power tags (what you’re good at),
+          a weakness, and a motivation. Pick a path below — both end in the same kind of sheet.
+        </p>
+        <h2>Quick build: from a trope</h2>
+        <p>Best for your first game, or when you just want to play.</p>
+        <ol>
+          <li><b>Pick a character trope.</b> A trope is a ready-made character idea that bundles three theme kits.</li>
+          <li><b>Pick your fourth kit</b> from the trope’s three options — or any kit whose theme type you don’t already have.</li>
+          <li><b>Turn each kit into a theme:</b> take the kit’s first (title) tag, choose two more power tags and one weakness, and copy the kit’s Identity, Ritual or Itch as the motivation.</li>
+          <li><b>Flesh it out:</b> a name, a look, a few details. Keep it light — more appears during play.</li>
+        </ol>
+        <OnTheSite>
+          On a new sheet, open <b>START FROM A TROPE</b> in the setup checklist. It builds all four themes from the kits with starter tags (and the trope’s suggested loadout) — then swap in the tags you prefer from each theme card’s kit list.
+        </OnTheSite>
+        <h2>Custom build: answer the questions</h2>
+        <p>More involved, fully yours.</p>
+        <ol>
+          <li><b>Concept.</b> Think about what your character does with their time, where they come from, how they use tech, whether a Source (a mythic power) touched them, and who keeps them grounded.</li>
+          <li><b>Choose four theme types</b> to match the four strongest parts of that concept — any mix of Self, Mythos and Noise. Avoid doubling up a type unless the clash is the point.</li>
+          <li><b>Answer the themebook questions.</b> For each theme, answer the first power question plus two more, and one weakness question. The answers become your tags; the motivation question gives your Identity, Ritual or Itch.</li>
+          <li><b>Choose a loadout:</b> three power tags (gear) and one weakness for your loadout theme.</li>
+        </ol>
+        <Tip>
+          A good power tag names something <b>useful</b> — ask “what actions would this help?” If the answer is “none” or “it only hurts me”,
+          it isn’t a power tag. Agree with the MC on what each tag covers before play.
+        </Tip>
+        <h2>Either way, finish with</h2>
+        <ul>
+          <li><b>Something extra (optional):</b> on one theme you may add one more power tag — but then add one more weakness there too.</li>
+          <li><b>Essence:</b> your balance of Self, Mythos and Noise themes decides your Essence and its Special.</li>
+          <li><b>Relationships:</b> one relationship tag toward each crewmate — how you feel about them, or what they are to you. Check it with their player.</li>
+          <li><b>Crew theme:</b> together, build the crew’s shared theme (three power tags and a weakness).</li>
+        </ul>
+        <OnTheSite>
+          The <b>setup checklist</b> at the top of a new sheet tracks every step, Essence is worked out for you from your themes, and the crew card
+          lives on the campaign page. See <Link href="/guide/themebooks">Themebooks &amp; Kits</Link> for every theme type’s questions and kits.
+        </OnTheSite>
+      </>
+    ),
+  },
+  {
     slug: 'tags',
     title: 'Tags',
     summary: 'Short descriptors instead of stats. Every relevant tag is worth ±1 Power.',
