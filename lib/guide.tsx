@@ -700,6 +700,13 @@ export const GUIDE: GuideTopic[] = [
         </ol>
         <h2>Saving</h2>
         <p>Everything saves automatically a moment after you stop typing — watch for “Saved” at the top of a sheet. Changed something by mistake? The undo and redo arrows next to it (or ⌘Z / Ctrl+Z) step your sheet back and forward. Deleted a character? It waits under <b>Recently deleted</b> on the campaign page for 30 days.</p>
+        <h2>Handy shortcuts</h2>
+        <ul>
+          <li><b>Your characters</b> on the Campaigns page jump straight to your sheets.</li>
+          <li>The <b>ROLL</b> button on a sheet opens the dice roller with your tags, the crew’s tags and your statuses ready to tap. On a phone, Power and the roll button stay pinned at the bottom.</li>
+          <li>The pen beside a tag records what it covers; the roller shows that note under the tag.</li>
+          <li><b>Export</b> saves a sheet to a file you can import into another campaign; <b>Print</b> (on a computer) gives a paper copy.</li>
+        </ul>
       </>
     ),
   },
