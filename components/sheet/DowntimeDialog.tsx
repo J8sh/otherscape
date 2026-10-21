@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Coffee, Minus, Plus, X } from 'lucide-react'
-import { DOWNTIME_POWER, applyDowntimePower, applyDowntimeUpgrade, downtimeCost, type DowntimeSpend } from '@/lib/downtime'
+import { DOWNTIME_POWER, applyDowntimePower, applyDowntimeUpgrade, downtimeCost, recoverCrewTags, type DowntimeSpend } from '@/lib/downtime'
 import { UPGRADE_BOXES } from '@/lib/rules'
 import { api } from '@/lib/api'
 import type { ICampaign, ICharacter, ICrewThemeCard } from '@/types'
@@ -41,6 +41,14 @@ export function DowntimeDialog({ character, onApply }: { character: ICharacter; 
       return { ...sp, recover: on ? sp.recover.filter(r => !(r.theme === ti && r.tag === i)) : [...sp.recover, { theme: ti, tag: i }] }
     })
   }
+  function toggleCrew(text: string) {
+    setSpend(sp => {
+      const list = sp.crew ?? []
+      return { ...sp, crew: list.includes(text) ? list.filter(t => t !== text) : [...list, text] }
+    })
+  }
+  const crewBurned = (crew?.tags ?? []).filter(t => t.isBurned && t.isPower && t.text.trim())
+
   function heal(i: number, delta: number, max: number) {
     setSpend(sp => ({ ...sp, heal: { ...sp.heal, [i]: Math.max(0, Math.min(max, (sp.heal[i] ?? 0) + delta)) } }))
   }
@@ -56,10 +64,19 @@ export function DowntimeDialog({ character, onApply }: { character: ICharacter; 
         return
       }
     } else {
+      if (mode === 'power' && spend.crew?.length) {
+        try {
+          const fresh = (await api<ICampaign>(`/api/campaigns/${character.campaignId}`)).crewTheme
+          await api(`/api/campaigns/${character.campaignId}`, { method: 'PATCH', json: { crewTheme: recoverCrewTags(fresh, spend.crew) } })
+        } catch (e) {
+          setError(e instanceof Error ? e.message : 'Couldn’t update the crew card')
+          return
+        }
+      }
       onApply(mode === 'upgrade' ? applyDowntimeUpgrade(character, theme) : applyDowntimePower(character, spend))
     }
     setOpen(false)
-    setSpend({ recover: [], heal: {} })
+    setSpend({ recover: [], heal: {}, crew: [] })
   }
 
   return (
@@ -111,7 +128,7 @@ export function DowntimeDialog({ character, onApply }: { character: ICharacter; 
                 <p className="font-display tracking-widest" style={{ color: left < 0 ? 'var(--danger)' : 'var(--accent-lime)' }}>{left} OF {DOWNTIME_POWER} POWER LEFT</p>
                 <section>
                   <h3 className="font-display tracking-widest text-sm mb-1" style={{ color: 'var(--text-muted)' }}>RECOVER BURNED TAGS · 1 EACH</h3>
-                  {burned.length === 0 ? <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Nothing burned.</p> : (
+                  {burned.length === 0 && crewBurned.length === 0 ? <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Nothing burned.</p> : (
                     <div className="flex flex-wrap gap-1.5">
                       {burned.map(({ t, ti, tag, i }) => {
                         const on = spend.recover.some(r => r.theme === ti && r.tag === i)
@@ -120,6 +137,16 @@ export function DowntimeDialog({ character, onApply }: { character: ICharacter; 
                             style={{ minHeight: 40, border: `1px solid ${on ? 'var(--accent-lime)' : 'var(--border-card)'}`, background: on ? 'rgba(200,255,0,0.12)' : 'var(--bg-inset)' }}
                             title={t.name || t.themeType}>
                             {tag.text}
+                          </button>
+                        )
+                      })}
+                      {crewBurned.map(tag => {
+                        const on = spend.crew?.includes(tag.text) ?? false
+                        return (
+                          <button key={`crew-${tag.text}`} type="button" aria-pressed={on} onClick={() => toggleCrew(tag.text)} className="px-3 rounded-lg italic font-semibold"
+                            style={{ minHeight: 40, border: `1px solid ${on ? 'var(--accent-lime)' : 'var(--border-card)'}`, background: on ? 'rgba(200,255,0,0.12)' : 'var(--bg-inset)' }}
+                            aria-label={`Crew tag: ${tag.text}`}>
+                            <span className="not-italic text-xs font-display tracking-widest mr-1" style={{ color: 'var(--accent-cyan)' }}>CREW</span>{tag.text}
                           </button>
                         )
                       })}

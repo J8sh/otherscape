@@ -1,5 +1,5 @@
 import { UPGRADE_BOXES, reduceStatus, statusTier } from './rules.ts'
-import type { ICharacter } from '../types/index.ts'
+import type { ICharacter, ICrewThemeCard } from '../types/index.ts'
 
 /** Downtime benefit (core book p.124): mark an upgrade, or spend 3 Power. */
 export const DOWNTIME_POWER = 3
@@ -9,10 +9,12 @@ export interface DowntimeSpend {
   recover: { theme: number; tag: number }[]
   /** Status index → tiers to remove (1 Power per tier). */
   heal: Record<number, number>
+  /** Burned crew power tags (by text) to recover — also 1 Power each. */
+  crew?: string[]
 }
 
 export function downtimeCost(spend: DowntimeSpend) {
-  return spend.recover.length + Object.values(spend.heal).reduce((a, b) => a + b, 0)
+  return spend.recover.length + (spend.crew?.length ?? 0) + Object.values(spend.heal).reduce((a, b) => a + b, 0)
 }
 
 /** Apply the 3-Power benefit. Throws if it costs more than the budget. */
@@ -29,6 +31,12 @@ export function applyDowntimePower(c: ICharacter, spend: DowntimeSpend, budget =
     return marks.length ? [{ ...s, marks, tier: statusTier(marks) }] : []
   })
   return { ...c, themes, statuses }
+}
+
+/** Recover burned crew tags (matched by text, so it applies to a freshly read card). */
+export function recoverCrewTags(crew: ICrewThemeCard, texts: string[]): ICrewThemeCard {
+  const want = new Set(texts)
+  return { ...crew, tags: crew.tags.map(t => (t.isBurned && want.has(t.text) ? { ...t, isBurned: false } : t)) }
 }
 
 /** The other benefit: one upgrade box on a theme (capped at the track). */
