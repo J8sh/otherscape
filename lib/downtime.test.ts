@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { applyDowntimePower, applyDowntimeUpgrade, downtimeCost } from './downtime.ts'
+import { applyDowntimePower, applyDowntimeUpgrade, downtimeCost, recoverCrewTags } from './downtime.ts'
 import type { ICharacter } from '../types/index.ts'
 
 const c = {
@@ -25,4 +25,15 @@ test('over budget throws; upgrade caps at 3', () => {
   assert.throws(() => applyDowntimePower(c, { recover: [{ theme: 0, tag: 0 }, { theme: 0, tag: 1 }], heal: { 0: 2 } }))
   assert.equal(applyDowntimeUpgrade(c, 0).themes[0].upgrade, 3)
   assert.equal(applyDowntimeUpgrade(applyDowntimeUpgrade(c, 0), 0).themes[0].upgrade, 3)
+})
+
+test('crew tags recovered in downtime cost 1 each and only unburn the named tags', () => {
+  assert.equal(downtimeCost({ recover: [], heal: { 0: 1 }, crew: ['safehouse'] }), 2)
+  const crew = { name: '', motivation: '', upgrade: 0, decay: 0, specials: [], tags: [
+    { text: 'safehouse', isPower: true, isWeakness: false, isBurned: true },
+    { text: 'fixer', isPower: true, isWeakness: false, isBurned: true },
+  ] }
+  const out = recoverCrewTags(crew, ['safehouse'])
+  assert.deepEqual(out.tags.map(t => t.isBurned), [false, true])
+  assert.equal(crew.tags[0].isBurned, true, 'input not mutated')
 })
