@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, ChevronRight, KeyRound, BookOpen, Dices, UserRound } from 'lucide-react'
+import { Plus, ChevronRight, KeyRound, BookOpen, Dices, UserRound, Upload } from 'lucide-react'
 import { api } from '@/lib/api'
 import { ROLE_LABEL } from '@/lib/roles'
 import { CATEGORY_META } from '@/lib/themeMeta'
@@ -46,6 +46,23 @@ export default function CampaignsPage() {
   }
 
   useEffect(() => { load() }, [])
+
+  // Start a new campaign from a backup file downloaded from Table Tools.
+  async function restore(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setError(null)
+    try {
+      if (file.size > 4 * 1024 * 1024) throw new Error('That file is too big to be a campaign backup.')
+      let json: unknown
+      try { json = JSON.parse(await file.text()) } catch { throw new Error('That file isn’t a campaign backup.') }
+      const c = await api<ICampaign>('/api/campaigns/restore', { method: 'POST', json })
+      router.push(`/campaigns/${c._id}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Restore failed')
+    }
+  }
 
   async function create(e: React.FormEvent) {
     e.preventDefault()
@@ -98,9 +115,13 @@ export default function CampaignsPage() {
             </div>
           </div>
           <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>You’ll be the MC. You’ll get an invite link to share with your players.</p>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button type="submit" className="btn btn-primary">CREATE</button>
             <button type="button" onClick={() => setCreating(false)} className="btn btn-ghost">CANCEL</button>
+            <label className="btn btn-ghost cursor-pointer sm:ml-auto" title="Start a new campaign from a backup file">
+              <Upload size={16} aria-hidden /> RESTORE FROM BACKUP
+              <input type="file" accept=".json,application/json" className="sr-only" onChange={restore} />
+            </label>
           </div>
         </form>
       )}

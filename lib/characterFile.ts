@@ -7,6 +7,7 @@ const FIELDS = ['name', 'player', 'themes', 'loadoutTheme', 'evolution', 'specia
 
 /** Drop database ids so an imported sheet gets fresh ones. */
 function stripIds(value: unknown): unknown {
+  if (value instanceof Date) return value.toISOString()
   if (Array.isArray(value)) return value.map(stripIds)
   if (value && typeof value === 'object') {
     return Object.fromEntries(Object.entries(value).filter(([k]) => k !== '_id' && k !== '__v').map(([k, v]) => [k, stripIds(v)]))
